@@ -37,6 +37,9 @@ const TableView: React.FC<TableViewProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
+  const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set());
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [openColumnDropdown, setOpenColumnDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Debounce search term to avoid too many API calls
@@ -684,8 +687,10 @@ const TableView: React.FC<TableViewProps> = ({
     setVisibleColumns(new Set(initialVisible));
   }, [tableName]);
 
-  // Get columns that should be displayed
-  const displayColumns = allColumns.filter(col => col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name));
+  // Get columns that should be displayed - pinned columns first
+  const pinnedDisplayColumns = allColumns.filter(col => pinnedColumns.has(col.name) && (col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name)));
+  const regularDisplayColumns = allColumns.filter(col => !pinnedColumns.has(col.name) && (col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name)));
+  const displayColumns = [...pinnedDisplayColumns, ...regularDisplayColumns];
 
   // Filter columns for search
   const filteredColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').filter(col => col.name.toLowerCase().includes(columnSearchTerm.toLowerCase()));
@@ -697,6 +702,34 @@ const TableView: React.FC<TableViewProps> = ({
       newVisible.add(columnName);
     }
     setVisibleColumns(newVisible);
+    setOpenColumnDropdown(null);
+  };
+
+  const toggleColumnPin = (columnName: string) => {
+    const newPinned = new Set(pinnedColumns);
+    if (newPinned.has(columnName)) {
+      newPinned.delete(columnName);
+    } else {
+      newPinned.add(columnName);
+    }
+    setPinnedColumns(newPinned);
+  };
+
+  const handleColumnFilter = (columnName: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnName]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearColumnFilter = (columnName: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[columnName];
+      return newFilters;
+    });
+    setCurrentPage(1);
   };
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -889,12 +922,113 @@ const TableView: React.FC<TableViewProps> = ({
                       <th className="w-12 px-4 py-4 text-left">
                         <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
-                      {displayColumns.map(column => <th key={column.name} className="px-4 py-4 text-left font-semibold text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]" onClick={() => handleSort(column.name)}>
-                          <div className="flex items-center space-x-1">
-                            <span className="uppercase text-xs tracking-wider">{column.name}</span>
-                            {getSortIcon(column.name)}
-                          </div>
-                        </th>)}
+                      {displayColumns.map(column => {
+                        const isPinned = pinnedColumns.has(column.name);
+                        const isDropdownOpen = openColumnDropdown === column.name;
+                        return (
+                          <th 
+                            key={column.name} 
+                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] relative ${isPinned ? 'sticky left-0 bg-table-header border-r-2 border-primary/20 z-20' : ''}`}
+                          >
+                            <div className="flex items-center justify-between space-x-1">
+                              <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
+                                <span className="uppercase text-xs tracking-wider">{column.name}</span>
+                                {getSortIcon(column.name)}
+                              </div>
+                              <DropdownMenu open={isDropdownOpen} onOpenChange={(open) => setOpenColumnDropdown(open ? column.name : null)}>
+                                <DropdownMenuTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-6 w-6 p-0 hover:bg-muted/80"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <MoreHorizontal className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent 
+                                  align="end" 
+                                  className="w-56 bg-background border shadow-lg z-50"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <DropdownMenuLabel className="text-xs font-medium">{column.name}</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  
+                                  {/* Recherche dans la colonne */}
+                                  <div className="p-2">
+                                    <Input
+                                      placeholder={`Filtrer ${column.name}...`}
+                                      value={columnFilters[column.name] || ''}
+                                      onChange={(e) => handleColumnFilter(column.name, e.target.value)}
+                                      className="h-8 text-xs"
+                                    />
+                                    {columnFilters[column.name] && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="mt-1 h-6 w-full text-xs"
+                                        onClick={() => clearColumnFilter(column.name)}
+                                      >
+                                        <X className="h-3 w-3 mr-1" />
+                                        Effacer
+                                      </Button>
+                                    )}
+                                  </div>
+                                  <DropdownMenuSeparator />
+                                  
+                                  {/* Tri */}
+                                  <DropdownMenuCheckboxItem
+                                    checked={sortBy === column.name && sortOrder === 'asc'}
+                                    onCheckedChange={() => {
+                                      setSortBy(column.name);
+                                      setSortOrder('asc');
+                                      setCurrentPage(1);
+                                    }}
+                                  >
+                                    <ArrowUp className="h-3 w-3 mr-2" />
+                                    Trier croissant
+                                  </DropdownMenuCheckboxItem>
+                                  
+                                  <DropdownMenuCheckboxItem
+                                    checked={sortBy === column.name && sortOrder === 'desc'}
+                                    onCheckedChange={() => {
+                                      setSortBy(column.name);
+                                      setSortOrder('desc');
+                                      setCurrentPage(1);
+                                    }}
+                                  >
+                                    <ArrowDown className="h-3 w-3 mr-2" />
+                                    Trier décroissant
+                                  </DropdownMenuCheckboxItem>
+                                  
+                                  <DropdownMenuSeparator />
+                                  
+                                  {/* Épingler */}
+                                  <DropdownMenuCheckboxItem
+                                    checked={pinnedColumns.has(column.name)}
+                                    onCheckedChange={() => toggleColumnPin(column.name)}
+                                  >
+                                    {isPinned ? '📌 Désépingler' : '📍 Épingler à gauche'}
+                                  </DropdownMenuCheckboxItem>
+                                  
+                                  {/* Masquer la colonne (sauf id et email) */}
+                                  {column.name !== 'id' && column.name !== 'email' && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuCheckboxItem
+                                        checked={false}
+                                        onCheckedChange={() => toggleColumnVisibility(column.name)}
+                                      >
+                                        👁️‍🗨️ Masquer la colonne
+                                      </DropdownMenuCheckboxItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </th>
+                        );
+                      })}
                       <th className="w-20 px-4 py-4 text-center">
                         <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
                       </th>
@@ -910,9 +1044,17 @@ const TableView: React.FC<TableViewProps> = ({
                           <td className="w-12 px-4 py-4">
                             <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
-                          {displayColumns.map(column => <td key={column.name} className="px-4 py-4 min-w-[120px]">
-                              {formatCellValue(row[column.name], column.name)}
-                            </td>)}
+                          {displayColumns.map(column => {
+                            const isPinned = pinnedColumns.has(column.name);
+                            return (
+                              <td 
+                                key={column.name} 
+                                className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky left-0 bg-background border-r-2 border-primary/20 z-10' : ''}`}
+                              >
+                                {formatCellValue(row[column.name], column.name)}
+                              </td>
+                            );
+                          })}
                           <td className="w-20 px-4 py-4">
                             <div className="flex items-center justify-center space-x-1">
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
