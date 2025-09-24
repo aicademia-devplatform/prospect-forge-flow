@@ -1,20 +1,27 @@
 import React from 'react';
-import { BarChart3, Users, Upload, FileText, Database, Settings } from 'lucide-react';
+import { BarChart3, Users, Upload, FileText, Database, Settings, ShieldCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@/hooks/useAuth';
 
 const navigation = [
-  { name: 'Dashboard', icon: BarChart3, active: false },
-  { name: 'Prospects', icon: Users, active: true },
-  { name: 'Import Data', icon: Upload, active: false },
-  { name: 'Reports', icon: FileText, active: false },
+  { name: 'Dashboard', icon: BarChart3, active: false, permission: 'view_prospects' },
+  { name: 'Prospects', icon: Users, active: true, permission: 'view_prospects' },
+  { name: 'Import Data', icon: Upload, active: false, permission: 'create_prospects' },
+  { name: 'Reports', icon: FileText, active: false, permission: 'view_prospects' },
 ];
 
 const adminNavigation = [
-  { name: 'Data Sources', icon: Database, active: false },
-  { name: 'Settings', icon: Settings, active: false },
+  { name: 'Data Sources', icon: Database, active: false, permission: 'manage_settings' },
+  { name: 'Admin Panel', icon: ShieldCheck, active: false, permission: 'access_admin_panel' },
+  { name: 'Settings', icon: Settings, active: false, permission: 'manage_settings' },
 ];
 
 export const Sidebar = () => {
+  const { hasPermission } = useAuth();
+
+  const filteredNavigation = navigation.filter(item => hasPermission(item.permission));
+  const filteredAdminNavigation = adminNavigation.filter(item => hasPermission(item.permission));
+
   return (
     <TooltipProvider>
       <div className="flex h-full w-16 flex-col bg-sidebar border-r border-sidebar-border">
@@ -26,7 +33,7 @@ export const Sidebar = () => {
         
         <div className="flex-1 px-2 py-4">
           <nav className="space-y-2">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const Icon = item.icon;
               return (
                 <Tooltip key={item.name}>
@@ -49,27 +56,31 @@ export const Sidebar = () => {
             })}
           </nav>
 
-          <div className="my-6 h-px bg-sidebar-border" />
+          {filteredAdminNavigation.length > 0 && (
+            <>
+              <div className="my-6 h-px bg-sidebar-border" />
 
-          <div className="space-y-2">
-            {adminNavigation.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Tooltip key={item.name}>
-                  <TooltipTrigger asChild>
-                    <button
-                      className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    >
-                      <Icon className="h-5 w-5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>{item.name}</p>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </div>
+              <div className="space-y-2">
+                {filteredAdminNavigation.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Tooltip key={item.name}>
+                      <TooltipTrigger asChild>
+                        <button
+                          className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        >
+                          <Icon className="h-5 w-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>{item.name}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </TooltipProvider>
