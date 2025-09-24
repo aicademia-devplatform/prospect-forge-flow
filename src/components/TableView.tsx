@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DataPagination from './DataPagination';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
@@ -271,25 +272,33 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
             />
           </div>
           {tableName === 'crm_contacts' && sections.length > 0 && (
-            <div className="flex items-center space-x-2">
-              {sections.map((section) => {
-                const isSelected = selectedSections.includes(section.value);
-                
-                return (
-                  <span
-                    key={section.value}
-                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-80 border ${
-                      isSelected 
-                        ? generateSectionColor(section.value)
-                        : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
-                    }`}
-                    onClick={() => toggleSection(section.value)}
-                  >
-                    {section.value}
-                  </span>
-                );
-              })}
-            </div>
+            <TooltipProvider>
+              <div className="flex items-center space-x-2">
+                {sections.map((section) => {
+                  const isSelected = selectedSections.includes(section.value);
+                  
+                  return (
+                    <Tooltip key={section.value}>
+                      <TooltipTrigger asChild>
+                        <span
+                          className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-80 border ${
+                            isSelected 
+                              ? generateSectionColor(section.value)
+                              : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                          }`}
+                          onClick={() => toggleSection(section.value)}
+                        >
+                          {section.value}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isSelected ? `Filtrer par ${section.value} (cliquer pour désactiver)` : `Filtrer par ${section.value} (cliquer pour activer)`}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
           )}
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
