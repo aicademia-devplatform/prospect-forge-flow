@@ -86,8 +86,11 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
 
       // Appliquer le filtre de section pour CRM contacts
       if (tableName === 'crm_contacts' && sectionFilter !== 'all') {
-        const sectionValue = sectionFilter === 'arlynk' ? 'Arlynk' : 'Aicademia';
-        query = query.eq('data_section', sectionValue);
+        if (sectionFilter === 'arlynk') {
+          query = query.ilike('data_section', '%Arlynk%');
+        } else if (sectionFilter === 'aicademia') {
+          query = query.ilike('data_section', '%Aicademia%');
+        }
       }
 
       // Recherche simple sur les colonnes texte principales
