@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown } from 'lucide-react';
 import DataPagination from './DataPagination';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
@@ -27,9 +27,13 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [sectionFilter, setSectionFilter] = useState<string>('all');
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+  const [sectionSearchTerm, setSectionSearchTerm] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -40,13 +44,75 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     page: currentPage,
     pageSize,
     searchTerm: debouncedSearchTerm,
-    sectionFilter,
+    sectionFilter: selectedSections.length > 0 ? selectedSections.join(',') : 'all',
     sortBy,
     sortOrder
   });
 
   // Fetch available sections
   const { sections } = useTableSections(tableName);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filter sections based on search term
+  const filteredSections = sections.filter(section => 
+    section.label.toLowerCase().includes(sectionSearchTerm.toLowerCase())
+  );
+
+  // Generate consistent colors for section badges
+  const generateSectionColor = (sectionName: string) => {
+    const colors = [
+      'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-300',
+      'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-300',
+      'bg-gradient-to-r from-green-500 to-green-600 text-white border-green-300',
+      'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-300',
+      'bg-gradient-to-r from-pink-500 to-pink-600 text-white border-pink-300',
+      'bg-gradient-to-r from-teal-500 to-teal-600 text-white border-teal-300',
+      'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white border-indigo-300',
+      'bg-gradient-to-r from-red-500 to-red-600 text-white border-red-300',
+      'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-yellow-300',
+      'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-cyan-300',
+      'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-300',
+      'bg-gradient-to-r from-violet-500 to-violet-600 text-white border-violet-300'
+    ];
+    
+    // Normalize the section name (lowercase and trim)
+    const normalizedName = sectionName.toLowerCase().trim();
+    
+    // Use string hash to consistently assign same color to same section
+    let hash = 0;
+    for (let i = 0; i < normalizedName.length; i++) {
+      const char = normalizedName.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  const toggleSection = (sectionValue: string) => {
+    if (selectedSections.includes(sectionValue)) {
+      setSelectedSections(selectedSections.filter(s => s !== sectionValue));
+    } else {
+      setSelectedSections([...selectedSections, sectionValue]);
+    }
+    setCurrentPage(1);
+  };
+
+  const removeSection = (sectionValue: string) => {
+    setSelectedSections(selectedSections.filter(s => s !== sectionValue));
+    setCurrentPage(1);
+  };
 
   // Define columns based on table
   const getColumns = (): ColumnInfo[] => {
@@ -134,37 +200,6 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     setSelectedRows(newSelected);
   };
 
-  // Generate consistent colors for data sections
-  const generateSectionColor = (sectionName: string) => {
-    const colors = [
-      'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-300',
-      'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-300',
-      'bg-gradient-to-r from-green-500 to-green-600 text-white border-green-300',
-      'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-300',
-      'bg-gradient-to-r from-pink-500 to-pink-600 text-white border-pink-300',
-      'bg-gradient-to-r from-teal-500 to-teal-600 text-white border-teal-300',
-      'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white border-indigo-300',
-      'bg-gradient-to-r from-red-500 to-red-600 text-white border-red-300',
-      'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-yellow-300',
-      'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-cyan-300',
-      'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-300',
-      'bg-gradient-to-r from-violet-500 to-violet-600 text-white border-violet-300'
-    ];
-    
-    // Normalize the section name (lowercase and trim)
-    const normalizedName = sectionName.toLowerCase().trim();
-    
-    // Use string hash to consistently assign same color to same section
-    let hash = 0;
-    for (let i = 0; i < normalizedName.length; i++) {
-      const char = normalizedName.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    
-    return colors[Math.abs(hash) % colors.length];
-  };
-
   const formatCellValue = (value: any, columnName: string) => {
     if (value === null || value === undefined) {
       return <span className="text-muted-foreground text-sm">—</span>;
@@ -250,20 +285,77 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
             />
           </div>
           {tableName === 'crm_contacts' && sections.length > 0 && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">Section:</span>
-              <select
-                value={sectionFilter}
-                onChange={(e) => handleSectionFilterChange(e.target.value)}
-                className="px-3 py-1 border border-input rounded-md text-sm bg-background min-w-[200px]"
-              >
-                <option value="all">Toutes ({totalCount.toLocaleString('fr-FR')})</option>
-                {sections.map((section) => (
-                  <option key={section.value} value={section.value}>
-                    {section.label}
-                  </option>
-                ))}
-              </select>
+            <div className="relative" ref={dropdownRef}>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium">Sections:</span>
+                <div 
+                  className="min-w-[300px] p-3 border border-input rounded-md bg-background cursor-pointer hover:border-primary/50 transition-colors"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
+                  <div className="flex flex-wrap gap-1 min-h-[24px] items-center">
+                    {selectedSections.length === 0 ? (
+                      <span className="text-muted-foreground text-sm">Sélectionner des sections...</span>
+                    ) : (
+                      selectedSections.map((sectionValue) => {
+                        const section = sections.find(s => s.value === sectionValue);
+                        const colorClass = generateSectionColor(section?.label || sectionValue);
+                        return (
+                          <span 
+                            key={sectionValue}
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${colorClass} cursor-pointer hover:opacity-80`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeSection(sectionValue);
+                            }}
+                          >
+                            {section?.label || sectionValue}
+                            <X className="h-3 w-3 ml-1" />
+                          </span>
+                        );
+                      })
+                    )}
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+              </div>
+              
+              {isDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 w-full bg-background border border-input rounded-md shadow-lg z-50 max-h-64 overflow-hidden">
+                  <div className="p-2 border-b border-border">
+                    <Input
+                      placeholder="Rechercher une section..."
+                      value={sectionSearchTerm}
+                      onChange={(e) => setSectionSearchTerm(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredSections.map((section) => {
+                      const isSelected = selectedSections.includes(section.value);
+                      const colorClass = generateSectionColor(section.label);
+                      return (
+                        <div
+                          key={section.value}
+                          className="flex items-center justify-between p-2 hover:bg-muted cursor-pointer transition-colors"
+                          onClick={() => toggleSection(section.value)}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
+                              {section.label}
+                            </span>
+                          </div>
+                          <Checkbox checked={isSelected} disabled />
+                        </div>
+                      );
+                    })}
+                    {filteredSections.length === 0 && (
+                      <div className="p-4 text-center text-muted-foreground text-sm">
+                        Aucune section trouvée
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <Button variant="outline">
