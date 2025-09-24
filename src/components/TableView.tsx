@@ -273,9 +273,9 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
           {tableName === 'crm_contacts' && sections.length > 0 && (
             <div className="flex items-center space-x-2">
               {sections.map((section) => {
-                const isSelected = selectedSections.length === 0 || selectedSections.includes(section.value);
+                const isSelected = selectedSections.includes(section.value);
                 const colorClass = generateSectionColor(section.value);
-                const opacityClass = isSelected ? '' : 'opacity-30';
+                const opacityClass = isSelected ? '' : 'opacity-50';
                 
                 return (
                   <span
