@@ -12,19 +12,19 @@ import DataPagination from './DataPagination';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
 import { useDebounce } from '@/hooks/useDebounce';
-
 interface TableViewProps {
   tableName: 'apollo_contacts' | 'crm_contacts';
   onBack: () => void;
 }
-
 interface ColumnInfo {
   name: string;
   type: string;
   nullable: boolean;
 }
-
-const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
+const TableView: React.FC<TableViewProps> = ({
+  tableName,
+  onBack
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -38,7 +38,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -46,7 +46,12 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   const visibleColumnsArray = useMemo(() => Array.from(visibleColumns), [visibleColumns]);
 
   // Fetch data using server-side pagination
-  const { data, totalCount, totalPages, loading } = useTableData({
+  const {
+    data,
+    totalCount,
+    totalPages,
+    loading
+  } = useTableData({
     tableName,
     page: currentPage,
     pageSize,
@@ -58,7 +63,9 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   });
 
   // Fetch available sections
-  const { sections } = useTableSections(tableName);
+  const {
+    sections
+  } = useTableSections(tableName);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -67,33 +74,29 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         setIsDropdownOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Filter sections based on search term
-  const filteredSections = sections.filter(section => 
-    section.label.toLowerCase().includes(sectionSearchTerm.toLowerCase())
-  );
+  const filteredSections = sections.filter(section => section.label.toLowerCase().includes(sectionSearchTerm.toLowerCase()));
 
   // Generate consistent colors for section badges
   const generateSectionColor = (sectionName: string) => {
     // Normalize the section name (case-insensitive, handle ARlynk/Arlynk)
     const normalizedName = sectionName.toLowerCase().trim();
     const finalName = normalizedName === 'arlynk' || normalizedName === 'arlynk' ? 'arlynk' : normalizedName;
-    
+
     // Assign specific colors: Arlynk = Blue, Aicademia = Green
     if (finalName === 'arlynk') {
       return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-300';
     } else if (finalName === 'aicademia') {
       return 'bg-gradient-to-r from-green-500 to-green-600 text-white border-green-300';
     }
-    
+
     // Default fallback color
     return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white border-gray-300';
   };
-
   const toggleSection = (sectionValue: string) => {
     if (selectedSections.includes(sectionValue)) {
       setSelectedSections(selectedSections.filter(s => s !== sectionValue));
@@ -102,7 +105,6 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     }
     setCurrentPage(1);
   };
-
   const removeSection = (sectionValue: string) => {
     setSelectedSections(selectedSections.filter(s => s !== sectionValue));
     setCurrentPage(1);
@@ -111,153 +113,567 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   // Define columns based on table - get ALL columns from database
   const getAllColumns = (): ColumnInfo[] => {
     if (tableName === 'apollo_contacts') {
-      return [
-        { name: 'id', type: 'string', nullable: false },
-        { name: 'email', type: 'string', nullable: false },
-        { name: 'first_name', type: 'string', nullable: true },
-        { name: 'last_name', type: 'string', nullable: true },
-        { name: 'company', type: 'string', nullable: true },
-        { name: 'title', type: 'string', nullable: true },
-        { name: 'seniority', type: 'string', nullable: true },
-        { name: 'departments', type: 'string', nullable: true },
-        { name: 'activity', type: 'string', nullable: true },
-        { name: 'lifecycle_stage', type: 'string', nullable: true },
-        { name: 'categorie_fonction', type: 'string', nullable: true },
-        { name: 'stage', type: 'string', nullable: true },
-        { name: 'technologies', type: 'string', nullable: true },
-        { name: 'secteur_activite', type: 'string', nullable: true },
-        { name: 'company_phone', type: 'string', nullable: true },
-        { name: 'company_country', type: 'string', nullable: true },
-        { name: 'company_state', type: 'string', nullable: true },
-        { name: 'company_city', type: 'string', nullable: true },
-        { name: 'company_address', type: 'string', nullable: true },
-        { name: 'country', type: 'string', nullable: true },
-        { name: 'state', type: 'string', nullable: true },
-        { name: 'city', type: 'string', nullable: true },
-        { name: 'twitter_url', type: 'string', nullable: true },
-        { name: 'facebook_url', type: 'string', nullable: true },
-        { name: 'company_linkedin_url', type: 'string', nullable: true },
-        { name: 'website', type: 'string', nullable: true },
-        { name: 'person_linkedin_url', type: 'string', nullable: true },
-        { name: 'subsidiary_of', type: 'string', nullable: true },
-        { name: 'statut', type: 'string', nullable: true },
-        { name: 'contact_owner', type: 'string', nullable: true },
-        { name: 'account_owner', type: 'string', nullable: true },
-        { name: 'work_direct_phone', type: 'string', nullable: true },
-        { name: 'home_phone', type: 'string', nullable: true },
-        { name: 'mobile_phone', type: 'string', nullable: true },
-        { name: 'corporate_phone', type: 'string', nullable: true },
-        { name: 'other_phone', type: 'string', nullable: true },
-        { name: 'region', type: 'string', nullable: true },
-        { name: 'industry', type: 'string', nullable: true },
-        { name: 'keywords', type: 'string', nullable: true },
-        { name: 'secondary_email', type: 'string', nullable: true },
-        { name: 'tertiary_email', type: 'string', nullable: true },
-        { name: 'num_employees', type: 'number', nullable: true },
-        { name: 'nb_employees', type: 'number', nullable: true },
-        { name: 'annual_revenue', type: 'number', nullable: true },
-        { name: 'total_funding', type: 'number', nullable: true },
-        { name: 'latest_funding', type: 'number', nullable: true },
-        { name: 'email_sent', type: 'boolean', nullable: true },
-        { name: 'email_open', type: 'boolean', nullable: true },
-        { name: 'email_bounced', type: 'boolean', nullable: true },
-        { name: 'replied', type: 'boolean', nullable: true },
-        { name: 'demoed', type: 'boolean', nullable: true },
-        { name: 'apollo_account_id', type: 'string', nullable: true },
-        { name: 'apollo_contact_id', type: 'string', nullable: true },
-        { name: 'email_status', type: 'string', nullable: true },
-        { name: 'primary_email_source', type: 'string', nullable: true },
-        { name: 'email_confidence', type: 'string', nullable: true },
-        { name: 'created_at', type: 'string', nullable: true },
-        { name: 'updated_at', type: 'string', nullable: true },
-        { name: 'last_sync_at', type: 'string', nullable: true },
-        { name: 'primary_email_last_verified_at', type: 'string', nullable: true },
-        { name: 'last_raised_at', type: 'string', nullable: true },
-        { name: 'last_contacted', type: 'string', nullable: true },
-      ];
+      return [{
+        name: 'id',
+        type: 'string',
+        nullable: false
+      }, {
+        name: 'email',
+        type: 'string',
+        nullable: false
+      }, {
+        name: 'first_name',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'last_name',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'title',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'seniority',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'departments',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'activity',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'lifecycle_stage',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'categorie_fonction',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'stage',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'technologies',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'secteur_activite',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company_phone',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company_country',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company_state',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company_city',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company_address',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'country',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'state',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'city',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'twitter_url',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'facebook_url',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company_linkedin_url',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'website',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'person_linkedin_url',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'subsidiary_of',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'statut',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'contact_owner',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'account_owner',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'work_direct_phone',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'home_phone',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'mobile_phone',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'corporate_phone',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'other_phone',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'region',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'industry',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'keywords',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'secondary_email',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'tertiary_email',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'num_employees',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'nb_employees',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'annual_revenue',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'total_funding',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'latest_funding',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'email_sent',
+        type: 'boolean',
+        nullable: true
+      }, {
+        name: 'email_open',
+        type: 'boolean',
+        nullable: true
+      }, {
+        name: 'email_bounced',
+        type: 'boolean',
+        nullable: true
+      }, {
+        name: 'replied',
+        type: 'boolean',
+        nullable: true
+      }, {
+        name: 'demoed',
+        type: 'boolean',
+        nullable: true
+      }, {
+        name: 'apollo_account_id',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'apollo_contact_id',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'email_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'primary_email_source',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'email_confidence',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'created_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'updated_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'last_sync_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'primary_email_last_verified_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'last_raised_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'last_contacted',
+        type: 'string',
+        nullable: true
+      }];
     } else {
-      return [
-        { name: 'id', type: 'number', nullable: false },
-        { name: 'email', type: 'string', nullable: false },
-        { name: 'firstname', type: 'string', nullable: true },
-        { name: 'name', type: 'string', nullable: true },
-        { name: 'company', type: 'string', nullable: true },
-        { name: 'data_section', type: 'string', nullable: true },
-        { name: 'full_name', type: 'string', nullable: true },
-        { name: 'email_domain', type: 'string', nullable: true },
-        { name: 'contact_active', type: 'string', nullable: true },
-        { name: 'tel', type: 'string', nullable: true },
-        { name: 'mobile', type: 'string', nullable: true },
-        { name: 'mobile_2', type: 'string', nullable: true },
-        { name: 'tel_pro', type: 'string', nullable: true },
-        { name: 'address', type: 'string', nullable: true },
-        { name: 'city', type: 'string', nullable: true },
-        { name: 'departement', type: 'string', nullable: true },
-        { name: 'country', type: 'string', nullable: true },
-        { name: 'nb_employees', type: 'string', nullable: true },
-        { name: 'linkedin_function', type: 'string', nullable: true },
-        { name: 'industrie', type: 'string', nullable: true },
-        { name: 'linkedin_url', type: 'string', nullable: true },
-        { name: 'linkedin_company_url', type: 'string', nullable: true },
-        { name: 'company_website', type: 'string', nullable: true },
-        { name: 'systemeio_list', type: 'string', nullable: true },
-        { name: 'apollo_list', type: 'string', nullable: true },
-        { name: 'brevo_tag', type: 'string', nullable: true },
-        { name: 'zoho_tag', type: 'string', nullable: true },
-        { name: 'zoho_status', type: 'string', nullable: true },
-        { name: 'apollo_status', type: 'string', nullable: true },
-        { name: 'arlynk_status', type: 'string', nullable: true },
-        { name: 'aicademia_high_status', type: 'string', nullable: true },
-        { name: 'aicademia_low_status', type: 'string', nullable: true },
-        { name: 'zoho_ma_score', type: 'string', nullable: true },
-        { name: 'zoho_crm_notation_score', type: 'string', nullable: true },
-        { name: 'arlynk_score', type: 'string', nullable: true },
-        { name: 'aicademia_score', type: 'string', nullable: true },
-        { name: 'total_score', type: 'number', nullable: true },
-        { name: 'apollo_email_verification', type: 'string', nullable: true },
-        { name: 'apollo_owner', type: 'string', nullable: true },
-        { name: 'apollo_last_contact', type: 'string', nullable: true },
-        { name: 'apollo_description', type: 'string', nullable: true },
-        { name: 'arlynk_cold_status', type: 'string', nullable: true },
-        { name: 'arlynk_cold_note', type: 'string', nullable: true },
-        { name: 'arlynk_cold_action_date', type: 'string', nullable: true },
-        { name: 'arlynk_cold_relance2', type: 'string', nullable: true },
-        { name: 'arlynk_cold_relance3', type: 'string', nullable: true },
-        { name: 'aicademia_cold_status', type: 'string', nullable: true },
-        { name: 'aicademia_cold_note', type: 'string', nullable: true },
-        { name: 'aicademia_cold_action_date', type: 'string', nullable: true },
-        { name: 'aicademia_cold_relance2', type: 'string', nullable: true },
-        { name: 'aicademia_cold_relance3', type: 'string', nullable: true },
-        { name: 'brevo_last_mail_campain', type: 'string', nullable: true },
-        { name: 'brevo_last_sms_campain', type: 'string', nullable: true },
-        { name: 'brevo_unsuscribe', type: 'string', nullable: true },
-        { name: 'brevo_open_number', type: 'string', nullable: true },
-        { name: 'brevo_click_number', type: 'string', nullable: true },
-        { name: 'brevo_reply_number', type: 'string', nullable: true },
-        { name: 'hubspot_lead_status', type: 'string', nullable: true },
-        { name: 'hubspot_contact_owner', type: 'string', nullable: true },
-        { name: 'hubspot_life_cycle_phase', type: 'string', nullable: true },
-        { name: 'hubspot_buy_role', type: 'string', nullable: true },
-        { name: 'hubspot_created_at', type: 'string', nullable: true },
-        { name: 'hubspot_modified_at', type: 'string', nullable: true },
-        { name: 'hubspot_last_activity', type: 'string', nullable: true },
-        { name: 'hubspot_notes', type: 'string', nullable: true },
-        { name: 'hubspot_anis_comment', type: 'string', nullable: true },
-        { name: 'zoho_created_at', type: 'string', nullable: true },
-        { name: 'zoho_updated_at', type: 'string', nullable: true },
-        { name: 'zoho_updated_by', type: 'string', nullable: true },
-        { name: 'zoho_report_to', type: 'string', nullable: true },
-        { name: 'zoho_description', type: 'string', nullable: true },
-        { name: 'zoho_last_activity', type: 'string', nullable: true },
-        { name: 'zoho_product_interest', type: 'string', nullable: true },
-        { name: 'zoho_status_2', type: 'string', nullable: true },
-        { name: 'zoho_industrie_tag', type: 'string', nullable: true },
-        { name: 'created_at', type: 'string', nullable: true },
-        { name: 'updated_at', type: 'string', nullable: true },
-      ];
+      return [{
+        name: 'id',
+        type: 'number',
+        nullable: false
+      }, {
+        name: 'email',
+        type: 'string',
+        nullable: false
+      }, {
+        name: 'firstname',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'name',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'data_section',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'full_name',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'email_domain',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'contact_active',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'tel',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'mobile',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'mobile_2',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'tel_pro',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'address',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'city',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'departement',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'country',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'nb_employees',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'linkedin_function',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'industrie',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'linkedin_url',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'linkedin_company_url',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company_website',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'systemeio_list',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'apollo_list',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'brevo_tag',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_tag',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'apollo_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'arlynk_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'aicademia_high_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'aicademia_low_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_ma_score',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_crm_notation_score',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'arlynk_score',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'aicademia_score',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'total_score',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'apollo_email_verification',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'apollo_owner',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'apollo_last_contact',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'apollo_description',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'arlynk_cold_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'arlynk_cold_note',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'arlynk_cold_action_date',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'arlynk_cold_relance2',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'arlynk_cold_relance3',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'aicademia_cold_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'aicademia_cold_note',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'aicademia_cold_action_date',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'aicademia_cold_relance2',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'aicademia_cold_relance3',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'brevo_last_mail_campain',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'brevo_last_sms_campain',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'brevo_unsuscribe',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'brevo_open_number',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'brevo_click_number',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'brevo_reply_number',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_lead_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_contact_owner',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_life_cycle_phase',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_buy_role',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_created_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_modified_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_last_activity',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_notes',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_anis_comment',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_created_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_updated_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_updated_by',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_report_to',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_description',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_last_activity',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_product_interest',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_status_2',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'zoho_industrie_tag',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'created_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'updated_at',
+        type: 'string',
+        nullable: true
+      }];
     }
   };
-
   const allColumns = getAllColumns();
 
   // Initialize visible columns (exclude email and actions from toggleable columns)
@@ -269,15 +685,10 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   }, [tableName]);
 
   // Get columns that should be displayed
-  const displayColumns = allColumns.filter(col => 
-    col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name)
-  );
+  const displayColumns = allColumns.filter(col => col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name));
 
   // Filter columns for search
-  const filteredColumns = allColumns
-    .filter(col => col.name !== 'email' && col.name !== 'id')
-    .filter(col => col.name.toLowerCase().includes(columnSearchTerm.toLowerCase()));
-
+  const filteredColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').filter(col => col.name.toLowerCase().includes(columnSearchTerm.toLowerCase()));
   const toggleColumnVisibility = (columnName: string) => {
     const newVisible = new Set(visibleColumns);
     if (newVisible.has(columnName)) {
@@ -287,27 +698,21 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     }
     setVisibleColumns(newVisible);
   };
-
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1);
   };
-
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
   };
-
   const handleSectionFilterChange = (value: string) => {
     setSectionFilter(value);
     setCurrentPage(1);
   };
-
   const handleSort = (columnName: string) => {
     if (sortBy === columnName) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -317,16 +722,12 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     }
     setCurrentPage(1);
   };
-
   const getSortIcon = (columnName: string) => {
     if (sortBy !== columnName) {
       return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
     }
-    return sortOrder === 'asc' ? 
-      <ArrowUp className="h-4 w-4 ml-1" /> : 
-      <ArrowDown className="h-4 w-4 ml-1" />;
+    return sortOrder === 'asc' ? <ArrowUp className="h-4 w-4 ml-1" /> : <ArrowDown className="h-4 w-4 ml-1" />;
   };
-
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       const allIds = data.map(row => row.id?.toString() || '');
@@ -335,7 +736,6 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
       setSelectedRows(new Set());
     }
   };
-
   const handleSelectRow = (rowId: string, checked: boolean) => {
     const newSelected = new Set(selectedRows);
     if (checked) {
@@ -345,12 +745,10 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     }
     setSelectedRows(newSelected);
   };
-
   const formatCellValue = (value: any, columnName: string) => {
     if (value === null || value === undefined) {
       return <span className="text-muted-foreground text-sm">—</span>;
     }
-    
     if (typeof value === 'boolean') {
       return <Badge variant={value ? 'default' : 'secondary'}>{value ? 'Oui' : 'Non'}</Badge>;
     }
@@ -360,28 +758,21 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
       // Check if value contains multiple sections separated by comma
       if (value.includes(',')) {
         const sections = value.split(',').map((section: string) => section.trim()).filter(Boolean);
-        return (
-          <div className="flex flex-wrap gap-1">
+        return <div className="flex flex-wrap gap-1">
             {sections.map((section: string, index: number) => {
-              const colorClass = generateSectionColor(section);
-              return (
-                <span key={index} className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${colorClass}`}>
+            const colorClass = generateSectionColor(section);
+            return <span key={index} className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${colorClass}`}>
                   {section}
-                </span>
-              );
-            })}
-          </div>
-        );
+                </span>;
+          })}
+          </div>;
       } else {
         const colorClass = generateSectionColor(value);
-        return (
-          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${colorClass}`}>
+        return <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${colorClass}`}>
             {value}
-          </span>
-        );
+          </span>;
       }
     }
-    
     if (columnName.includes('date') || columnName.includes('_at')) {
       try {
         const date = new Date(value);
@@ -390,22 +781,15 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         return <span className="text-sm">{value}</span>;
       }
     }
-    
     if (typeof value === 'string' && value.length > 40) {
-      return (
-        <span title={value} className="text-sm">
+      return <span title={value} className="text-sm">
           {value.substring(0, 40)}...
-        </span>
-      );
+        </span>;
     }
-    
     return <span className="text-sm">{value}</span>;
   };
-
   const tableTitle = tableName === 'apollo_contacts' ? 'Contacts Apollo' : 'Contacts CRM';
-
-  return (
-    <div className="p-6 space-y-6">
+  return <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button variant="outline" onClick={onBack}>
@@ -423,42 +807,25 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         <div className="flex items-center space-x-4">
           <div className="relative w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-8"
-            />
+            <Input placeholder="Rechercher..." value={searchTerm} onChange={e => handleSearch(e.target.value)} className="pl-8" />
           </div>
-          {tableName === 'crm_contacts' && sections.length > 0 && (
-            <TooltipProvider>
+          {tableName === 'crm_contacts' && sections.length > 0 && <TooltipProvider>
               <div className="flex items-center space-x-2">
-                {sections.map((section) => {
-                  const isSelected = selectedSections.includes(section.value);
-                  
-                  return (
-                    <Tooltip key={section.value}>
+                {sections.map(section => {
+              const isSelected = selectedSections.includes(section.value);
+              return <Tooltip key={section.value}>
                       <TooltipTrigger asChild>
-                        <span
-                          className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-80 border ${
-                            isSelected 
-                              ? generateSectionColor(section.value)
-                              : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
-                          }`}
-                          onClick={() => toggleSection(section.value)}
-                        >
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-80 border ${isSelected ? generateSectionColor(section.value) : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}`} onClick={() => toggleSection(section.value)}>
                           {section.value}
                         </span>
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>{isSelected ? `Filtrer par ${section.value} (cliquer pour désactiver)` : `Filtrer par ${section.value} (cliquer pour activer)`}</p>
                       </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+                    </Tooltip>;
+            })}
               </div>
-            </TooltipProvider>
-          )}
+            </TooltipProvider>}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
@@ -470,28 +837,15 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
               <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <div className="p-2">
-                <Input
-                  placeholder="Rechercher une colonne..."
-                  value={columnSearchTerm}
-                  onChange={(e) => setColumnSearchTerm(e.target.value)}
-                  className="h-8 text-xs"
-                />
+                <Input placeholder="Rechercher une colonne..." value={columnSearchTerm} onChange={e => setColumnSearchTerm(e.target.value)} className="h-8 text-xs" />
               </div>
               <DropdownMenuSeparator />
-              {filteredColumns.map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.name}
-                  checked={visibleColumns.has(column.name)}
-                  onCheckedChange={() => toggleColumnVisibility(column.name)}
-                >
+              {filteredColumns.map(column => <DropdownMenuCheckboxItem key={column.name} checked={visibleColumns.has(column.name)} onCheckedChange={() => toggleColumnVisibility(column.name)}>
                   {column.name}
-                </DropdownMenuCheckboxItem>
-              ))}
-              {filteredColumns.length === 0 && columnSearchTerm && (
-                <div className="p-2 text-sm text-muted-foreground text-center">
+                </DropdownMenuCheckboxItem>)}
+              {filteredColumns.length === 0 && columnSearchTerm && <div className="p-2 text-sm text-muted-foreground text-center">
                   Aucune colonne trouvée
-                </div>
-              )}
+                </div>}
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline">
@@ -502,16 +856,12 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
       </div>
 
       <div className="bg-card rounded-lg border border-border shadow-sm">
-        {loading ? (
-          <div className="flex items-center justify-center p-12">
+        {loading ? <div className="flex items-center justify-center p-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-muted-foreground">Chargement des données...</span>
-          </div>
-        ) : (
-          <div className="space-y-0">
+          </div> : <div className="space-y-0">
             {/* Table Header with selection controls */}
-            {selectedRows.size > 0 && (
-              <div className="px-6 py-4 bg-primary/5 border-b border-border">
+            {selectedRows.size > 0 && <div className="px-6 py-4 bg-primary/5 border-b border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-primary">
                     {selectedRows.size} élément(s) sélectionné(s)
@@ -527,8 +877,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                     </Button>
                   </div>
                 </div>
-              </div>
-            )}
+              </div>}
 
             <div className="flex flex-col h-[600px] border border-table-border rounded-lg overflow-hidden">
               {/* Table with horizontal scroll */}
@@ -538,24 +887,14 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
                     <tr>
                       <th className="w-12 px-4 py-4 text-left">
-                        <Checkbox
-                          checked={selectedRows.size === data.length && data.length > 0}
-                          onCheckedChange={handleSelectAll}
-                          aria-label="Sélectionner tout"
-                        />
+                        <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
-                      {displayColumns.map((column) => (
-                        <th 
-                          key={column.name} 
-                          className="px-4 py-4 text-left font-semibold text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]"
-                          onClick={() => handleSort(column.name)}
-                        >
+                      {displayColumns.map(column => <th key={column.name} className="px-4 py-4 text-left font-semibold text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]" onClick={() => handleSort(column.name)}>
                           <div className="flex items-center space-x-1">
                             <span className="uppercase text-xs tracking-wider">{column.name}</span>
                             {getSortIcon(column.name)}
                           </div>
-                        </th>
-                      ))}
+                        </th>)}
                       <th className="w-20 px-4 py-4 text-center">
                         <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
                       </th>
@@ -565,77 +904,41 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                   {/* Scrollable Body */}
                   <tbody>
                     {data.map((row, index) => {
-                      const rowId = row.id?.toString() || index.toString();
-                      const isSelected = selectedRows.has(rowId);
-                      
-                      return (
-                        <tr 
-                          key={rowId}
-                          className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${
-                            isSelected ? 'bg-table-selected' : ''
-                          }`}
-                        >
+                  const rowId = row.id?.toString() || index.toString();
+                  const isSelected = selectedRows.has(rowId);
+                  return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
                           <td className="w-12 px-4 py-4">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={(checked) => handleSelectRow(rowId, !!checked)}
-                              aria-label={`Sélectionner ligne ${index + 1}`}
-                            />
+                            <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
-                          {displayColumns.map((column) => (
-                            <td key={column.name} className="px-4 py-4 min-w-[120px]">
+                          {displayColumns.map(column => <td key={column.name} className="px-4 py-4 min-w-[120px]">
                               {formatCellValue(row[column.name], column.name)}
-                            </td>
-                          ))}
+                            </td>)}
                           <td className="w-20 px-4 py-4">
                             <div className="flex items-center justify-center space-x-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-muted"
-                              >
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
                                 <Edit2 className="h-4 w-4 text-muted-foreground" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-muted"
-                              >
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
                                 <ExternalLink className="h-4 w-4 text-muted-foreground" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                              >
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </td>
-                        </tr>
-                      );
-                    })}
+                        </tr>;
+                })}
                   </tbody>
                 </table>
               </div>
             </div>
 
             {/* Pagination */}
-            <div className="px-6 py-4 border-t border-table-border bg-muted/20">
-              <DataPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={totalCount}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
-              />
+            <div className="border-t border-table-border bg-muted/20 px-[25px] py-[10px]">
+              <DataPagination currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} totalItems={totalCount} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
             </div>
-          </div>
-        )}
+          </div>}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default TableView;
