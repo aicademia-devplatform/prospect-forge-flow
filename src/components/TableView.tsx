@@ -21,16 +21,58 @@ interface ColumnInfo {
 }
 
 const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
-  const [data, setData] = useState<any[]>([]);
+  const [allData, setAllData] = useState<any[]>([]);
+  const [filteredData, setFilteredData] = useState<any[]>([]);
   const [columns, setColumns] = useState<ColumnInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [totalCount, setTotalCount] = useState(0);
   const [sectionFilter, setSectionFilter] = useState<'all' | 'arlynk' | 'aicademia'>('all');
-  const [infiniteLoading, setInfiniteLoading] = useState(false);
   const { toast } = useToast();
+
+  // Fonction pour filtrer les données côté client
+  const filterData = (data: any[], search: string, section: 'all' | 'arlynk' | 'aicademia') => {
+    let filtered = [...data];
+
+    // Filtre par section (sans sensibilité à la casse)
+    if (tableName === 'crm_contacts' && section !== 'all') {
+      if (section === 'arlynk') {
+        filtered = filtered.filter(item => 
+          item.data_section && item.data_section.toLowerCase().includes('arlynk')
+        );
+      } else if (section === 'aicademia') {
+        filtered = filtered.filter(item => 
+          item.data_section && item.data_section.toLowerCase().includes('aicademia')
+        );
+      }
+    }
+
+    // Filtre par recherche
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(item => {
+        if (tableName === 'apollo_contacts') {
+          return (
+            (item.email && item.email.toLowerCase().includes(searchLower)) ||
+            (item.first_name && item.first_name.toLowerCase().includes(searchLower)) ||
+            (item.last_name && item.last_name.toLowerCase().includes(searchLower)) ||
+            (item.company && item.company.toLowerCase().includes(searchLower))
+          );
+        } else if (tableName === 'crm_contacts') {
+          return (
+            (item.email && item.email.toLowerCase().includes(searchLower)) ||
+            (item.firstname && item.firstname.toLowerCase().includes(searchLower)) ||
+            (item.name && item.name.toLowerCase().includes(searchLower)) ||
+            (item.company && item.company.toLowerCase().includes(searchLower))
+          );
+        }
+        return false;
+      });
+    }
+
+    return filtered;
+  };
 
   const fetchColumns = async () => {
     try {
@@ -73,58 +115,21 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     }
   };
 
-  const fetchData = async (page: number, size: number, search: string = '', isInfinite: boolean = false) => {
-    if (isInfinite) {
-      setInfiniteLoading(true);
-    } else {
-      setLoading(true);
-    }
-
+  const fetchAllData = async () => {
+    setLoading(true);
     try {
-      // Add explicit type to break type inference recursion
       let query: any = supabase.from(tableName).select('*', { count: 'exact' });
+      
+      // Charger toutes les données (limité à 10000 pour éviter les problèmes)
+      query = query.range(0, 9999);
 
-      // Appliquer le filtre de section pour CRM contacts
-      if (tableName === 'crm_contacts' && sectionFilter !== 'all') {
-        if (sectionFilter === 'arlynk') {
-          query = query.ilike('data_section', '%Arlynk%');
-        } else if (sectionFilter === 'aicademia') {
-          query = query.ilike('data_section', '%Aicademia%');
-        }
-      }
-
-      // Recherche simple sur les colonnes texte principales
-      if (search) {
-        if (tableName === 'apollo_contacts') {
-          query = query.or('email.ilike.%' + search + '%,first_name.ilike.%' + search + '%,last_name.ilike.%' + search + '%,company.ilike.%' + search + '%');
-        } else if (tableName === 'crm_contacts') {
-          query = query.or('email.ilike.%' + search + '%,firstname.ilike.%' + search + '%,name.ilike.%' + search + '%,company.ilike.%' + search + '%');
-        }
-      }
-
-      const from = (page - 1) * size;
-      const to = from + size - 1;
-
-      if (size !== 1000) {
-        query = query.range(from, to);
-      } else {
-        // Pour le mode infini, charger les premières 1000 entrées d'abord
-        query = query.range(0, 999);
-      }
-
-      const { data: result, error, count } = await query;
+      const { data: result, error } = await query;
 
       if (error) {
         throw error;
       }
 
-      if (isInfinite) {
-        setData(prev => [...prev, ...(result || [])]);
-      } else {
-        setData(result || []);
-      }
-      
-      setTotalCount(count || 0);
+      setAllData(result || []);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       toast({
@@ -134,63 +139,50 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
       });
     } finally {
       setLoading(false);
-      setInfiniteLoading(false);
     }
+  };
+
+  // Fonction pour appliquer les filtres et la pagination
+  const applyFiltersAndPagination = () => {
+    const filtered = filterData(allData, searchTerm, sectionFilter);
+    setFilteredData(filtered);
+  };
+
+  // Obtenir les données paginées
+  const getPaginatedData = () => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredData.slice(startIndex, endIndex);
   };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    fetchData(page, pageSize, searchTerm);
   };
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1);
-    
-    if (size === 1000) {
-      // Pour 1000 éléments, charger la première page et préparer le scroll infini
-      fetchData(1, size, searchTerm);
-    } else {
-      fetchData(1, size, searchTerm);
-    }
   };
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
-    fetchData(1, pageSize, value);
   };
 
   const handleSectionFilterChange = (value: 'all' | 'arlynk' | 'aicademia') => {
     setSectionFilter(value);
     setCurrentPage(1);
-    fetchData(1, pageSize, searchTerm);
   };
 
-  const handleInfiniteScroll = () => {
-    if (pageSize === 1000 && !infiniteLoading && data.length < totalCount) {
-      const nextPage = Math.floor(data.length / 1000) + 2;
-      fetchData(nextPage, 1000, searchTerm, true);
-    }
-  };
+  // Appliquer les filtres à chaque changement
+  useEffect(() => {
+    applyFiltersAndPagination();
+  }, [allData, searchTerm, sectionFilter]);
 
   useEffect(() => {
     fetchColumns();
-    fetchData(1, pageSize, searchTerm);
-  }, [tableName, pageSize, sectionFilter]);
-
-  // Gérer le scroll infini pour pageSize = 1000
-  useEffect(() => {
-    if (pageSize === 1000) {
-      const handleScroll = () => {
-        if (window.innerHeight + document.documentElement.scrollTop !== document.documentElement.offsetHeight) return;
-        handleInfiniteScroll();
-      };
-
-      window.addEventListener('scroll', handleScroll);
-      return () => window.removeEventListener('scroll', handleScroll);
-    }
-  }, [pageSize, infiniteLoading, data.length, totalCount, searchTerm]);
+    fetchAllData();
+  }, [tableName]);
 
   const formatCellValue = (value: any, columnName: string) => {
     if (value === null || value === undefined) {
@@ -221,8 +213,9 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     return value;
   };
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const totalPages = Math.ceil(filteredData.length / pageSize);
   const tableTitle = tableName === 'apollo_contacts' ? 'Contacts Apollo' : 'Contacts CRM';
+  const paginatedData = getPaginatedData();
 
   return (
     <div className="p-6 space-y-6">
@@ -235,7 +228,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{tableTitle}</h1>
             <p className="text-muted-foreground">
-              {totalCount.toLocaleString('fr-FR')} enregistrement(s) au total
+              {filteredData.length.toLocaleString('fr-FR')} enregistrement(s) 
+              {filteredData.length !== allData.length && ` sur ${allData.length.toLocaleString('fr-FR')} au total`}
             </p>
           </div>
         </div>
@@ -275,10 +269,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         <CardHeader>
           <CardTitle>Données de la table</CardTitle>
           <CardDescription>
-            {pageSize === 1000 ? 
-              `Affichage avec scroll infini (${data.length} éléments chargés)` :
-              `Page ${currentPage} sur ${totalPages} (${pageSize} éléments par page)`
-            }
+            Page {currentPage} sur {totalPages} ({pageSize} éléments par page)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -306,7 +297,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.map((row, index) => (
+                    {paginatedData.map((row, index) => (
                       <TableRow key={index}>
                         {columns.slice(0, 8).map((column) => (
                           <TableCell key={column.name} className="max-w-[200px]">
@@ -326,29 +317,14 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                 </Table>
               </div>
 
-              {pageSize !== 1000 && (
-                <DataPagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  pageSize={pageSize}
-                  totalItems={totalCount}
-                  onPageChange={handlePageChange}
-                  onPageSizeChange={handlePageSizeChange}
-                />
-              )}
-
-              {pageSize === 1000 && infiniteLoading && (
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">Chargement des données suivantes...</span>
-                </div>
-              )}
-
-              {pageSize === 1000 && !infiniteLoading && data.length >= totalCount && totalCount > 0 && (
-                <div className="text-center text-muted-foreground py-4">
-                  Tous les enregistrements ont été chargés
-                </div>
-              )}
+              <DataPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalItems={filteredData.length}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+              />
             </div>
           )}
         </CardContent>
