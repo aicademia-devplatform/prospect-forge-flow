@@ -501,17 +501,17 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         </div>
       </div>
 
-      <div className="bg-card rounded-lg border border-border shadow-sm">
+      <div className="bg-card rounded-lg border border-border shadow-sm flex flex-col h-[calc(100vh-300px)]">
         {loading ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-muted-foreground">Chargement des données...</span>
           </div>
         ) : (
-          <div className="space-y-0">
-            {/* Table Header with selection controls */}
+          <div className="flex flex-col h-full">
+            {/* Table Header with selection controls - Fixed */}
             {selectedRows.size > 0 && (
-              <div className="px-6 py-4 bg-primary/5 border-b border-border">
+              <div className="px-6 py-4 bg-primary/5 border-b border-border flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-primary">
                     {selectedRows.size} élément(s) sélectionné(s)
@@ -530,92 +530,101 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
               </div>
             )}
 
-            <div className="border border-table-border rounded-lg overflow-hidden">
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow className="border-b border-table-border hover:bg-transparent">
-                    <TableHead className="w-12 bg-table-header">
-                      <Checkbox
-                        checked={selectedRows.size === data.length && data.length > 0}
-                        onCheckedChange={handleSelectAll}
-                        aria-label="Sélectionner tout"
-                      />
-                    </TableHead>
-                    {displayColumns.map((column) => (
-                      <TableHead 
-                        key={column.name} 
-                        className="font-semibold text-muted-foreground bg-table-header cursor-pointer hover:bg-muted/80 transition-colors py-4"
-                        onClick={() => handleSort(column.name)}
-                      >
-                        <div className="flex items-center space-x-1">
-                          <span className="uppercase text-xs tracking-wider">{column.name}</span>
-                          {getSortIcon(column.name)}
-                        </div>
+            <div className="flex flex-col h-full border border-table-border rounded-lg overflow-hidden">
+              {/* Fixed Header */}
+              <div className="flex-shrink-0 bg-table-header border-b border-table-border">
+                <Table className="w-full">
+                  <TableHeader>
+                    <TableRow className="border-0 hover:bg-transparent">
+                      <TableHead className="w-12 bg-transparent">
+                        <Checkbox
+                          checked={selectedRows.size === data.length && data.length > 0}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Sélectionner tout"
+                        />
                       </TableHead>
-                    ))}
-                    <TableHead className="bg-table-header w-20 text-center">
-                      <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((row, index) => {
-                    const rowId = row.id?.toString() || index.toString();
-                    const isSelected = selectedRows.has(rowId);
-                    
-                    return (
-                      <TableRow 
-                        key={rowId}
-                        className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${
-                          isSelected ? 'bg-table-selected' : ''
-                        }`}
-                      >
-                        <TableCell className="w-12">
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={(checked) => handleSelectRow(rowId, !!checked)}
-                            aria-label={`Sélectionner ligne ${index + 1}`}
-                          />
-                        </TableCell>
-                        {displayColumns.map((column) => (
-                          <TableCell key={column.name} className="py-4">
-                            {formatCellValue(row[column.name], column.name)}
-                          </TableCell>
-                        ))}
-                        <TableCell className="w-20">
-                          <div className="flex items-center justify-center space-x-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-muted"
-                            >
-                              <Edit2 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-muted"
-                            >
-                              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                      {displayColumns.map((column) => (
+                        <TableHead 
+                          key={column.name} 
+                          className="font-semibold text-muted-foreground bg-transparent cursor-pointer hover:bg-muted/80 transition-colors py-4"
+                          onClick={() => handleSort(column.name)}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span className="uppercase text-xs tracking-wider">{column.name}</span>
+                            {getSortIcon(column.name)}
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                        </TableHead>
+                      ))}
+                      <TableHead className="bg-transparent w-20 text-center">
+                        <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                </Table>
+              </div>
+
+              {/* Scrollable Body */}
+              <div className="flex-1 overflow-auto">
+                <Table className="w-full">
+                  <TableBody>
+                    {data.map((row, index) => {
+                      const rowId = row.id?.toString() || index.toString();
+                      const isSelected = selectedRows.has(rowId);
+                      
+                      return (
+                        <TableRow 
+                          key={rowId}
+                          className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${
+                            isSelected ? 'bg-table-selected' : ''
+                          }`}
+                        >
+                          <TableCell className="w-12">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => handleSelectRow(rowId, !!checked)}
+                              aria-label={`Sélectionner ligne ${index + 1}`}
+                            />
+                          </TableCell>
+                          {displayColumns.map((column) => (
+                            <TableCell key={column.name} className="py-4">
+                              {formatCellValue(row[column.name], column.name)}
+                            </TableCell>
+                          ))}
+                          <TableCell className="w-20">
+                            <div className="flex items-center justify-center space-x-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-muted"
+                              >
+                                <Edit2 className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-muted"
+                              >
+                                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
 
-            {/* Pagination */}
-            <div className="px-6 py-4 border-t border-table-border bg-muted/20">
+            {/* Fixed Footer - Pagination */}
+            <div className="px-6 py-4 border-t border-table-border bg-muted/20 flex-shrink-0">
               <DataPagination
                 currentPage={currentPage}
                 totalPages={totalPages}
