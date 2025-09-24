@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Database, Table, RefreshCw, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import TableView from '@/components/TableView';
 
 interface TableInfo {
   name: string;
@@ -17,7 +18,18 @@ interface TableInfo {
 const DataSources = () => {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTable, setSelectedTable] = useState<'apollo_contacts' | 'crm_contacts' | null>(null);
   const { toast } = useToast();
+
+  // Si une table est sélectionnée, afficher la vue tableau
+  if (selectedTable) {
+    return (
+      <TableView 
+        tableName={selectedTable} 
+        onBack={() => setSelectedTable(null)} 
+      />
+    );
+  }
 
   const fetchTableInfo = async () => {
     setLoading(true);
@@ -177,7 +189,12 @@ const DataSources = () => {
                 </div>
 
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setSelectedTable(table.name as 'apollo_contacts' | 'crm_contacts')}
+                  >
                     Voir les données
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1">
