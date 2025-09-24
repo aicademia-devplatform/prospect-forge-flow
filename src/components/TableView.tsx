@@ -501,17 +501,17 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         </div>
       </div>
 
-      <div className="bg-card rounded-lg border border-border shadow-sm flex flex-col h-[calc(100vh-300px)]">
+      <div className="bg-card rounded-lg border border-border shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-muted-foreground">Chargement des données...</span>
           </div>
         ) : (
-          <div className="flex flex-col h-full">
-            {/* Table Header with selection controls - Fixed */}
+          <div className="space-y-0">
+            {/* Table Header with selection controls */}
             {selectedRows.size > 0 && (
-              <div className="px-6 py-4 bg-primary/5 border-b border-border flex-shrink-0">
+              <div className="px-6 py-4 bg-primary/5 border-b border-border">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-primary">
                     {selectedRows.size} élément(s) sélectionné(s)
@@ -530,41 +530,36 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
               </div>
             )}
 
-            <div className="flex flex-col h-full border border-table-border rounded-lg overflow-hidden">
-              {/* Fixed Header */}
-              <div className="flex-shrink-0 bg-table-header border-b border-table-border">
-                <Table className="w-full">
-                  <TableHeader>
-                    <TableRow className="border-0 hover:bg-transparent">
-                      <TableHead className="w-12 bg-transparent">
-                        <Checkbox
-                          checked={selectedRows.size === data.length && data.length > 0}
-                          onCheckedChange={handleSelectAll}
-                          aria-label="Sélectionner tout"
-                        />
+            <div className="border border-table-border rounded-lg overflow-hidden">
+              <Table className="w-full">
+                <TableHeader className="sticky top-0 z-10">
+                  <TableRow className="border-b border-table-border hover:bg-transparent">
+                    <TableHead className="w-12 bg-table-header">
+                      <Checkbox
+                        checked={selectedRows.size === data.length && data.length > 0}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Sélectionner tout"
+                      />
+                    </TableHead>
+                    {displayColumns.map((column) => (
+                      <TableHead 
+                        key={column.name} 
+                        className="font-semibold text-muted-foreground bg-table-header cursor-pointer hover:bg-muted/80 transition-colors py-4"
+                        onClick={() => handleSort(column.name)}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span className="uppercase text-xs tracking-wider">{column.name}</span>
+                          {getSortIcon(column.name)}
+                        </div>
                       </TableHead>
-                      {displayColumns.map((column) => (
-                        <TableHead 
-                          key={column.name} 
-                          className="font-semibold text-muted-foreground bg-transparent cursor-pointer hover:bg-muted/80 transition-colors py-4"
-                          onClick={() => handleSort(column.name)}
-                        >
-                          <div className="flex items-center space-x-1">
-                            <span className="uppercase text-xs tracking-wider">{column.name}</span>
-                            {getSortIcon(column.name)}
-                          </div>
-                        </TableHead>
-                      ))}
-                      <TableHead className="bg-transparent w-20 text-center">
-                        <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                </Table>
-              </div>
-
-              {/* Scrollable Body */}
-              <div className="flex-1 overflow-auto">
+                    ))}
+                    <TableHead className="bg-table-header w-20 text-center">
+                      <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+              </Table>
+              <div className="overflow-auto max-h-[600px]">
                 <Table className="w-full">
                   <TableBody>
                     {data.map((row, index) => {
@@ -623,8 +618,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
               </div>
             </div>
 
-            {/* Fixed Footer - Pagination */}
-            <div className="px-6 py-4 border-t border-table-border bg-muted/20 flex-shrink-0">
+            {/* Pagination */}
+            <div className="px-6 py-4 border-t border-table-border bg-muted/20">
               <DataPagination
                 currentPage={currentPage}
                 totalPages={totalPages}
