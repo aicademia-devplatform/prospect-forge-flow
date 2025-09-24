@@ -532,7 +532,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
 
             <div className="border border-table-border rounded-lg overflow-hidden">
               <Table className="w-full">
-                <TableHeader className="sticky top-0 z-10">
+                <TableHeader>
                   <TableRow className="border-b border-table-border hover:bg-transparent">
                     <TableHead className="w-12 bg-table-header">
                       <Checkbox
@@ -558,64 +558,60 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                     </TableHead>
                   </TableRow>
                 </TableHeader>
+                <TableBody>
+                  {data.map((row, index) => {
+                    const rowId = row.id?.toString() || index.toString();
+                    const isSelected = selectedRows.has(rowId);
+                    
+                    return (
+                      <TableRow 
+                        key={rowId}
+                        className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${
+                          isSelected ? 'bg-table-selected' : ''
+                        }`}
+                      >
+                        <TableCell className="w-12">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => handleSelectRow(rowId, !!checked)}
+                            aria-label={`Sélectionner ligne ${index + 1}`}
+                          />
+                        </TableCell>
+                        {displayColumns.map((column) => (
+                          <TableCell key={column.name} className="py-4">
+                            {formatCellValue(row[column.name], column.name)}
+                          </TableCell>
+                        ))}
+                        <TableCell className="w-20">
+                          <div className="flex items-center justify-center space-x-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-muted"
+                            >
+                              <Edit2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-muted"
+                            >
+                              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
               </Table>
-              <div className="overflow-auto max-h-[600px]">
-                <Table className="w-full">
-                  <TableBody>
-                    {data.map((row, index) => {
-                      const rowId = row.id?.toString() || index.toString();
-                      const isSelected = selectedRows.has(rowId);
-                      
-                      return (
-                        <TableRow 
-                          key={rowId}
-                          className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${
-                            isSelected ? 'bg-table-selected' : ''
-                          }`}
-                        >
-                          <TableCell className="w-12">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={(checked) => handleSelectRow(rowId, !!checked)}
-                              aria-label={`Sélectionner ligne ${index + 1}`}
-                            />
-                          </TableCell>
-                          {displayColumns.map((column) => (
-                            <TableCell key={column.name} className="py-4">
-                              {formatCellValue(row[column.name], column.name)}
-                            </TableCell>
-                          ))}
-                          <TableCell className="w-20">
-                            <div className="flex items-center justify-center space-x-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-muted"
-                              >
-                                <Edit2 className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-muted"
-                              >
-                                <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
             </div>
 
             {/* Pagination */}
