@@ -21,16 +21,6 @@ const DataSources = () => {
   const [selectedTable, setSelectedTable] = useState<'apollo_contacts' | 'crm_contacts' | null>(null);
   const { toast } = useToast();
 
-  // Si une table est sélectionnée, afficher la vue tableau
-  if (selectedTable) {
-    return (
-      <TableView 
-        tableName={selectedTable} 
-        onBack={() => setSelectedTable(null)} 
-      />
-    );
-  }
-
   const fetchTableInfo = async () => {
     setLoading(true);
     try {
@@ -90,8 +80,10 @@ const DataSources = () => {
   };
 
   useEffect(() => {
-    fetchTableInfo();
-  }, []);
+    if (!selectedTable) {
+      fetchTableInfo();
+    }
+  }, [selectedTable]);
 
   const formatDate = (dateString: string) => {
     if (dateString === 'Jamais') return dateString;
@@ -115,6 +107,16 @@ const DataSources = () => {
       default: return 'Inconnu';
     }
   };
+
+  // Rendu conditionnel APRÈS tous les hooks
+  if (selectedTable) {
+    return (
+      <TableView 
+        tableName={selectedTable} 
+        onBack={() => setSelectedTable(null)} 
+      />
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
