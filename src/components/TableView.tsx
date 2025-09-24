@@ -28,24 +28,19 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-  const [sectionFilter, setSectionFilter] = useState<'all' | 'arlynk' | 'aicademia'>('all');
+  const [sectionFilter, setSectionFilter] = useState<string>('all');
+  const [availableSections, setAvailableSections] = useState<Array<{value: string, label: string, count: number}>>([]);
   const { toast } = useToast();
 
   // Fonction pour filtrer les données côté client
-  const filterData = (data: any[], search: string, section: 'all' | 'arlynk' | 'aicademia') => {
+  const filterData = (data: any[], search: string, section: string) => {
     let filtered = [...data];
 
-    // Filtre par section (sans sensibilité à la casse)
+    // Filtre par section
     if (tableName === 'crm_contacts' && section !== 'all') {
-      if (section === 'arlynk') {
-        filtered = filtered.filter(item => 
-          item.data_section && item.data_section.toLowerCase().includes('arlynk')
-        );
-      } else if (section === 'aicademia') {
-        filtered = filtered.filter(item => 
-          item.data_section && item.data_section.toLowerCase().includes('aicademia')
-        );
-      }
+      filtered = filtered.filter(item => 
+        item.data_section && item.data_section === section
+      );
     }
 
     // Filtre par recherche
@@ -115,6 +110,40 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     }
   };
 
+  const fetchAvailableSections = async () => {
+    if (tableName === 'crm_contacts') {
+      try {
+        const { data: sectionsData } = await supabase
+          .from('crm_contacts')
+          .select('data_section')
+          .not('data_section', 'is', null);
+
+        if (sectionsData) {
+          // Compter les occurrences de chaque section
+          const sectionCounts: { [key: string]: number } = {};
+          sectionsData.forEach(item => {
+            if (item.data_section) {
+              sectionCounts[item.data_section] = (sectionCounts[item.data_section] || 0) + 1;
+            }
+          });
+
+          // Convertir en array et trier par nombre d'occurrences
+          const sections = Object.entries(sectionCounts)
+            .map(([value, count]) => ({
+              value,
+              label: `${value} (${count.toLocaleString('fr-FR')})`,
+              count
+            }))
+            .sort((a, b) => b.count - a.count);
+
+          setAvailableSections(sections);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des sections:', error);
+      }
+    }
+  };
+
   const fetchAllData = async () => {
     setLoading(true);
     try {
@@ -169,7 +198,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     setCurrentPage(1);
   };
 
-  const handleSectionFilterChange = (value: 'all' | 'arlynk' | 'aicademia') => {
+  const handleSectionFilterChange = (value: string) => {
     setSectionFilter(value);
     setCurrentPage(1);
   };
@@ -181,6 +210,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
 
   useEffect(() => {
     fetchColumns();
+    fetchAvailableSections();
     fetchAllData();
   }, [tableName]);
 
@@ -244,17 +274,20 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
               className="pl-8"
             />
           </div>
-          {tableName === 'crm_contacts' && (
+          {tableName === 'crm_contacts' && availableSections.length > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium">Section:</span>
               <select
                 value={sectionFilter}
-                onChange={(e) => handleSectionFilterChange(e.target.value as 'all' | 'arlynk' | 'aicademia')}
-                className="px-3 py-1 border border-input rounded-md text-sm bg-background"
+                onChange={(e) => handleSectionFilterChange(e.target.value)}
+                className="px-3 py-1 border border-input rounded-md text-sm bg-background min-w-[200px]"
               >
-                <option value="all">Toutes</option>
-                <option value="arlynk">Arlynk</option>
-                <option value="aicademia">Aicademia</option>
+                <option value="all">Toutes ({allData.length.toLocaleString('fr-FR')})</option>
+                {availableSections.map((section) => (
+                  <option key={section.value} value={section.value}>
+                    {section.label}
+                  </option>
+                ))}
               </select>
             </div>
           )}
