@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, ChevronUp } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -170,6 +170,7 @@ const TableView: React.FC<TableViewProps> = ({
   const [isScrolled, setIsScrolled] = useState(false);
   const [columnDialogOpen, setColumnDialogOpen] = useState(false);
   const [tempVisibleColumns, setTempVisibleColumns] = useState<Set<string>>(new Set());
+  const [tempColumnOrder, setTempColumnOrder] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -833,11 +834,38 @@ const TableView: React.FC<TableViewProps> = ({
     const initialVisible = toggleableColumns.filter(col => defaultColumns.includes(col));
     setVisibleColumns(new Set(initialVisible));
     setTempVisibleColumns(new Set(initialVisible));
+    setTempColumnOrder(initialVisible);
   }, [tableName]);
 
-  // Get columns that should be displayed - pinned columns first
+  // Get columns that should be displayed - pinned columns first, then ordered visible columns
   const pinnedDisplayColumns = allColumns.filter(col => pinnedColumns.has(col.name) && (col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name)));
-  const regularDisplayColumns = allColumns.filter(col => !pinnedColumns.has(col.name) && (col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name)));
+  
+  // Order the regular columns based on tempColumnOrder if in dialog, otherwise use current visible columns
+  const getOrderedVisibleColumns = () => {
+    const visibleColumnNames = Array.from(visibleColumns);
+    const orderedColumns: string[] = [];
+    
+    // Add columns in the order specified by tempColumnOrder (if they're visible)
+    tempColumnOrder.forEach(colName => {
+      if (visibleColumnNames.includes(colName)) {
+        orderedColumns.push(colName);
+      }
+    });
+    
+    // Add any remaining visible columns that weren't in the order
+    visibleColumnNames.forEach(colName => {
+      if (!orderedColumns.includes(colName)) {
+        orderedColumns.push(colName);
+      }
+    });
+    
+    return orderedColumns;
+  };
+  
+  const orderedVisibleColumns = getOrderedVisibleColumns();
+  const regularDisplayColumns = allColumns.filter(col => !pinnedColumns.has(col.name) && orderedVisibleColumns.includes(col.name))
+    .sort((a, b) => orderedVisibleColumns.indexOf(a.name) - orderedVisibleColumns.indexOf(b.name));
+  
   const displayColumns = [...pinnedDisplayColumns, ...regularDisplayColumns];
 
   // Filter columns for search
@@ -846,24 +874,57 @@ const TableView: React.FC<TableViewProps> = ({
     const newVisible = new Set(tempVisibleColumns);
     if (newVisible.has(columnName)) {
       newVisible.delete(columnName);
+      // Remove from order when hiding
+      setTempColumnOrder(prev => prev.filter(col => col !== columnName));
     } else {
       newVisible.add(columnName);
+      // Add to end of order when showing
+      setTempColumnOrder(prev => [...prev, columnName]);
     }
     setTempVisibleColumns(newVisible);
   };
 
+  const moveColumnUp = (columnName: string) => {
+    setTempColumnOrder(prev => {
+      const currentIndex = prev.indexOf(columnName);
+      if (currentIndex > 0) {
+        const newOrder = [...prev];
+        [newOrder[currentIndex - 1], newOrder[currentIndex]] = [newOrder[currentIndex], newOrder[currentIndex - 1]];
+        return newOrder;
+      }
+      return prev;
+    });
+  };
+
+  const moveColumnDown = (columnName: string) => {
+    setTempColumnOrder(prev => {
+      const currentIndex = prev.indexOf(columnName);
+      if (currentIndex < prev.length - 1 && currentIndex >= 0) {
+        const newOrder = [...prev];
+        [newOrder[currentIndex], newOrder[currentIndex + 1]] = [newOrder[currentIndex + 1], newOrder[currentIndex]];
+        return newOrder;
+      }
+      return prev;
+    });
+  };
+
   const openColumnDialog = () => {
     setTempVisibleColumns(new Set(visibleColumns));
+    setTempColumnOrder(getOrderedVisibleColumns());
     setColumnDialogOpen(true);
   };
 
   const applyColumnChanges = () => {
     setVisibleColumns(new Set(tempVisibleColumns));
+    // Update the actual column order for future use
+    const newOrder = tempColumnOrder.filter(col => tempVisibleColumns.has(col));
+    setTempColumnOrder(newOrder);
     setColumnDialogOpen(false);
   };
 
   const cancelColumnChanges = () => {
     setTempVisibleColumns(new Set(visibleColumns));
+    setTempColumnOrder(getOrderedVisibleColumns());
     setColumnDialogOpen(false);
   };
 
@@ -1256,22 +1317,49 @@ const TableView: React.FC<TableViewProps> = ({
               <h3 className="text-sm font-medium mb-3 text-green-600 flex-shrink-0">Colonnes affichées ({Array.from(tempVisibleColumns).length})</h3>
               <div className="border rounded-lg p-3 bg-green-50/50 flex-1 overflow-y-auto">
                 <div className="space-y-2">
-                  {allColumns
-                    .filter(col => col.name !== 'email' && col.name !== 'id' && tempVisibleColumns.has(col.name))
-                    .map(column => (
-                      <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-colors">
-                        <span className="text-sm font-medium flex-1 mr-2">{translateColumnName(column.name)}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleColumnVisibility(column.name)}
-                          className="h-8 w-8 p-0 hover:bg-red-100"
-                        >
-                          <ArrowRight className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
-                    ))}
-                  {Array.from(tempVisibleColumns).length === 0 && (
+                  {tempColumnOrder
+                    .filter(colName => tempVisibleColumns.has(colName))
+                    .map((colName, index) => {
+                      const column = allColumns.find(col => col.name === colName);
+                      if (!column) return null;
+                      return (
+                        <div key={column.name} className="flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-colors">
+                          <div className="flex flex-col gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveColumnUp(column.name)}
+                              disabled={index === 0}
+                              className="h-6 w-6 p-0 hover:bg-blue-100"
+                              title="Monter"
+                            >
+                              <ChevronUp className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveColumnDown(column.name)}
+                              disabled={index === tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length - 1}
+                              className="h-6 w-6 p-0 hover:bg-blue-100"
+                              title="Descendre"
+                            >
+                              <ChevronDown className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleColumnVisibility(column.name)}
+                            className="h-8 w-8 p-0 hover:bg-red-100"
+                            title="Masquer"
+                          >
+                            <ArrowRight className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  {tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length === 0 && (
                     <div className="text-center text-muted-foreground text-sm py-4">
                       Aucune colonne affichée
                     </div>
