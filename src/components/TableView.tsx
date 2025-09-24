@@ -134,6 +134,34 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     setSelectedRows(newSelected);
   };
 
+  // Generate consistent colors for data sections
+  const generateSectionColor = (sectionName: string) => {
+    const colors = [
+      'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-300',
+      'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-300',
+      'bg-gradient-to-r from-green-500 to-green-600 text-white border-green-300',
+      'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-300',
+      'bg-gradient-to-r from-pink-500 to-pink-600 text-white border-pink-300',
+      'bg-gradient-to-r from-teal-500 to-teal-600 text-white border-teal-300',
+      'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white border-indigo-300',
+      'bg-gradient-to-r from-red-500 to-red-600 text-white border-red-300',
+      'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-yellow-300',
+      'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-cyan-300',
+      'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-300',
+      'bg-gradient-to-r from-violet-500 to-violet-600 text-white border-violet-300'
+    ];
+    
+    // Use string hash to consistently assign same color to same section
+    let hash = 0;
+    for (let i = 0; i < sectionName.length; i++) {
+      const char = sectionName.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   const formatCellValue = (value: any, columnName: string) => {
     if (value === null || value === undefined) {
       return <span className="text-muted-foreground text-sm">—</span>;
@@ -143,22 +171,12 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
       return <Badge variant={value ? 'default' : 'secondary'}>{value ? 'Oui' : 'Non'}</Badge>;
     }
 
-    // Special formatting for sections/categories with distinct colors
+    // Special formatting for sections/categories with vibrant random colors
     if (columnName === 'data_section' && value) {
-      const sectionColors: Record<string, string> = {
-        'Aicademia': 'bg-primary-light text-primary border-primary/20',
-        'crm': 'bg-success-light text-success border-success/20',
-        'leads': 'bg-warning-light text-warning border-warning/20',
-        'prospects': 'bg-secondary-light text-secondary border-secondary/20',
-        'customers': 'bg-danger-light text-danger border-danger/20',
-        'partners': 'bg-accent text-accent-foreground border-accent/20',
-        'vendors': 'bg-muted text-muted-foreground border-muted-foreground/20'
-      };
-      
-      const colorClass = sectionColors[value.toLowerCase()] || '';
+      const colorClass = generateSectionColor(value);
       
       return (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
+        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${colorClass}`}>
           {value}
         </span>
       );
