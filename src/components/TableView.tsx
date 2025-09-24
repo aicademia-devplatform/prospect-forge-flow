@@ -919,7 +919,7 @@ const TableView: React.FC<TableViewProps> = ({
                   {/* Fixed Header */}
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
                     <tr>
-                      <th className={`w-12 px-4 py-4 text-left ${pinnedColumns.size > 0 ? 'sticky left-0 bg-table-header border-r-2 border-primary/20 z-20' : ''}`}>
+                      <th className="w-12 px-4 py-4 text-left sticky left-0 bg-table-header border-r-2 border-primary/20 z-30">
                         <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
                       {displayColumns.map(column => {
@@ -931,8 +931,8 @@ const TableView: React.FC<TableViewProps> = ({
                         return (
                           <th 
                             key={column.name} 
-                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] relative ${isPinned ? 'sticky bg-table-header border-r-2 border-primary/20 z-20' : ''}`}
-                            style={isPinned ? { left: leftOffset } : {}}
+                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] relative ${isPinned ? 'sticky bg-table-header border-r-2 border-primary/20 z-20 shadow-md' : ''}`}
+                            style={isPinned ? { left: `${48 + (pinnedIndex * 120)}px` } : {}}
                           >
                             <div className="flex items-center justify-between space-x-1">
                               <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
@@ -1045,18 +1045,17 @@ const TableView: React.FC<TableViewProps> = ({
                   const rowId = row.id?.toString() || index.toString();
                   const isSelected = selectedRows.has(rowId);
                   return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
-                          <td className={`w-12 px-4 py-4 ${pinnedColumns.size > 0 ? 'sticky left-0 bg-background border-r-2 border-primary/20 z-10' : ''}`}>
+                          <td className="w-12 px-4 py-4 sticky left-0 bg-background border-r-2 border-primary/20 z-20 shadow-md">
                             <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
                           {displayColumns.map(column => {
                             const isPinned = pinnedColumns.has(column.name);
                             const pinnedIndex = [...pinnedColumns].indexOf(column.name);
-                            const leftOffset = pinnedIndex >= 0 ? `${48 + (pinnedIndex * 120)}px` : '0';
                             return (
                               <td 
                                 key={column.name} 
-                                className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-background border-r-2 border-primary/20 z-10' : ''}`}
-                                style={isPinned ? { left: leftOffset } : {}}
+                                className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-background border-r-2 border-primary/20 z-10 shadow-md' : ''}`}
+                                style={isPinned ? { left: `${48 + (pinnedIndex * 120)}px` } : {}}
                               >
                                 {formatCellValue(row[column.name], column.name)}
                               </td>
