@@ -40,7 +40,9 @@ const TableView: React.FC<TableViewProps> = ({
   const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set());
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [openColumnDropdown, setOpenColumnDropdown] = useState<string | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -79,6 +81,22 @@ const TableView: React.FC<TableViewProps> = ({
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Handle scroll detection for pinned columns border
+  useEffect(() => {
+    const handleScroll = () => {
+      if (tableContainerRef.current) {
+        const scrollLeft = tableContainerRef.current.scrollLeft;
+        setIsScrolled(scrollLeft > 0);
+      }
+    };
+
+    const tableContainer = tableContainerRef.current;
+    if (tableContainer) {
+      tableContainer.addEventListener('scroll', handleScroll);
+      return () => tableContainer.removeEventListener('scroll', handleScroll);
+    }
   }, []);
 
   // Filter sections based on search term
@@ -914,12 +932,12 @@ const TableView: React.FC<TableViewProps> = ({
 
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
               {/* Table with horizontal scroll */}
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-auto" ref={tableContainerRef}>
                 <table className="w-full min-w-max">
                   {/* Fixed Header */}
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
                     <tr>
-                      <th className="w-12 px-4 py-4 text-left sticky left-0 bg-table-header border-r-2 border-primary/20 z-30">
+                      <th className={`w-12 px-4 py-4 text-left sticky left-0 bg-table-header z-30 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
                         <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
                       {displayColumns.map(column => {
@@ -927,11 +945,11 @@ const TableView: React.FC<TableViewProps> = ({
                         const isDropdownOpen = openColumnDropdown === column.name;
                         // Calculate left offset for pinned columns
                         const pinnedIndex = [...pinnedColumns].indexOf(column.name);
-                        const leftOffset = pinnedIndex >= 0 ? `${48 + (pinnedIndex * 120)}px` : '0';
+                        const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
                         return (
                           <th 
                             key={column.name} 
-                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] relative ${isPinned ? 'sticky bg-table-header border-r-2 border-primary/20 z-20 shadow-md' : ''}`}
+                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] relative ${isPinned ? `sticky bg-table-header z-20 ${borderStyle}` : ''}`}
                             style={isPinned ? { left: `${48 + (pinnedIndex * 120)}px` } : {}}
                           >
                             <div className="flex items-center justify-between space-x-1">
@@ -1045,16 +1063,17 @@ const TableView: React.FC<TableViewProps> = ({
                   const rowId = row.id?.toString() || index.toString();
                   const isSelected = selectedRows.has(rowId);
                   return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
-                          <td className="w-12 px-4 py-4 sticky left-0 bg-background border-r-2 border-primary/20 z-20 shadow-md">
+                          <td className={`w-12 px-4 py-4 sticky left-0 bg-background z-20 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
                             <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
                           {displayColumns.map(column => {
                             const isPinned = pinnedColumns.has(column.name);
                             const pinnedIndex = [...pinnedColumns].indexOf(column.name);
+                            const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
                             return (
                               <td 
                                 key={column.name} 
-                                className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-background border-r-2 border-primary/20 z-10 shadow-md' : ''}`}
+                                className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-background z-10 ${borderStyle}` : ''}`}
                                 style={isPinned ? { left: `${48 + (pinnedIndex * 120)}px` } : {}}
                               >
                                 {formatCellValue(row[column.name], column.name)}
