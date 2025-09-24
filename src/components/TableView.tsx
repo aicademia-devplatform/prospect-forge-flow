@@ -31,6 +31,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   const [sectionFilter, setSectionFilter] = useState<string>('all');
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [sectionSearchTerm, setSectionSearchTerm] = useState('');
+  const [columnSearchTerm, setColumnSearchTerm] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -103,8 +104,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     setCurrentPage(1);
   };
 
-  // Define columns based on table
-  const getColumns = (): ColumnInfo[] => {
+  // Define columns based on table - get ALL columns from database
+  const getAllColumns = (): ColumnInfo[] => {
     if (tableName === 'apollo_contacts') {
       return [
         { name: 'id', type: 'string', nullable: false },
@@ -113,8 +114,62 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         { name: 'last_name', type: 'string', nullable: true },
         { name: 'company', type: 'string', nullable: true },
         { name: 'title', type: 'string', nullable: true },
+        { name: 'seniority', type: 'string', nullable: true },
+        { name: 'departments', type: 'string', nullable: true },
+        { name: 'activity', type: 'string', nullable: true },
+        { name: 'lifecycle_stage', type: 'string', nullable: true },
+        { name: 'categorie_fonction', type: 'string', nullable: true },
+        { name: 'stage', type: 'string', nullable: true },
+        { name: 'technologies', type: 'string', nullable: true },
+        { name: 'secteur_activite', type: 'string', nullable: true },
+        { name: 'company_phone', type: 'string', nullable: true },
+        { name: 'company_country', type: 'string', nullable: true },
+        { name: 'company_state', type: 'string', nullable: true },
+        { name: 'company_city', type: 'string', nullable: true },
+        { name: 'company_address', type: 'string', nullable: true },
+        { name: 'country', type: 'string', nullable: true },
+        { name: 'state', type: 'string', nullable: true },
+        { name: 'city', type: 'string', nullable: true },
+        { name: 'twitter_url', type: 'string', nullable: true },
+        { name: 'facebook_url', type: 'string', nullable: true },
+        { name: 'company_linkedin_url', type: 'string', nullable: true },
+        { name: 'website', type: 'string', nullable: true },
+        { name: 'person_linkedin_url', type: 'string', nullable: true },
+        { name: 'subsidiary_of', type: 'string', nullable: true },
+        { name: 'statut', type: 'string', nullable: true },
+        { name: 'contact_owner', type: 'string', nullable: true },
+        { name: 'account_owner', type: 'string', nullable: true },
+        { name: 'work_direct_phone', type: 'string', nullable: true },
+        { name: 'home_phone', type: 'string', nullable: true },
+        { name: 'mobile_phone', type: 'string', nullable: true },
+        { name: 'corporate_phone', type: 'string', nullable: true },
+        { name: 'other_phone', type: 'string', nullable: true },
+        { name: 'region', type: 'string', nullable: true },
+        { name: 'industry', type: 'string', nullable: true },
+        { name: 'keywords', type: 'string', nullable: true },
+        { name: 'secondary_email', type: 'string', nullable: true },
+        { name: 'tertiary_email', type: 'string', nullable: true },
+        { name: 'num_employees', type: 'number', nullable: true },
+        { name: 'nb_employees', type: 'number', nullable: true },
+        { name: 'annual_revenue', type: 'number', nullable: true },
+        { name: 'total_funding', type: 'number', nullable: true },
+        { name: 'latest_funding', type: 'number', nullable: true },
+        { name: 'email_sent', type: 'boolean', nullable: true },
+        { name: 'email_open', type: 'boolean', nullable: true },
+        { name: 'email_bounced', type: 'boolean', nullable: true },
+        { name: 'replied', type: 'boolean', nullable: true },
+        { name: 'demoed', type: 'boolean', nullable: true },
+        { name: 'apollo_account_id', type: 'string', nullable: true },
+        { name: 'apollo_contact_id', type: 'string', nullable: true },
+        { name: 'email_status', type: 'string', nullable: true },
+        { name: 'primary_email_source', type: 'string', nullable: true },
+        { name: 'email_confidence', type: 'string', nullable: true },
         { name: 'created_at', type: 'string', nullable: true },
         { name: 'updated_at', type: 'string', nullable: true },
+        { name: 'last_sync_at', type: 'string', nullable: true },
+        { name: 'primary_email_last_verified_at', type: 'string', nullable: true },
+        { name: 'last_raised_at', type: 'string', nullable: true },
+        { name: 'last_contacted', type: 'string', nullable: true },
       ];
     } else {
       return [
@@ -124,24 +179,100 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         { name: 'name', type: 'string', nullable: true },
         { name: 'company', type: 'string', nullable: true },
         { name: 'data_section', type: 'string', nullable: true },
+        { name: 'full_name', type: 'string', nullable: true },
+        { name: 'email_domain', type: 'string', nullable: true },
+        { name: 'contact_active', type: 'string', nullable: true },
+        { name: 'tel', type: 'string', nullable: true },
+        { name: 'mobile', type: 'string', nullable: true },
+        { name: 'mobile_2', type: 'string', nullable: true },
+        { name: 'tel_pro', type: 'string', nullable: true },
+        { name: 'address', type: 'string', nullable: true },
+        { name: 'city', type: 'string', nullable: true },
+        { name: 'departement', type: 'string', nullable: true },
+        { name: 'country', type: 'string', nullable: true },
+        { name: 'nb_employees', type: 'string', nullable: true },
+        { name: 'linkedin_function', type: 'string', nullable: true },
+        { name: 'industrie', type: 'string', nullable: true },
+        { name: 'linkedin_url', type: 'string', nullable: true },
+        { name: 'linkedin_company_url', type: 'string', nullable: true },
+        { name: 'company_website', type: 'string', nullable: true },
+        { name: 'systemeio_list', type: 'string', nullable: true },
+        { name: 'apollo_list', type: 'string', nullable: true },
+        { name: 'brevo_tag', type: 'string', nullable: true },
+        { name: 'zoho_tag', type: 'string', nullable: true },
+        { name: 'zoho_status', type: 'string', nullable: true },
+        { name: 'apollo_status', type: 'string', nullable: true },
+        { name: 'arlynk_status', type: 'string', nullable: true },
+        { name: 'aicademia_high_status', type: 'string', nullable: true },
+        { name: 'aicademia_low_status', type: 'string', nullable: true },
+        { name: 'zoho_ma_score', type: 'string', nullable: true },
+        { name: 'zoho_crm_notation_score', type: 'string', nullable: true },
+        { name: 'arlynk_score', type: 'string', nullable: true },
+        { name: 'aicademia_score', type: 'string', nullable: true },
+        { name: 'total_score', type: 'number', nullable: true },
+        { name: 'apollo_email_verification', type: 'string', nullable: true },
+        { name: 'apollo_owner', type: 'string', nullable: true },
+        { name: 'apollo_last_contact', type: 'string', nullable: true },
+        { name: 'apollo_description', type: 'string', nullable: true },
+        { name: 'arlynk_cold_status', type: 'string', nullable: true },
+        { name: 'arlynk_cold_note', type: 'string', nullable: true },
+        { name: 'arlynk_cold_action_date', type: 'string', nullable: true },
+        { name: 'arlynk_cold_relance2', type: 'string', nullable: true },
+        { name: 'arlynk_cold_relance3', type: 'string', nullable: true },
+        { name: 'aicademia_cold_status', type: 'string', nullable: true },
+        { name: 'aicademia_cold_note', type: 'string', nullable: true },
+        { name: 'aicademia_cold_action_date', type: 'string', nullable: true },
+        { name: 'aicademia_cold_relance2', type: 'string', nullable: true },
+        { name: 'aicademia_cold_relance3', type: 'string', nullable: true },
+        { name: 'brevo_last_mail_campain', type: 'string', nullable: true },
+        { name: 'brevo_last_sms_campain', type: 'string', nullable: true },
+        { name: 'brevo_unsuscribe', type: 'string', nullable: true },
+        { name: 'brevo_open_number', type: 'string', nullable: true },
+        { name: 'brevo_click_number', type: 'string', nullable: true },
+        { name: 'brevo_reply_number', type: 'string', nullable: true },
+        { name: 'hubspot_lead_status', type: 'string', nullable: true },
+        { name: 'hubspot_contact_owner', type: 'string', nullable: true },
+        { name: 'hubspot_life_cycle_phase', type: 'string', nullable: true },
+        { name: 'hubspot_buy_role', type: 'string', nullable: true },
+        { name: 'hubspot_created_at', type: 'string', nullable: true },
+        { name: 'hubspot_modified_at', type: 'string', nullable: true },
+        { name: 'hubspot_last_activity', type: 'string', nullable: true },
+        { name: 'hubspot_notes', type: 'string', nullable: true },
+        { name: 'hubspot_anis_comment', type: 'string', nullable: true },
+        { name: 'zoho_created_at', type: 'string', nullable: true },
+        { name: 'zoho_updated_at', type: 'string', nullable: true },
+        { name: 'zoho_updated_by', type: 'string', nullable: true },
+        { name: 'zoho_report_to', type: 'string', nullable: true },
+        { name: 'zoho_description', type: 'string', nullable: true },
+        { name: 'zoho_last_activity', type: 'string', nullable: true },
+        { name: 'zoho_product_interest', type: 'string', nullable: true },
+        { name: 'zoho_status_2', type: 'string', nullable: true },
+        { name: 'zoho_industrie_tag', type: 'string', nullable: true },
         { name: 'created_at', type: 'string', nullable: true },
         { name: 'updated_at', type: 'string', nullable: true },
       ];
     }
   };
 
-  const columns = getColumns();
+  const allColumns = getAllColumns();
 
   // Initialize visible columns (exclude email and actions from toggleable columns)
   useEffect(() => {
-    const toggleableColumns = columns.filter(col => col.name !== 'email' && col.name !== 'id').map(col => col.name);
-    setVisibleColumns(new Set(toggleableColumns));
+    const defaultColumns = ['id', 'email', 'firstname', 'name', 'first_name', 'last_name', 'company', 'data_section', 'created_at'];
+    const toggleableColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').map(col => col.name);
+    const initialVisible = toggleableColumns.filter(col => defaultColumns.includes(col));
+    setVisibleColumns(new Set(initialVisible));
   }, [tableName]);
 
   // Get columns that should be displayed
-  const displayColumns = columns.filter(col => 
+  const displayColumns = allColumns.filter(col => 
     col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name)
   );
+
+  // Filter columns for search
+  const filteredColumns = allColumns
+    .filter(col => col.name !== 'email' && col.name !== 'id')
+    .filter(col => col.name.toLowerCase().includes(columnSearchTerm.toLowerCase()));
 
   const toggleColumnVisibility = (columnName: string) => {
     const newVisible = new Set(visibleColumns);
@@ -152,6 +283,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     }
     setVisibleColumns(newVisible);
   };
+
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -330,20 +462,32 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                 Colonnes
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-background">
+            <DropdownMenuContent align="end" className="w-56 bg-background max-h-96 overflow-y-auto">
               <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {columns
-                .filter(col => col.name !== 'email' && col.name !== 'id')
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.name}
-                    checked={visibleColumns.has(column.name)}
-                    onCheckedChange={() => toggleColumnVisibility(column.name)}
-                  >
-                    {column.name}
-                  </DropdownMenuCheckboxItem>
-                ))}
+              <div className="p-2">
+                <Input
+                  placeholder="Rechercher une colonne..."
+                  value={columnSearchTerm}
+                  onChange={(e) => setColumnSearchTerm(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <DropdownMenuSeparator />
+              {filteredColumns.map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.name}
+                  checked={visibleColumns.has(column.name)}
+                  onCheckedChange={() => toggleColumnVisibility(column.name)}
+                >
+                  {column.name}
+                </DropdownMenuCheckboxItem>
+              ))}
+              {filteredColumns.length === 0 && columnSearchTerm && (
+                <div className="p-2 text-sm text-muted-foreground text-center">
+                  Aucune colonne trouvée
+                </div>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           <Button variant="outline">
