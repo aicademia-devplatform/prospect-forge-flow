@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Download, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal } from 'lucide-react';
 import DataPagination from './DataPagination';
+import { useTableData } from '@/hooks/useTableData';
+import { useTableSections } from '@/hooks/useTableSections';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface TableViewProps {
   tableName: 'apollo_contacts' | 'crm_contacts';
@@ -21,168 +23,59 @@ interface ColumnInfo {
 }
 
 const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
-  const [allData, setAllData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
-  const [columns, setColumns] = useState<ColumnInfo[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [sectionFilter, setSectionFilter] = useState<string>('all');
-  const [availableSections, setAvailableSections] = useState<Array<{value: string, label: string, count: number}>>([]);
-  const { toast } = useToast();
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  
+  // Debounce search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Fonction pour filtrer les données côté client
-  const filterData = (data: any[], search: string, section: string) => {
-    let filtered = [...data];
+  // Fetch data using server-side pagination
+  const { data, totalCount, totalPages, loading } = useTableData({
+    tableName,
+    page: currentPage,
+    pageSize,
+    searchTerm: debouncedSearchTerm,
+    sectionFilter,
+    sortBy,
+    sortOrder
+  });
 
-    // Filtre par section
-    if (tableName === 'crm_contacts' && section !== 'all') {
-      filtered = filtered.filter(item => 
-        item.data_section && item.data_section === section
-      );
-    }
+  // Fetch available sections
+  const { sections } = useTableSections(tableName);
 
-    // Filtre par recherche
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filtered = filtered.filter(item => {
-        if (tableName === 'apollo_contacts') {
-          return (
-            (item.email && item.email.toLowerCase().includes(searchLower)) ||
-            (item.first_name && item.first_name.toLowerCase().includes(searchLower)) ||
-            (item.last_name && item.last_name.toLowerCase().includes(searchLower)) ||
-            (item.company && item.company.toLowerCase().includes(searchLower))
-          );
-        } else if (tableName === 'crm_contacts') {
-          return (
-            (item.email && item.email.toLowerCase().includes(searchLower)) ||
-            (item.firstname && item.firstname.toLowerCase().includes(searchLower)) ||
-            (item.name && item.name.toLowerCase().includes(searchLower)) ||
-            (item.company && item.company.toLowerCase().includes(searchLower))
-          );
-        }
-        return false;
-      });
-    }
-
-    return filtered;
-  };
-
-  const fetchColumns = async () => {
-    try {
-      // Obtenir les colonnes depuis la première ligne de données
-      const { data: firstRow } = await supabase
-        .from(tableName)
-        .select('*')
-        .limit(1)
-        .single();
-      
-      if (firstRow) {
-        const columnInfo = Object.keys(firstRow).map(key => ({
-          name: key,
-          type: typeof firstRow[key] === 'number' ? 'number' : 'string',
-          nullable: firstRow[key] === null
-        }));
-        setColumns(columnInfo);
-      } else {
-        // Fallback si pas de données
-        if (tableName === 'apollo_contacts') {
-          setColumns([
-            { name: 'id', type: 'string', nullable: false },
-            { name: 'email', type: 'string', nullable: false },
-            { name: 'first_name', type: 'string', nullable: true },
-            { name: 'last_name', type: 'string', nullable: true },
-            { name: 'company', type: 'string', nullable: true },
-          ]);
-        } else {
-          setColumns([
-            { name: 'id', type: 'number', nullable: false },
-            { name: 'email', type: 'string', nullable: false },
-            { name: 'firstname', type: 'string', nullable: true },
-            { name: 'name', type: 'string', nullable: true },
-            { name: 'company', type: 'string', nullable: true },
-          ]);
-        }
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des colonnes:', error);
+  // Define columns based on table
+  const getColumns = (): ColumnInfo[] => {
+    if (tableName === 'apollo_contacts') {
+      return [
+        { name: 'id', type: 'string', nullable: false },
+        { name: 'email', type: 'string', nullable: false },
+        { name: 'first_name', type: 'string', nullable: true },
+        { name: 'last_name', type: 'string', nullable: true },
+        { name: 'company', type: 'string', nullable: true },
+        { name: 'title', type: 'string', nullable: true },
+        { name: 'created_at', type: 'string', nullable: true },
+        { name: 'updated_at', type: 'string', nullable: true },
+      ];
+    } else {
+      return [
+        { name: 'id', type: 'number', nullable: false },
+        { name: 'email', type: 'string', nullable: false },
+        { name: 'firstname', type: 'string', nullable: true },
+        { name: 'name', type: 'string', nullable: true },
+        { name: 'company', type: 'string', nullable: true },
+        { name: 'data_section', type: 'string', nullable: true },
+        { name: 'created_at', type: 'string', nullable: true },
+        { name: 'updated_at', type: 'string', nullable: true },
+      ];
     }
   };
 
-  const fetchAvailableSections = async () => {
-    if (tableName === 'crm_contacts') {
-      try {
-        const { data: sectionsData } = await supabase
-          .from('crm_contacts')
-          .select('data_section')
-          .not('data_section', 'is', null);
-
-        if (sectionsData) {
-          // Compter les occurrences de chaque section
-          const sectionCounts: { [key: string]: number } = {};
-          sectionsData.forEach(item => {
-            if (item.data_section) {
-              sectionCounts[item.data_section] = (sectionCounts[item.data_section] || 0) + 1;
-            }
-          });
-
-          // Convertir en array et trier par nombre d'occurrences
-          const sections = Object.entries(sectionCounts)
-            .map(([value, count]) => ({
-              value,
-              label: `${value} (${count.toLocaleString('fr-FR')})`,
-              count
-            }))
-            .sort((a, b) => b.count - a.count);
-
-          setAvailableSections(sections);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des sections:', error);
-      }
-    }
-  };
-
-  const fetchAllData = async () => {
-    setLoading(true);
-    try {
-      let query: any = supabase.from(tableName).select('*', { count: 'exact' });
-      
-      // Définir une limite très élevée pour récupérer toutes les données
-      query = query.range(0, 50000); // Limite à 50k enregistrements
-      
-      const { data: result, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      setAllData(result || []);
-    } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les données."
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fonction pour appliquer les filtres et la pagination
-  const applyFiltersAndPagination = () => {
-    const filtered = filterData(allData, searchTerm, sectionFilter);
-    setFilteredData(filtered);
-  };
-
-  // Obtenir les données paginées
-  const getPaginatedData = () => {
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredData.slice(startIndex, endIndex);
-  };
+  const columns = getColumns();
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -203,49 +96,95 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     setCurrentPage(1);
   };
 
-  // Appliquer les filtres à chaque changement
-  useEffect(() => {
-    applyFiltersAndPagination();
-  }, [allData, searchTerm, sectionFilter]);
+  const handleSort = (columnName: string) => {
+    if (sortBy === columnName) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(columnName);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
+  };
 
-  useEffect(() => {
-    fetchColumns();
-    fetchAvailableSections();
-    fetchAllData();
-  }, [tableName]);
+  const getSortIcon = (columnName: string) => {
+    if (sortBy !== columnName) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+    }
+    return sortOrder === 'asc' ? 
+      <ArrowUp className="h-4 w-4 ml-1" /> : 
+      <ArrowDown className="h-4 w-4 ml-1" />;
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = data.map(row => row.id?.toString() || '');
+      setSelectedRows(new Set(allIds));
+    } else {
+      setSelectedRows(new Set());
+    }
+  };
+
+  const handleSelectRow = (rowId: string, checked: boolean) => {
+    const newSelected = new Set(selectedRows);
+    if (checked) {
+      newSelected.add(rowId);
+    } else {
+      newSelected.delete(rowId);
+    }
+    setSelectedRows(newSelected);
+  };
 
   const formatCellValue = (value: any, columnName: string) => {
     if (value === null || value === undefined) {
-      return <span className="text-muted-foreground">—</span>;
+      return <span className="text-muted-foreground text-sm">—</span>;
     }
     
     if (typeof value === 'boolean') {
       return <Badge variant={value ? 'default' : 'secondary'}>{value ? 'Oui' : 'Non'}</Badge>;
     }
-    
-    if (columnName.includes('date') || columnName.includes('_at')) {
-      try {
-        const date = new Date(value);
-        return date.toLocaleString('fr-FR');
-      } catch {
-        return value;
-      }
-    }
-    
-    if (typeof value === 'string' && value.length > 50) {
+
+    // Special formatting for sections/categories with distinct colors
+    if (columnName === 'data_section' && value) {
+      const sectionColors: Record<string, string> = {
+        'apollo': 'bg-primary-light text-primary border-primary/20',
+        'crm': 'bg-success-light text-success border-success/20',
+        'leads': 'bg-warning-light text-warning border-warning/20',
+        'prospects': 'bg-secondary-light text-secondary border-secondary/20',
+        'customers': 'bg-danger-light text-danger border-danger/20',
+        'partners': 'bg-accent text-accent-foreground border-accent/20',
+        'vendors': 'bg-muted text-muted-foreground border-muted-foreground/20'
+      };
+      
+      const colorClass = sectionColors[value.toLowerCase()] || 'bg-muted text-muted-foreground border-muted-foreground/20';
+      
       return (
-        <span title={value}>
-          {value.substring(0, 50)}...
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
+          {value}
         </span>
       );
     }
     
-    return value;
+    if (columnName.includes('date') || columnName.includes('_at')) {
+      try {
+        const date = new Date(value);
+        return <span className="text-sm text-muted-foreground">{date.toLocaleString('fr-FR')}</span>;
+      } catch {
+        return <span className="text-sm">{value}</span>;
+      }
+    }
+    
+    if (typeof value === 'string' && value.length > 40) {
+      return (
+        <span title={value} className="text-sm">
+          {value.substring(0, 40)}...
+        </span>
+      );
+    }
+    
+    return <span className="text-sm">{value}</span>;
   };
 
-  const totalPages = Math.ceil(filteredData.length / pageSize);
   const tableTitle = tableName === 'apollo_contacts' ? 'Contacts Apollo' : 'Contacts CRM';
-  const paginatedData = getPaginatedData();
 
   return (
     <div className="p-6 space-y-6">
@@ -258,8 +197,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{tableTitle}</h1>
             <p className="text-muted-foreground">
-              {filteredData.length.toLocaleString('fr-FR')} enregistrement(s) 
-              {filteredData.length !== allData.length && ` sur ${allData.length.toLocaleString('fr-FR')} au total`}
+              {totalCount.toLocaleString('fr-FR')} enregistrement(s) au total
             </p>
           </div>
         </div>
@@ -274,7 +212,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
               className="pl-8"
             />
           </div>
-          {tableName === 'crm_contacts' && availableSections.length > 0 && (
+          {tableName === 'crm_contacts' && sections.length > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium">Section:</span>
               <select
@@ -282,8 +220,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                 onChange={(e) => handleSectionFilterChange(e.target.value)}
                 className="px-3 py-1 border border-input rounded-md text-sm bg-background min-w-[200px]"
               >
-                <option value="all">Toutes ({allData.length.toLocaleString('fr-FR')})</option>
-                {availableSections.map((section) => (
+                <option value="all">Toutes ({totalCount.toLocaleString('fr-FR')})</option>
+                {sections.map((section) => (
                   <option key={section.value} value={section.value}>
                     {section.label}
                   </option>
@@ -298,70 +236,133 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Données de la table</CardTitle>
-          <CardDescription>
-            Page {currentPage} sur {totalPages} ({pageSize} éléments par page)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <span className="ml-2">Chargement des données...</span>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="rounded-md border overflow-auto max-h-[70vh]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {columns.slice(0, 8).map((column) => (
-                        <TableHead key={column.name} className="font-medium">
-                          {column.name}
-                        </TableHead>
-                      ))}
-                      {columns.length > 8 && (
-                        <TableHead className="font-medium">
-                          +{columns.length - 8} colonnes...
-                        </TableHead>
-                      )}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedData.map((row, index) => (
-                      <TableRow key={index}>
-                        {columns.slice(0, 8).map((column) => (
-                          <TableCell key={column.name} className="max-w-[200px]">
+      <div className="bg-card rounded-lg border border-border shadow-sm">
+        {loading ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-3 text-muted-foreground">Chargement des données...</span>
+          </div>
+        ) : (
+          <div className="space-y-0">
+            {/* Table Header with selection controls */}
+            {selectedRows.size > 0 && (
+              <div className="px-6 py-4 bg-primary/5 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-primary">
+                    {selectedRows.size} élément(s) sélectionné(s)
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exporter sélection
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Supprimer
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <Table className="w-full">
+                <TableHeader>
+                  <TableRow className="border-b border-table-border hover:bg-transparent">
+                    <TableHead className="w-12 bg-table-header">
+                      <Checkbox
+                        checked={selectedRows.size === data.length && data.length > 0}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Sélectionner tout"
+                      />
+                    </TableHead>
+                    {columns.slice(0, 7).map((column) => (
+                      <TableHead 
+                        key={column.name} 
+                        className="font-semibold text-muted-foreground bg-table-header cursor-pointer hover:bg-muted/80 transition-colors py-4"
+                        onClick={() => handleSort(column.name)}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span className="uppercase text-xs tracking-wider">{column.name}</span>
+                          {getSortIcon(column.name)}
+                        </div>
+                      </TableHead>
+                    ))}
+                    <TableHead className="bg-table-header w-20 text-center">
+                      <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.map((row, index) => {
+                    const rowId = row.id?.toString() || index.toString();
+                    const isSelected = selectedRows.has(rowId);
+                    
+                    return (
+                      <TableRow 
+                        key={rowId}
+                        className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${
+                          isSelected ? 'bg-table-selected' : ''
+                        }`}
+                      >
+                        <TableCell className="w-12">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => handleSelectRow(rowId, !!checked)}
+                            aria-label={`Sélectionner ligne ${index + 1}`}
+                          />
+                        </TableCell>
+                        {columns.slice(0, 7).map((column) => (
+                          <TableCell key={column.name} className="py-4">
                             {formatCellValue(row[column.name], column.name)}
                           </TableCell>
                         ))}
-                        {columns.length > 8 && (
-                          <TableCell className="text-muted-foreground">
-                            <Button variant="outline" size="sm">
-                              Voir plus
+                        <TableCell className="w-20">
+                          <div className="flex items-center justify-center space-x-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-muted"
+                            >
+                              <Edit2 className="h-4 w-4 text-muted-foreground" />
                             </Button>
-                          </TableCell>
-                        )}
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-muted"
+                            >
+                              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
 
+            {/* Pagination */}
+            <div className="px-6 py-4 border-t border-table-border bg-muted/20">
               <DataPagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 pageSize={pageSize}
-                totalItems={filteredData.length}
+                totalItems={totalCount}
                 onPageChange={handlePageChange}
                 onPageSizeChange={handlePageSizeChange}
               />
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
