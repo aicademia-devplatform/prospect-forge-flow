@@ -941,37 +941,31 @@ const TableView: React.FC<TableViewProps> = ({
                   setIsScrolled(scrollLeft > 0);
                 }}
               >
-                <table className="w-full table-fixed">
-                  {/* Définition des largeurs des colonnes */}
-                  <colgroup>
-                    <col className="w-12" />
-                    {displayColumns.map(column => (
-                      <col key={column.name} className="w-40" />
-                    ))}
-                    <col className="w-20" />
-                  </colgroup>
-                  
+                <table className="w-full">
                   {/* Fixed Header */}
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
                     <tr>
-                      <th className={`px-4 py-4 text-left sticky left-0 bg-table-header z-30 transition-all duration-300 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
+                      <th className={`w-12 px-4 py-4 text-left sticky left-0 bg-table-header z-30 transition-all duration-300 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
                         <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
-                      {displayColumns.map((column, index) => {
+                      {displayColumns.map((column, columnIndex) => {
                         const isPinned = pinnedColumns.has(column.name);
                         const isDropdownOpen = openColumnDropdown === column.name;
                         
-                        // Calculate left offset for pinned columns based on their actual order
-                        const pinnedColumnsArray = [...pinnedColumns];
-                        const pinnedIndex = pinnedColumnsArray.indexOf(column.name);
-                        const leftOffset = isPinned ? 48 + (pinnedIndex * 160) : 0; // 160px (40 * 4) car w-40 = 10rem = 160px
+                        // Calculate left offset for pinned columns - use sequential order
+                        let leftOffset = 48; // Start after checkbox column
+                        const pinnedColumnsArray = Array.from(pinnedColumns);
+                        if (isPinned) {
+                          const currentPinnedIndex = pinnedColumnsArray.indexOf(column.name);
+                          leftOffset = 48 + (currentPinnedIndex * 150); // 150px per pinned column
+                        }
                         
                         const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
                         
                         return (
                           <th 
                             key={column.name} 
-                            className={`px-4 py-4 text-left font-semibold text-muted-foreground relative transition-all duration-300 ${isPinned ? `sticky bg-table-header z-20 ${borderStyle}` : ''}`}
+                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[150px] relative transition-all duration-300 ${isPinned ? `sticky bg-table-header z-20 ${borderStyle}` : ''}`}
                             style={isPinned ? { left: `${leftOffset}px` } : {}}
                           >
                             <div className="flex items-center justify-between space-x-1">
@@ -1073,7 +1067,7 @@ const TableView: React.FC<TableViewProps> = ({
                           </th>
                         );
                       })}
-                      <th className="px-4 py-4 text-center">
+                      <th className="w-20 px-4 py-4 text-center">
                         <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
                       </th>
                     </tr>
@@ -1088,25 +1082,30 @@ const TableView: React.FC<TableViewProps> = ({
                           <td className={`px-4 py-4 sticky left-0 bg-background z-20 transition-all duration-300 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
                             <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
-                          {displayColumns.map((column, index) => {
+                          {displayColumns.map((column, columnIndex) => {
                             const isPinned = pinnedColumns.has(column.name);
-                            const pinnedColumnsArray = [...pinnedColumns];
-                            const pinnedIndex = pinnedColumnsArray.indexOf(column.name);
-                            const leftOffset = isPinned ? 48 + (pinnedIndex * 160) : 0; // Même calcul que le header
+                            
+                            // Use same calculation as header
+                            let leftOffset = 48;
+                            const pinnedColumnsArray = Array.from(pinnedColumns);
+                            if (isPinned) {
+                              const currentPinnedIndex = pinnedColumnsArray.indexOf(column.name);
+                              leftOffset = 48 + (currentPinnedIndex * 150);
+                            }
                             
                             const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
                             
                             return (
                               <td 
                                 key={column.name} 
-                                className={`px-4 py-4 transition-all duration-300 ${isPinned ? `sticky bg-background z-10 ${borderStyle}` : ''}`}
+                                className={`px-4 py-4 min-w-[150px] transition-all duration-300 ${isPinned ? `sticky bg-background z-10 ${borderStyle}` : ''}`}
                                 style={isPinned ? { left: `${leftOffset}px` } : {}}
                               >
                                 {formatCellValue(row[column.name], column.name)}
                               </td>
                             );
                           })}
-                          <td className="px-4 py-4">
+                          <td className="w-20 px-4 py-4">
                             <div className="flex items-center justify-center space-x-1">
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
                                 <Edit2 className="h-4 w-4 text-muted-foreground" />
