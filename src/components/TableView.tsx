@@ -954,8 +954,8 @@ const TableView: React.FC<TableViewProps> = ({
                             key={column.name} 
                             className={`
                               px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px]
-                              sticky top-0 bg-table-header
-                              ${isPinned ? 'left-0 z-30' : 'z-20'}
+                              sticky top-0 
+                              ${isPinned ? 'left-0 z-30 bg-muted/30' : 'z-20 bg-table-header'}
                               ${borderStyle}
                             `}
                             style={isPinned ? { left: '48px' } : {}}
@@ -1081,7 +1081,7 @@ const TableView: React.FC<TableViewProps> = ({
                             return (
                               <td 
                                 key={column.name} 
-                                className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-background z-10 ${borderStyle}` : ''}`}
+                                className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-muted/10 z-10 ${borderStyle}` : ''}`}
                                 style={isPinned ? { left: '48px' } : {}}
                               >
                                 {formatCellValue(row[column.name], column.name)}
