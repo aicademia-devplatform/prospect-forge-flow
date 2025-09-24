@@ -1242,25 +1242,25 @@ const TableView: React.FC<TableViewProps> = ({
 
       {/* Dialog de gestion des colonnes */}
       <Dialog open={columnDialogOpen} onOpenChange={setColumnDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] bg-background">
-          <DialogHeader>
+        <DialogContent className="max-w-5xl w-[90vw] h-[80vh] bg-background flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Gestion des colonnes</DialogTitle>
             <DialogDescription>
               Sélectionnez les colonnes à afficher dans le tableau. Déplacez les colonnes entre les sections pour les afficher ou les masquer.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="flex gap-6 flex-1 min-h-0">
+          <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
             {/* Colonnes affichées */}
-            <div className="flex-1 flex flex-col">
-              <h3 className="text-sm font-medium mb-3 text-green-600">Colonnes affichées ({Array.from(tempVisibleColumns).length})</h3>
-              <div className="border rounded-lg p-4 bg-green-50/50 flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 flex flex-col min-h-0">
+              <h3 className="text-sm font-medium mb-3 text-green-600 flex-shrink-0">Colonnes affichées ({Array.from(tempVisibleColumns).length})</h3>
+              <div className="border rounded-lg p-3 bg-green-50/50 flex-1 overflow-y-auto">
                 <div className="space-y-2">
                   {allColumns
                     .filter(col => col.name !== 'email' && col.name !== 'id' && tempVisibleColumns.has(col.name))
                     .map(column => (
                       <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-colors">
-                        <span className="text-sm font-medium">{translateColumnName(column.name)}</span>
+                        <span className="text-sm font-medium flex-1 mr-2">{translateColumnName(column.name)}</span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1272,7 +1272,7 @@ const TableView: React.FC<TableViewProps> = ({
                       </div>
                     ))}
                   {Array.from(tempVisibleColumns).length === 0 && (
-                    <div className="text-center text-muted-foreground text-sm py-8">
+                    <div className="text-center text-muted-foreground text-sm py-4">
                       Aucune colonne affichée
                     </div>
                   )}
@@ -1281,15 +1281,15 @@ const TableView: React.FC<TableViewProps> = ({
             </div>
 
             {/* Colonnes non affichées */}
-            <div className="flex-1 flex flex-col">
-              <h3 className="text-sm font-medium mb-3 text-gray-600">Colonnes masquées ({allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).length})</h3>
-              <div className="border rounded-lg p-4 bg-gray-50/50 flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 flex flex-col min-h-0">
+              <h3 className="text-sm font-medium mb-3 text-gray-600 flex-shrink-0">Colonnes masquées ({allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).length})</h3>
+              <div className="border rounded-lg p-3 bg-gray-50/50 flex-1 overflow-y-auto">
                 <div className="space-y-2">
                   {allColumns
                     .filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name))
                     .map(column => (
                       <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors">
-                        <span className="text-sm">{translateColumnName(column.name)}</span>
+                        <span className="text-sm flex-1 mr-2">{translateColumnName(column.name)}</span>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1301,7 +1301,7 @@ const TableView: React.FC<TableViewProps> = ({
                       </div>
                     ))}
                   {allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).length === 0 && (
-                    <div className="text-center text-muted-foreground text-sm py-8">
+                    <div className="text-center text-muted-foreground text-sm py-4">
                       Toutes les colonnes sont affichées
                     </div>
                   )}
@@ -1310,7 +1310,7 @@ const TableView: React.FC<TableViewProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="flex gap-2 pt-4">
+          <DialogFooter className="flex gap-2 pt-4 flex-shrink-0 border-t">
             <Button variant="outline" onClick={cancelColumnChanges}>
               Annuler
             </Button>
