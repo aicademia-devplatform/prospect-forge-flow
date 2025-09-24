@@ -779,7 +779,7 @@ const TableView: React.FC<TableViewProps> = ({
   };
   const getSortIcon = (columnName: string) => {
     if (sortBy !== columnName) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+      return null;
     }
     return sortOrder === 'asc' ? <ArrowUp className="h-4 w-4 ml-1" /> : <ArrowDown className="h-4 w-4 ml-1" />;
   };
