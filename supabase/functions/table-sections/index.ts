@@ -43,8 +43,11 @@ Deno.serve(async (req) => {
       throw error
     }
 
-    // Count occurrences of each section, normalizing and splitting combined sections
-    const sectionCounts: { [key: string]: number } = {}
+    // Count occurrences of each section, but only for Arlynk and Aicademia
+    const sectionCounts: { [key: string]: number } = {
+      'Arlynk': 0,
+      'Aicademia': 0
+    }
     
     data?.forEach(item => {
       if (item.data_section) {
@@ -52,22 +55,19 @@ Deno.serve(async (req) => {
         const individualSections = item.data_section.split(',').map(s => s.trim()).filter(Boolean)
         
         individualSections.forEach(section => {
-          // Normalize section names (case-insensitive, handle ARlynk/Arlynk)
-          let normalizedSection = section.trim()
+          // Normalize section names and count only Arlynk and Aicademia
+          const normalizedSection = section.trim().toLowerCase()
           
-          // Normalize ARlynk to Arlynk
-          if (normalizedSection.toLowerCase() === 'arlynk') {
-            normalizedSection = 'Arlynk'
-          } else if (normalizedSection.toLowerCase() === 'aicademia') {
-            normalizedSection = 'Aicademia'
+          if (normalizedSection === 'arlynk') {
+            sectionCounts['Arlynk'] = (sectionCounts['Arlynk'] || 0) + 1
+          } else if (normalizedSection === 'aicademia') {
+            sectionCounts['Aicademia'] = (sectionCounts['Aicademia'] || 0) + 1
           }
-          
-          sectionCounts[normalizedSection] = (sectionCounts[normalizedSection] || 0) + 1
         })
       }
     })
 
-    // Convert to array and sort by count
+    // Convert to array with only Arlynk and Aicademia
     const sections = Object.entries(sectionCounts)
       .map(([value, count]) => ({
         value,
