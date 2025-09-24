@@ -1071,7 +1071,7 @@ const TableView: React.FC<TableViewProps> = ({
                   const rowId = row.id?.toString() || index.toString();
                   const isSelected = selectedRows.has(rowId);
                   return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
-                          <td className={`w-12 px-4 py-4 sticky left-0 bg-background z-20 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
+                          <td className={`w-12 px-4 py-4 sticky left-0 bg-background z-10 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
                             <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
                           {displayColumns.map(column => {
