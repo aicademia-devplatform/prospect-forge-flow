@@ -45,7 +45,15 @@ Deno.serve(async (req) => {
 
     // Apply section filter for CRM contacts
     if (tableName === 'crm_contacts' && sectionFilter && sectionFilter !== 'all') {
-      query = query.eq('data_section', sectionFilter)
+      // Handle multiple sections (comma-separated)
+      const sections = sectionFilter.split(',').map(s => s.trim()).filter(Boolean)
+      if (sections.length === 1) {
+        query = query.eq('data_section', sections[0])
+      } else if (sections.length > 1) {
+        // For multiple sections, we need to check if data_section contains any of them
+        const orConditions = sections.map(section => `data_section.eq.${section}`)
+        query = query.or(orConditions.join(','))
+      }
     }
 
     // Apply search filter
