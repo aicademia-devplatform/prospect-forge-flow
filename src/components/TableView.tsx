@@ -40,9 +40,10 @@ const TableView: React.FC<TableViewProps> = ({
   const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set());
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [openColumnDropdown, setOpenColumnDropdown] = useState<string | null>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const pinnedTableRef = useRef<HTMLDivElement>(null);
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -82,6 +83,71 @@ const TableView: React.FC<TableViewProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Sync column widths and scroll position
+  useEffect(() => {
+    const syncScrollAndWidths = () => {
+      if (tableContainerRef.current && pinnedTableRef.current) {
+        const mainTable = tableContainerRef.current.querySelector('table');
+        const pinnedTable = pinnedTableRef.current.querySelector('table');
+        
+        if (mainTable && pinnedTable) {
+          // Sync column widths
+          const mainHeaders = mainTable.querySelectorAll('thead th');
+          const pinnedHeaders = pinnedTable.querySelectorAll('thead th');
+          
+          // Set column widths
+          mainHeaders.forEach((header, index) => {
+            const width = header.getBoundingClientRect().width;
+            if (pinnedHeaders[index]) {
+              (pinnedHeaders[index] as HTMLElement).style.width = `${width}px`;
+            }
+          });
+
+          // Sync main table body cell widths with pinned table
+          const mainRows = mainTable.querySelectorAll('tbody tr');
+          const pinnedRows = pinnedTable.querySelectorAll('tbody tr');
+          
+          mainRows.forEach((mainRow, rowIndex) => {
+            const mainCells = mainRow.querySelectorAll('td');
+            const pinnedRow = pinnedRows[rowIndex];
+            if (pinnedRow) {
+              const pinnedCells = pinnedRow.querySelectorAll('td');
+              mainCells.forEach((cell, cellIndex) => {
+                const width = cell.getBoundingClientRect().width;
+                if (pinnedCells[cellIndex]) {
+                  (pinnedCells[cellIndex] as HTMLElement).style.width = `${width}px`;
+                }
+              });
+            }
+          });
+        }
+      }
+    };
+
+    // Sync scroll position
+    const syncScroll = () => {
+      if (tableContainerRef.current && pinnedTableRef.current) {
+        pinnedTableRef.current.scrollTop = tableContainerRef.current.scrollTop;
+      }
+    };
+
+    const mainContainer = tableContainerRef.current;
+    if (mainContainer) {
+      mainContainer.addEventListener('scroll', syncScroll);
+      // Use ResizeObserver to sync widths when content changes
+      const resizeObserver = new ResizeObserver(syncScrollAndWidths);
+      resizeObserver.observe(mainContainer);
+      
+      // Initial sync
+      syncScrollAndWidths();
+      
+      return () => {
+        mainContainer.removeEventListener('scroll', syncScroll);
+        resizeObserver.disconnect();
+      };
+    }
+  }, [data, pinnedColumns]);
 
 
   // Filter sections based on search term
@@ -919,13 +985,20 @@ const TableView: React.FC<TableViewProps> = ({
               {/* Table container with relative positioning for overlay */}
               <div className="flex-1 relative">
                 {/* Sticky overlay table for checkbox and pinned columns */}
-                <div className="absolute top-0 left-0 z-30 bg-background">
-                  <table>
+                <div 
+                  className="absolute top-0 left-0 z-30 bg-background overflow-hidden"
+                  ref={pinnedTableRef}
+                  style={{ 
+                    height: '100%',
+                    width: pinnedColumns.size > 0 ? `${48 + (pinnedColumns.size * 150)}px` : '48px'
+                  }}
+                >
+                  <table className="w-full">
                     {/* Sticky header */}
                     <thead className="bg-table-header border-b border-table-border">
                       <tr>
                         {/* Always show checkbox */}
-                        <th className="w-12 px-4 py-4 text-left bg-table-header border-r border-border">
+                        <th className="w-12 px-4 py-4 text-left bg-table-header border-r border-border" style={{ width: '48px' }}>
                           <Checkbox 
                             checked={selectedRows.size === data.length && data.length > 0} 
                             onCheckedChange={handleSelectAll} 
@@ -942,7 +1015,8 @@ const TableView: React.FC<TableViewProps> = ({
                           return (
                             <th 
                               key={column.name} 
-                              className="px-4 py-4 text-left font-semibold text-muted-foreground min-w-[150px] w-[150px] bg-table-header border-r border-border"
+                              className="px-4 py-4 text-left font-semibold text-muted-foreground bg-table-header border-r border-border"
+                              style={{ width: '150px', minWidth: '150px' }}
                             >
                               <div className="flex items-center justify-between space-x-1">
                                 <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
@@ -1055,7 +1129,7 @@ const TableView: React.FC<TableViewProps> = ({
                         return (
                           <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
                             {/* Checkbox cell */}
-                            <td className="px-4 py-4 bg-background border-r border-border">
+                            <td className="px-4 py-4 bg-background border-r border-border" style={{ width: '48px' }}>
                               <Checkbox 
                                 checked={isSelected} 
                                 onCheckedChange={checked => handleSelectRow(rowId, !!checked)} 
@@ -1070,7 +1144,8 @@ const TableView: React.FC<TableViewProps> = ({
                               return (
                                 <td 
                                   key={column.name} 
-                                  className="px-4 py-4 min-w-[150px] w-[150px] bg-background border-r border-border"
+                                  className="px-4 py-4 bg-background border-r border-border"
+                                  style={{ width: '150px', minWidth: '150px' }}
                                 >
                                   {formatCellValue(row[column.name], column.name)}
                                 </td>
@@ -1095,10 +1170,13 @@ const TableView: React.FC<TableViewProps> = ({
                     {/* Main header */}
                     <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
                       <tr>
-                        {/* Spacer for checkbox when no pinned columns */}
-                        {pinnedColumns.size === 0 && (
-                          <th className="w-12 px-4 py-4 opacity-0 pointer-events-none"></th>
-                        )}
+                        {/* Invisible spacer for checkbox alignment */}
+                        <th className="w-12 px-4 py-4 opacity-0 pointer-events-none" style={{ width: '48px' }}></th>
+                        
+                        {/* Invisible spacers for pinned columns alignment */}
+                        {Array.from(pinnedColumns).map((columnName) => (
+                          <th key={`spacer-${columnName}`} className="opacity-0 pointer-events-none" style={{ width: '150px', minWidth: '150px' }}></th>
+                        ))}
                         
                         {/* All columns (excluding pinned ones) */}
                         {displayColumns
@@ -1218,7 +1296,7 @@ const TableView: React.FC<TableViewProps> = ({
                       </tr>
                     </thead>
                     
-                    {/* Main body */}
+                     {/* Main body */}
                     <tbody>
                       {data.map((row, index) => {
                         const rowId = row.id?.toString() || index.toString();
@@ -1226,10 +1304,13 @@ const TableView: React.FC<TableViewProps> = ({
                         
                         return (
                           <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
-                            {/* Spacer for checkbox when no pinned columns */}
-                            {pinnedColumns.size === 0 && (
-                              <td className="w-12 px-4 py-4 opacity-0 pointer-events-none"></td>
-                            )}
+                            {/* Invisible spacer for checkbox alignment */}
+                            <td className="w-12 px-4 py-4 opacity-0 pointer-events-none" style={{ width: '48px' }}></td>
+                            
+                            {/* Invisible spacers for pinned columns alignment */}
+                            {Array.from(pinnedColumns).map((columnName) => (
+                              <td key={`spacer-${columnName}`} className="opacity-0 pointer-events-none" style={{ width: '150px', minWidth: '150px' }}></td>
+                            ))}
                             
                             {/* Non-pinned columns data */}
                             {displayColumns
@@ -1237,7 +1318,8 @@ const TableView: React.FC<TableViewProps> = ({
                               .map((column) => (
                                 <td 
                                   key={column.name} 
-                                  className="px-4 py-4 min-w-[150px] w-[150px] border-r border-border"
+                                  className="px-4 py-4 border-r border-border"
+                                  style={{ width: '150px', minWidth: '150px' }}
                                 >
                                   {formatCellValue(row[column.name], column.name)}
                                 </td>
