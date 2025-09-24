@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -13,15 +14,18 @@ import DataPagination from './DataPagination';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
 import { useDebounce } from '@/hooks/useDebounce';
+
 interface TableViewProps {
   tableName: 'apollo_contacts' | 'crm_contacts';
   onBack: () => void;
 }
+
 interface ColumnInfo {
   name: string;
   type: string;
   nullable: boolean;
 }
+
 // Fonction de traduction des noms de colonnes
 const translateColumnName = (columnName: string): string => {
   const translations: Record<string, string> = {
@@ -631,99 +635,27 @@ const TableView: React.FC<TableViewProps> = ({
         type: 'string',
         nullable: true
       }, {
-        name: 'arlynk_status',
+        name: 'brevo_status',
         type: 'string',
         nullable: true
       }, {
-        name: 'aicademia_high_status',
+        name: 'hubspot_status',
         type: 'string',
         nullable: true
       }, {
-        name: 'aicademia_low_status',
+        name: 'systemeio_status',
         type: 'string',
         nullable: true
       }, {
-        name: 'zoho_ma_score',
+        name: 'brevo_last_email',
         type: 'string',
         nullable: true
       }, {
-        name: 'zoho_crm_notation_score',
+        name: 'brevo_last_opened',
         type: 'string',
         nullable: true
       }, {
-        name: 'arlynk_score',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'aicademia_score',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'total_score',
-        type: 'number',
-        nullable: true
-      }, {
-        name: 'apollo_email_verification',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'apollo_owner',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'apollo_last_contact',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'apollo_description',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'arlynk_cold_status',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'arlynk_cold_note',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'arlynk_cold_action_date',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'arlynk_cold_relance2',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'arlynk_cold_relance3',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'aicademia_cold_status',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'aicademia_cold_note',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'aicademia_cold_action_date',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'aicademia_cold_relance2',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'aicademia_cold_relance3',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'brevo_last_mail_campain',
-        type: 'string',
-        nullable: true
-      }, {
-        name: 'brevo_last_sms_campain',
+        name: 'brevo_last_clicked',
         type: 'string',
         nullable: true
       }, {
@@ -870,6 +802,7 @@ const TableView: React.FC<TableViewProps> = ({
 
   // Filter columns for search
   const filteredColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').filter(col => col.name.toLowerCase().includes(columnSearchTerm.toLowerCase()));
+  
   const toggleColumnVisibility = (columnName: string) => {
     const newVisible = new Set(tempVisibleColumns);
     if (newVisible.has(columnName)) {
@@ -884,28 +817,20 @@ const TableView: React.FC<TableViewProps> = ({
     setTempVisibleColumns(newVisible);
   };
 
-  const moveColumnUp = (columnName: string) => {
-    setTempColumnOrder(prev => {
-      const currentIndex = prev.indexOf(columnName);
-      if (currentIndex > 0) {
-        const newOrder = [...prev];
-        [newOrder[currentIndex - 1], newOrder[currentIndex]] = [newOrder[currentIndex], newOrder[currentIndex - 1]];
-        return newOrder;
-      }
-      return prev;
-    });
-  };
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
 
-  const moveColumnDown = (columnName: string) => {
-    setTempColumnOrder(prev => {
-      const currentIndex = prev.indexOf(columnName);
-      if (currentIndex < prev.length - 1 && currentIndex >= 0) {
-        const newOrder = [...prev];
-        [newOrder[currentIndex], newOrder[currentIndex + 1]] = [newOrder[currentIndex + 1], newOrder[currentIndex]];
-        return newOrder;
-      }
-      return prev;
-    });
+    const items = Array.from(tempColumnOrder.filter(col => tempVisibleColumns.has(col)));
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update the order with all columns (visible and hidden)
+    const newOrder = [
+      ...items, // reordered visible columns
+      ...tempColumnOrder.filter(col => !tempVisibleColumns.has(col)) // hidden columns at the end
+    ];
+    
+    setTempColumnOrder(newOrder);
   };
 
   const openColumnDialog = () => {
@@ -1233,7 +1158,11 @@ const TableView: React.FC<TableViewProps> = ({
                                       <DropdownMenuSeparator />
                                       <DropdownMenuCheckboxItem
                                         checked={false}
-                                        onCheckedChange={() => toggleColumnVisibility(column.name)}
+                                        onCheckedChange={() => {
+                                          const newVisible = new Set(visibleColumns);
+                                          newVisible.delete(column.name);
+                                          setVisibleColumns(newVisible);
+                                        }}
                                       >
                                         👁️‍🗨️ Masquer la colonne
                                       </DropdownMenuCheckboxItem>
@@ -1307,64 +1236,76 @@ const TableView: React.FC<TableViewProps> = ({
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>Gestion des colonnes</DialogTitle>
             <DialogDescription>
-              Sélectionnez les colonnes à afficher dans le tableau. Déplacez les colonnes entre les sections pour les afficher ou les masquer.
+              Glissez et déposez les colonnes pour réorganiser leur ordre d'affichage. Déplacez les colonnes entre les sections pour les afficher ou les masquer.
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
             {/* Colonnes affichées */}
             <div className="flex-1 flex flex-col min-h-0">
-              <h3 className="text-sm font-medium mb-3 text-green-600 flex-shrink-0">Colonnes affichées ({Array.from(tempVisibleColumns).length})</h3>
+              <h3 className="text-sm font-medium mb-3 text-green-600 flex-shrink-0">Colonnes affichées ({tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length})</h3>
               <div className="border rounded-lg p-3 bg-green-50/50 flex-1 overflow-y-auto">
-                <div className="space-y-2">
-                  {tempColumnOrder
-                    .filter(colName => tempVisibleColumns.has(colName))
-                    .map((colName, index) => {
-                      const column = allColumns.find(col => col.name === colName);
-                      if (!column) return null;
-                      return (
-                        <div key={column.name} className="flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-colors">
-                          <div className="flex flex-col gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveColumnUp(column.name)}
-                              disabled={index === 0}
-                              className="h-6 w-6 p-0 hover:bg-blue-100"
-                              title="Monter"
-                            >
-                              <ChevronUp className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveColumnDown(column.name)}
-                              disabled={index === tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length - 1}
-                              className="h-6 w-6 p-0 hover:bg-blue-100"
-                              title="Descendre"
-                            >
-                              <ChevronDown className="h-3 w-3" />
-                            </Button>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="visible-columns">
+                    {(provided, snapshot) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className={`space-y-2 min-h-[100px] transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-green-100/70 rounded-lg' : ''}`}
+                      >
+                        {tempColumnOrder
+                          .filter(colName => tempVisibleColumns.has(colName))
+                          .map((colName, index) => {
+                            const column = allColumns.find(col => col.name === colName);
+                            if (!column) return null;
+                            return (
+                              <Draggable key={column.name} draggableId={column.name} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${
+                                      snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'
+                                    }`}
+                                    style={{
+                                      ...provided.draggableProps.style,
+                                      transform: snapshot.isDragging 
+                                        ? `${provided.draggableProps.style?.transform} rotate(1deg)` 
+                                        : provided.draggableProps.style?.transform
+                                    }}
+                                  >
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded transition-colors duration-150"
+                                      title="Glisser pour réorganiser"
+                                    >
+                                      <GripVertical className="h-4 w-4 text-gray-400" />
+                                    </div>
+                                    <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => toggleColumnVisibility(column.name)}
+                                      className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200"
+                                      title="Masquer"
+                                    >
+                                      <ArrowRight className="h-4 w-4 text-red-600" />
+                                    </Button>
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                        {provided.placeholder}
+                        {tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length === 0 && (
+                          <div className="text-center text-muted-foreground text-sm py-8">
+                            Aucune colonne affichée
                           </div>
-                          <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleColumnVisibility(column.name)}
-                            className="h-8 w-8 p-0 hover:bg-red-100"
-                            title="Masquer"
-                          >
-                            <ArrowRight className="h-4 w-4 text-red-600" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                  {tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length === 0 && (
-                    <div className="text-center text-muted-foreground text-sm py-4">
-                      Aucune colonne affichée
-                    </div>
-                  )}
-                </div>
+                        )}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
               </div>
             </div>
 
@@ -1376,20 +1317,21 @@ const TableView: React.FC<TableViewProps> = ({
                   {allColumns
                     .filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name))
                     .map(column => (
-                      <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors">
+                      <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors duration-200 hover:shadow-sm">
                         <span className="text-sm flex-1 mr-2">{translateColumnName(column.name)}</span>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleColumnVisibility(column.name)}
-                          className="h-8 w-8 p-0 hover:bg-green-100"
+                          className="h-8 w-8 p-0 hover:bg-green-100 transition-colors duration-200"
+                          title="Afficher"
                         >
                           <ArrowLeftRight className="h-4 w-4 text-green-600" />
                         </Button>
                       </div>
                     ))}
                   {allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).length === 0 && (
-                    <div className="text-center text-muted-foreground text-sm py-4">
+                    <div className="text-center text-muted-foreground text-sm py-8">
                       Toutes les colonnes sont affichées
                     </div>
                   )}
@@ -1403,7 +1345,7 @@ const TableView: React.FC<TableViewProps> = ({
               Annuler
             </Button>
             <Button onClick={applyColumnChanges}>
-              Afficher ({Array.from(tempVisibleColumns).length} colonnes)
+              Afficher ({tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length} colonnes)
             </Button>
           </DialogFooter>
         </DialogContent>
