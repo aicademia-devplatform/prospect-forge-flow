@@ -151,10 +151,13 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
       'bg-gradient-to-r from-violet-500 to-violet-600 text-white border-violet-300'
     ];
     
+    // Normalize the section name (lowercase and trim)
+    const normalizedName = sectionName.toLowerCase().trim();
+    
     // Use string hash to consistently assign same color to same section
     let hash = 0;
-    for (let i = 0; i < sectionName.length; i++) {
-      const char = sectionName.charCodeAt(i);
+    for (let i = 0; i < normalizedName.length; i++) {
+      const char = normalizedName.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
@@ -173,13 +176,29 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
 
     // Special formatting for sections/categories with vibrant random colors
     if (columnName === 'data_section' && value) {
-      const colorClass = generateSectionColor(value);
-      
-      return (
-        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${colorClass}`}>
-          {value}
-        </span>
-      );
+      // Check if value contains multiple sections separated by comma
+      if (value.includes(',')) {
+        const sections = value.split(',').map((section: string) => section.trim()).filter(Boolean);
+        return (
+          <div className="flex flex-wrap gap-1">
+            {sections.map((section: string, index: number) => {
+              const colorClass = generateSectionColor(section);
+              return (
+                <span key={index} className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${colorClass}`}>
+                  {section}
+                </span>
+              );
+            })}
+          </div>
+        );
+      } else {
+        const colorClass = generateSectionColor(value);
+        return (
+          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${colorClass}`}>
+            {value}
+          </span>
+        );
+      }
     }
     
     if (columnName.includes('date') || columnName.includes('_at')) {
