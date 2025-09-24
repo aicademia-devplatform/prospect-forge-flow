@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,7 +20,7 @@ interface ColumnInfo {
   nullable: boolean;
 }
 
-const TableView = ({ tableName, onBack }: TableViewProps) => {
+const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   const [data, setData] = useState<any[]>([]);
   const [columns, setColumns] = useState<ColumnInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,10 +28,11 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [totalCount, setTotalCount] = useState(0);
+  const [sectionFilter, setSectionFilter] = useState<'all' | 'arlynk' | 'aicademia'>('all');
   const [infiniteLoading, setInfiniteLoading] = useState(false);
   const { toast } = useToast();
 
-  const fetchColumns = useCallback(async () => {
+  const fetchColumns = async () => {
     try {
       // Obtenir les colonnes depuis la première ligne de données
       const { data: firstRow } = await supabase
@@ -41,37 +42,38 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
         .single();
       
       if (firstRow) {
-        const cols = Object.keys(firstRow).map(key => ({
+        const columnInfo = Object.keys(firstRow).map(key => ({
           name: key,
-          type: typeof firstRow[key],
-          nullable: true
+          type: typeof firstRow[key] === 'number' ? 'number' : 'string',
+          nullable: firstRow[key] === null
         }));
-        setColumns(cols);
+        setColumns(columnInfo);
+      } else {
+        // Fallback si pas de données
+        if (tableName === 'apollo_contacts') {
+          setColumns([
+            { name: 'id', type: 'string', nullable: false },
+            { name: 'email', type: 'string', nullable: false },
+            { name: 'first_name', type: 'string', nullable: true },
+            { name: 'last_name', type: 'string', nullable: true },
+            { name: 'company', type: 'string', nullable: true },
+          ]);
+        } else {
+          setColumns([
+            { name: 'id', type: 'number', nullable: false },
+            { name: 'email', type: 'string', nullable: false },
+            { name: 'firstname', type: 'string', nullable: true },
+            { name: 'name', type: 'string', nullable: true },
+            { name: 'company', type: 'string', nullable: true },
+          ]);
+        }
       }
     } catch (error) {
       console.error('Erreur lors du chargement des colonnes:', error);
-      // Colonnes par défaut selon la table
-      if (tableName === 'apollo_contacts') {
-        setColumns([
-          { name: 'id', type: 'string', nullable: false },
-          { name: 'email', type: 'string', nullable: false },
-          { name: 'first_name', type: 'string', nullable: true },
-          { name: 'last_name', type: 'string', nullable: true },
-          { name: 'company', type: 'string', nullable: true },
-        ]);
-      } else {
-        setColumns([
-          { name: 'id', type: 'number', nullable: false },
-          { name: 'email', type: 'string', nullable: false },
-          { name: 'firstname', type: 'string', nullable: true },
-          { name: 'name', type: 'string', nullable: true },
-          { name: 'company', type: 'string', nullable: true },
-        ]);
-      }
     }
-  }, [tableName]);
+  };
 
-  const fetchData = useCallback(async (page: number, size: number, search: string = '', isInfinite: boolean = false) => {
+  const fetchData = async (page: number, size: number, search: string = '', isInfinite: boolean = false) => {
     if (isInfinite) {
       setInfiniteLoading(true);
     } else {
@@ -81,28 +83,41 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
     try {
       let query = supabase.from(tableName).select('*', { count: 'exact' });
 
+      // Appliquer le filtre de section pour CRM contacts
+      if (tableName === 'crm_contacts' && sectionFilter !== 'all') {
+        const sectionValue = sectionFilter === 'arlynk' ? 'Arlynk' : 'Aicademia';
+        query = query.eq('data_section', sectionValue);
+      }
+
       // Recherche simple sur les colonnes texte principales
       if (search) {
         if (tableName === 'apollo_contacts') {
-          query = query.or(`email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%,company.ilike.%${search}%`);
+          query = query.or('email.ilike.%' + search + '%,first_name.ilike.%' + search + '%,last_name.ilike.%' + search + '%,company.ilike.%' + search + '%');
         } else if (tableName === 'crm_contacts') {
-          query = query.or(`email.ilike.%${search}%,firstname.ilike.%${search}%,name.ilike.%${search}%,company.ilike.%${search}%`);
+          query = query.or('email.ilike.%' + search + '%,firstname.ilike.%' + search + '%,name.ilike.%' + search + '%,company.ilike.%' + search + '%');
         }
       }
 
       const from = (page - 1) * size;
       const to = from + size - 1;
 
-      query = query.range(from, to).order('created_at', { ascending: false });
-
-      const { data: tableData, error, count } = await query;
-
-      if (error) throw error;
-
-      if (isInfinite && page > 1) {
-        setData(prev => [...prev, ...(tableData || [])]);
+      if (size !== 1000) {
+        query = query.range(from, to);
       } else {
-        setData(tableData || []);
+        // Pour le mode infini, charger les premières 1000 entrées d'abord
+        query = query.range(0, 999);
+      }
+
+      const { data: result, error, count } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      if (isInfinite) {
+        setData(prev => [...prev, ...(result || [])]);
+      } else {
+        setData(result || []);
       }
       
       setTotalCount(count || 0);
@@ -111,13 +126,13 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de charger les données de la table."
+        description: "Impossible de charger les données."
       });
     } finally {
       setLoading(false);
       setInfiniteLoading(false);
     }
-  }, [tableName, toast]);
+  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -142,31 +157,36 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
     fetchData(1, pageSize, value);
   };
 
-  const handleInfiniteScroll = useCallback(() => {
+  const handleSectionFilterChange = (value: 'all' | 'arlynk' | 'aicademia') => {
+    setSectionFilter(value);
+    setCurrentPage(1);
+    fetchData(1, pageSize, searchTerm);
+  };
+
+  const handleInfiniteScroll = () => {
     if (pageSize === 1000 && !infiniteLoading && data.length < totalCount) {
       const nextPage = Math.floor(data.length / 1000) + 2;
       fetchData(nextPage, 1000, searchTerm, true);
     }
-  }, [pageSize, infiniteLoading, data.length, totalCount, searchTerm, fetchData]);
+  };
 
   useEffect(() => {
     fetchColumns();
-    fetchData(1, pageSize);
-  }, [fetchColumns, fetchData, pageSize]);
+    fetchData(1, pageSize, searchTerm);
+  }, [tableName, pageSize, sectionFilter]);
 
+  // Gérer le scroll infini pour pageSize = 1000
   useEffect(() => {
     if (pageSize === 1000) {
       const handleScroll = () => {
-        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-        if (scrollTop + clientHeight >= scrollHeight - 5) {
-          handleInfiniteScroll();
-        }
+        if (window.innerHeight + document.documentElement.scrollTop !== document.documentElement.offsetHeight) return;
+        handleInfiniteScroll();
       };
 
       window.addEventListener('scroll', handleScroll);
       return () => window.removeEventListener('scroll', handleScroll);
     }
-  }, [pageSize, handleInfiniteScroll]);
+  }, [pageSize, infiniteLoading, data.length, totalCount, searchTerm]);
 
   const formatCellValue = (value: any, columnName: string) => {
     if (value === null || value === undefined) {
@@ -179,7 +199,8 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
     
     if (columnName.includes('date') || columnName.includes('_at')) {
       try {
-        return new Date(value).toLocaleString('fr-FR');
+        const date = new Date(value);
+        return date.toLocaleString('fr-FR');
       } catch {
         return value;
       }
@@ -214,8 +235,8 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
             </p>
           </div>
         </div>
-        
-        <div className="flex items-center space-x-2">
+
+        <div className="flex items-center space-x-4">
           <div className="relative w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -225,6 +246,20 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
               className="pl-8"
             />
           </div>
+          {tableName === 'crm_contacts' && (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium">Section:</span>
+              <select
+                value={sectionFilter}
+                onChange={(e) => handleSectionFilterChange(e.target.value as 'all' | 'arlynk' | 'aicademia')}
+                className="px-3 py-1 border border-input rounded-md text-sm bg-background"
+              >
+                <option value="all">Toutes</option>
+                <option value="arlynk">Arlynk</option>
+                <option value="aicademia">Aicademia</option>
+              </select>
+            </div>
+          )}
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Exporter
@@ -236,42 +271,47 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
         <CardHeader>
           <CardTitle>Données de la table</CardTitle>
           <CardDescription>
-            Visualisation des données avec pagination {pageSize === 1000 ? 'et scroll infini' : 'standard'}
+            {pageSize === 1000 ? 
+              `Affichage avec scroll infini (${data.length} éléments chargés)` :
+              `Page ${currentPage} sur ${totalPages} (${pageSize} éléments par page)`
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center p-8">
               <Loader2 className="h-8 w-8 animate-spin" />
               <span className="ml-2">Chargement des données...</span>
             </div>
           ) : (
-            <>
-              <div className="rounded-md border">
+            <div className="space-y-4">
+              <div className="rounded-md border overflow-auto max-h-[70vh]">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       {columns.slice(0, 8).map((column) => (
-                        <TableHead key={column.name} className="whitespace-nowrap">
+                        <TableHead key={column.name} className="font-medium">
                           {column.name}
                         </TableHead>
                       ))}
                       {columns.length > 8 && (
-                        <TableHead>...</TableHead>
+                        <TableHead className="font-medium">
+                          +{columns.length - 8} colonnes...
+                        </TableHead>
                       )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data.map((row, index) => (
-                      <TableRow key={row.id || index}>
+                      <TableRow key={index}>
                         {columns.slice(0, 8).map((column) => (
                           <TableCell key={column.name} className="max-w-[200px]">
                             {formatCellValue(row[column.name], column.name)}
                           </TableCell>
                         ))}
                         {columns.length > 8 && (
-                          <TableCell>
-                            <Button variant="ghost" size="sm">
+                          <TableCell className="text-muted-foreground">
+                            <Button variant="outline" size="sm">
                               Voir plus
                             </Button>
                           </TableCell>
@@ -282,13 +322,6 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
                 </Table>
               </div>
 
-              {infiniteLoading && (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">Chargement de plus de données...</span>
-                </div>
-              )}
-
               {pageSize !== 1000 && (
                 <DataPagination
                   currentPage={currentPage}
@@ -297,27 +330,22 @@ const TableView = ({ tableName, onBack }: TableViewProps) => {
                   totalItems={totalCount}
                   onPageChange={handlePageChange}
                   onPageSizeChange={handlePageSizeChange}
-                  loading={loading}
                 />
               )}
 
-              {pageSize === 1000 && (
-                <div className="mt-4 text-center">
-                  <DataPagination
-                    currentPage={1}
-                    totalPages={1}
-                    pageSize={pageSize}
-                    totalItems={totalCount}
-                    onPageChange={() => {}}
-                    onPageSizeChange={handlePageSizeChange}
-                    loading={loading}
-                  />
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Mode scroll infini activé - {data.length} sur {totalCount} éléments chargés
-                  </p>
+              {pageSize === 1000 && infiniteLoading && (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Chargement des données suivantes...</span>
                 </div>
               )}
-            </>
+
+              {pageSize === 1000 && !infiniteLoading && data.length >= totalCount && totalCount > 0 && (
+                <div className="text-center text-muted-foreground py-4">
+                  Tous les enregistrements ont été chargés
+                </div>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
