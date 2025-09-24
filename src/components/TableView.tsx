@@ -938,15 +938,19 @@ const TableView: React.FC<TableViewProps> = ({
                 ref={tableContainerRef}
                 onScroll={(e) => {
                   const scrollLeft = e.currentTarget.scrollLeft;
+                  console.log('Scroll detected:', scrollLeft);
                   setIsScrolled(scrollLeft > 0);
+                  console.log('isScrolled state:', scrollLeft > 0);
                 }}
               >
                 <table className="w-full min-w-max">
                   {/* Fixed Header */}
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
                     <tr>
-                      <th className={`w-12 px-4 py-4 text-left sticky left-0 bg-table-header z-30 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
+                      <th className={`w-12 px-4 py-4 text-left sticky left-0 bg-table-header z-30 transition-all duration-300 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
                         <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
+                        {/* Debug indicator */}
+                        {isScrolled && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>}
                       </th>
                       {displayColumns.map(column => {
                         const isPinned = pinnedColumns.has(column.name);
