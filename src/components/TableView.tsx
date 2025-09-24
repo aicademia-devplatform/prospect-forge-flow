@@ -955,7 +955,7 @@ const TableView: React.FC<TableViewProps> = ({
                             className={`
                               px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px]
                               sticky top-0 
-                              ${isPinned ? 'left-0 z-30 bg-muted/30' : 'z-20 bg-table-header'}
+                              ${isPinned ? 'left-0 z-30 bg-white/95 backdrop-blur-sm border-r border-border/30' : 'z-20 bg-table-header'}
                             `}
                             style={isPinned ? { left: '48px' } : {}}
                           >
@@ -1070,7 +1070,7 @@ const TableView: React.FC<TableViewProps> = ({
                   const rowId = row.id?.toString() || index.toString();
                   const isSelected = selectedRows.has(rowId);
                   return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
-                          <td className="w-12 px-4 py-4 sticky left-0 bg-background z-10">
+                          <td className="w-12 px-4 py-4 sticky left-0 bg-white/95 backdrop-blur-sm border-r border-border/30 z-10">
                             <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
                           {displayColumns.map(column => {
@@ -1080,7 +1080,7 @@ const TableView: React.FC<TableViewProps> = ({
                             return (
                               <td 
                                 key={column.name} 
-                                className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-muted/10 z-10' : ''}`}
+                                className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-white/95 backdrop-blur-sm border-r border-border/30 z-10' : ''}`}
                                 style={isPinned ? { left: '48px' } : {}}
                               >
                                 {formatCellValue(row[column.name], column.name)}
