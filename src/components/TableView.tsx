@@ -789,8 +789,8 @@ const TableView: React.FC<TableViewProps> = ({
     return <span className="text-sm">{value}</span>;
   };
   const tableTitle = tableName === 'apollo_contacts' ? 'Contacts Apollo' : 'Contacts CRM';
-  return <div className="h-full flex flex-col p-6 space-y-6">
-      <div className="flex items-center justify-between">
+  return <div className="h-screen flex flex-col p-6">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-4">
           <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -855,13 +855,13 @@ const TableView: React.FC<TableViewProps> = ({
         </div>
       </div>
 
-      <div className="bg-card rounded-lg border border-border shadow-sm">
-        {loading ? <div className="flex items-center justify-center p-12">
+      <div className="bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-6">
+        {loading ? <div className="flex items-center justify-center flex-1">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-muted-foreground">Chargement des données...</span>
-          </div> : <div className="space-y-0">
+          </div> : <div className="flex-1 flex flex-col min-h-0">
             {/* Table Header with selection controls */}
-            {selectedRows.size > 0 && <div className="px-6 py-4 bg-primary/5 border-b border-border">
+            {selectedRows.size > 0 && <div className="px-6 py-4 bg-primary/5 border-b border-border flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-primary">
                     {selectedRows.size} élément(s) sélectionné(s)
@@ -879,7 +879,7 @@ const TableView: React.FC<TableViewProps> = ({
                 </div>
               </div>}
 
-            <div className="flex flex-col h-[600px] border border-table-border rounded-lg overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
               {/* Table with horizontal scroll */}
               <div className="flex-1 overflow-auto">
                 <table className="w-full min-w-max">
@@ -934,7 +934,7 @@ const TableView: React.FC<TableViewProps> = ({
             </div>
 
             {/* Pagination */}
-            <div className="border-t border-table-border bg-muted/20 px-[25px] py-[10px]">
+            <div className="border-t border-table-border bg-muted/20 px-[25px] py-[10px] flex-shrink-0">
               <DataPagination currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} totalItems={totalCount} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
             </div>
           </div>}
