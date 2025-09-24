@@ -143,18 +143,24 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
       return <Badge variant={value ? 'default' : 'secondary'}>{value ? 'Oui' : 'Non'}</Badge>;
     }
 
-    // Special formatting for sections/categories
+    // Special formatting for sections/categories with distinct colors
     if (columnName === 'data_section' && value) {
-      const badgeVariants: Record<string, 'default' | 'secondary' | 'outline'> = {
-        'apollo': 'default',
-        'crm': 'secondary',
-        'all': 'outline'
+      const sectionColors: Record<string, string> = {
+        'apollo': 'bg-primary-light text-primary border-primary/20',
+        'crm': 'bg-success-light text-success border-success/20',
+        'leads': 'bg-warning-light text-warning border-warning/20',
+        'prospects': 'bg-secondary-light text-secondary border-secondary/20',
+        'customers': 'bg-danger-light text-danger border-danger/20',
+        'partners': 'bg-accent text-accent-foreground border-accent/20',
+        'vendors': 'bg-muted text-muted-foreground border-muted-foreground/20'
       };
-      const variant = badgeVariants[value.toLowerCase()] || 'outline';
+      
+      const colorClass = sectionColors[value.toLowerCase()] || 'bg-muted text-muted-foreground border-muted-foreground/20';
+      
       return (
-        <Badge variant={variant} className="font-medium">
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
           {value}
-        </Badge>
+        </span>
       );
     }
     
