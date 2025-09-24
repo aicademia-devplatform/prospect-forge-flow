@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Download, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import DataPagination from './DataPagination';
+import { useTableData } from '@/hooks/useTableData';
+import { useTableSections } from '@/hooks/useTableSections';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface TableViewProps {
   tableName: 'apollo_contacts' | 'crm_contacts';
@@ -21,189 +22,58 @@ interface ColumnInfo {
 }
 
 const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
-  const [allData, setAllData] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
-  const [columns, setColumns] = useState<ColumnInfo[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [sectionFilter, setSectionFilter] = useState<string>('all');
-  const [availableSections, setAvailableSections] = useState<Array<{value: string, label: string, count: number}>>([]);
-  const { toast } = useToast();
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  // Debounce search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  // Fonction pour filtrer les données côté client
-  const filterData = (data: any[], search: string, section: string) => {
-    let filtered = [...data];
+  // Fetch data using server-side pagination
+  const { data, totalCount, totalPages, loading } = useTableData({
+    tableName,
+    page: currentPage,
+    pageSize,
+    searchTerm: debouncedSearchTerm,
+    sectionFilter,
+    sortBy,
+    sortOrder
+  });
 
-    // Filtre par section
-    if (tableName === 'crm_contacts' && section !== 'all') {
-      filtered = filtered.filter(item => 
-        item.data_section && item.data_section === section
-      );
-    }
+  // Fetch available sections
+  const { sections } = useTableSections(tableName);
 
-    // Filtre par recherche
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filtered = filtered.filter(item => {
-        if (tableName === 'apollo_contacts') {
-          return (
-            (item.email && item.email.toLowerCase().includes(searchLower)) ||
-            (item.first_name && item.first_name.toLowerCase().includes(searchLower)) ||
-            (item.last_name && item.last_name.toLowerCase().includes(searchLower)) ||
-            (item.company && item.company.toLowerCase().includes(searchLower))
-          );
-        } else if (tableName === 'crm_contacts') {
-          return (
-            (item.email && item.email.toLowerCase().includes(searchLower)) ||
-            (item.firstname && item.firstname.toLowerCase().includes(searchLower)) ||
-            (item.name && item.name.toLowerCase().includes(searchLower)) ||
-            (item.company && item.company.toLowerCase().includes(searchLower))
-          );
-        }
-        return false;
-      });
-    }
-
-    return filtered;
-  };
-
-  const fetchColumns = async () => {
-    try {
-      // Obtenir les colonnes depuis la première ligne de données
-      const { data: firstRow } = await supabase
-        .from(tableName)
-        .select('*')
-        .limit(1)
-        .single();
-      
-      if (firstRow) {
-        const columnInfo = Object.keys(firstRow).map(key => ({
-          name: key,
-          type: typeof firstRow[key] === 'number' ? 'number' : 'string',
-          nullable: firstRow[key] === null
-        }));
-        setColumns(columnInfo);
-      } else {
-        // Fallback si pas de données
-        if (tableName === 'apollo_contacts') {
-          setColumns([
-            { name: 'id', type: 'string', nullable: false },
-            { name: 'email', type: 'string', nullable: false },
-            { name: 'first_name', type: 'string', nullable: true },
-            { name: 'last_name', type: 'string', nullable: true },
-            { name: 'company', type: 'string', nullable: true },
-          ]);
-        } else {
-          setColumns([
-            { name: 'id', type: 'number', nullable: false },
-            { name: 'email', type: 'string', nullable: false },
-            { name: 'firstname', type: 'string', nullable: true },
-            { name: 'name', type: 'string', nullable: true },
-            { name: 'company', type: 'string', nullable: true },
-          ]);
-        }
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des colonnes:', error);
+  // Define columns based on table
+  const getColumns = (): ColumnInfo[] => {
+    if (tableName === 'apollo_contacts') {
+      return [
+        { name: 'id', type: 'string', nullable: false },
+        { name: 'email', type: 'string', nullable: false },
+        { name: 'first_name', type: 'string', nullable: true },
+        { name: 'last_name', type: 'string', nullable: true },
+        { name: 'company', type: 'string', nullable: true },
+        { name: 'title', type: 'string', nullable: true },
+        { name: 'created_at', type: 'string', nullable: true },
+        { name: 'updated_at', type: 'string', nullable: true },
+      ];
+    } else {
+      return [
+        { name: 'id', type: 'number', nullable: false },
+        { name: 'email', type: 'string', nullable: false },
+        { name: 'firstname', type: 'string', nullable: true },
+        { name: 'name', type: 'string', nullable: true },
+        { name: 'company', type: 'string', nullable: true },
+        { name: 'data_section', type: 'string', nullable: true },
+        { name: 'created_at', type: 'string', nullable: true },
+        { name: 'updated_at', type: 'string', nullable: true },
+      ];
     }
   };
 
-  const fetchAvailableSections = async () => {
-    if (tableName === 'crm_contacts') {
-      try {
-        const { data: sectionsData } = await supabase
-          .from('crm_contacts')
-          .select('data_section')
-          .not('data_section', 'is', null);
-
-        if (sectionsData) {
-          // Compter les occurrences de chaque section
-          const sectionCounts: { [key: string]: number } = {};
-          sectionsData.forEach(item => {
-            if (item.data_section) {
-              sectionCounts[item.data_section] = (sectionCounts[item.data_section] || 0) + 1;
-            }
-          });
-
-          // Convertir en array et trier par nombre d'occurrences
-          const sections = Object.entries(sectionCounts)
-            .map(([value, count]) => ({
-              value,
-              label: `${value} (${count.toLocaleString('fr-FR')})`,
-              count
-            }))
-            .sort((a, b) => b.count - a.count);
-
-          setAvailableSections(sections);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des sections:', error);
-      }
-    }
-  };
-
-  const fetchAllData = async () => {
-    setLoading(true);
-    try {
-      let allResults: any[] = [];
-      let from = 0;
-      const chunkSize = 1000;
-      let hasMore = true;
-
-      // Charger toutes les données par chunks de 1000
-      while (hasMore) {
-        let query: any = supabase
-          .from(tableName)
-          .select('*', { count: 'exact' })
-          .range(from, from + chunkSize - 1);
-
-        const { data: result, error, count } = await query;
-
-        if (error) {
-          throw error;
-        }
-
-        if (result) {
-          allResults = [...allResults, ...result];
-        }
-
-        // Vérifier s'il y a encore des données à charger
-        hasMore = result && result.length === chunkSize;
-        from += chunkSize;
-
-        // Pour éviter les boucles infinies, arrêter si on dépasse le count total
-        if (count && allResults.length >= count) {
-          hasMore = false;
-        }
-      }
-
-      setAllData(allResults);
-    } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les données."
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fonction pour appliquer les filtres et la pagination
-  const applyFiltersAndPagination = () => {
-    const filtered = filterData(allData, searchTerm, sectionFilter);
-    setFilteredData(filtered);
-  };
-
-  // Obtenir les données paginées
-  const getPaginatedData = () => {
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredData.slice(startIndex, endIndex);
-  };
+  const columns = getColumns();
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -224,16 +94,24 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     setCurrentPage(1);
   };
 
-  // Appliquer les filtres à chaque changement
-  useEffect(() => {
-    applyFiltersAndPagination();
-  }, [allData, searchTerm, sectionFilter]);
+  const handleSort = (columnName: string) => {
+    if (sortBy === columnName) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(columnName);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
+  };
 
-  useEffect(() => {
-    fetchColumns();
-    fetchAvailableSections();
-    fetchAllData();
-  }, [tableName]);
+  const getSortIcon = (columnName: string) => {
+    if (sortBy !== columnName) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+    }
+    return sortOrder === 'asc' ? 
+      <ArrowUp className="h-4 w-4 ml-1" /> : 
+      <ArrowDown className="h-4 w-4 ml-1" />;
+  };
 
   const formatCellValue = (value: any, columnName: string) => {
     if (value === null || value === undefined) {
@@ -264,9 +142,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     return value;
   };
 
-  const totalPages = Math.ceil(filteredData.length / pageSize);
   const tableTitle = tableName === 'apollo_contacts' ? 'Contacts Apollo' : 'Contacts CRM';
-  const paginatedData = getPaginatedData();
 
   return (
     <div className="p-6 space-y-6">
@@ -279,8 +155,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{tableTitle}</h1>
             <p className="text-muted-foreground">
-              {filteredData.length.toLocaleString('fr-FR')} enregistrement(s) 
-              {filteredData.length !== allData.length && ` sur ${allData.length.toLocaleString('fr-FR')} au total`}
+              {totalCount.toLocaleString('fr-FR')} enregistrement(s) au total
             </p>
           </div>
         </div>
@@ -295,7 +170,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
               className="pl-8"
             />
           </div>
-          {tableName === 'crm_contacts' && availableSections.length > 0 && (
+          {tableName === 'crm_contacts' && sections.length > 0 && (
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium">Section:</span>
               <select
@@ -303,8 +178,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                 onChange={(e) => handleSectionFilterChange(e.target.value)}
                 className="px-3 py-1 border border-input rounded-md text-sm bg-background min-w-[200px]"
               >
-                <option value="all">Toutes ({allData.length.toLocaleString('fr-FR')})</option>
-                {availableSections.map((section) => (
+                <option value="all">Toutes ({totalCount.toLocaleString('fr-FR')})</option>
+                {sections.map((section) => (
                   <option key={section.value} value={section.value}>
                     {section.label}
                   </option>
@@ -339,8 +214,15 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                   <TableHeader>
                     <TableRow>
                       {columns.slice(0, 8).map((column) => (
-                        <TableHead key={column.name} className="font-medium">
-                          {column.name}
+                        <TableHead 
+                          key={column.name} 
+                          className="font-medium cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleSort(column.name)}
+                        >
+                          <div className="flex items-center">
+                            {column.name}
+                            {getSortIcon(column.name)}
+                          </div>
                         </TableHead>
                       ))}
                       {columns.length > 8 && (
@@ -351,8 +233,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedData.map((row, index) => (
-                      <TableRow key={index}>
+                    {data.map((row, index) => (
+                      <TableRow key={row.id || index}>
                         {columns.slice(0, 8).map((column) => (
                           <TableCell key={column.name} className="max-w-[200px]">
                             {formatCellValue(row[column.name], column.name)}
@@ -375,7 +257,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 pageSize={pageSize}
-                totalItems={filteredData.length}
+                totalItems={totalCount}
                 onPageChange={handlePageChange}
                 onPageSizeChange={handlePageSizeChange}
               />

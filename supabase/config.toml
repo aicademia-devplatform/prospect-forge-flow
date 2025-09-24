@@ -1,1 +1,7 @@
 project_id = "hzcsalwomlnumwurozuz"
+
+[functions.table-data]
+verify_jwt = false
+
+[functions.table-sections]
+verify_jwt = false
