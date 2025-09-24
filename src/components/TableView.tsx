@@ -531,10 +531,11 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
             )}
 
             <div className="flex flex-col h-[600px] border border-table-border rounded-lg overflow-hidden">
-              {/* Fixed Header */}
-              <div className="flex-shrink-0 bg-table-header border-b border-table-border overflow-x-auto">
-                <table className="w-full min-w-max table-fixed">
-                  <thead>
+              {/* Table with horizontal scroll */}
+              <div className="flex-1 overflow-auto">
+                <table className="w-full min-w-max">
+                  {/* Fixed Header */}
+                  <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
                     <tr>
                       <th className="w-12 px-4 py-4 text-left">
                         <Checkbox
@@ -560,12 +561,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                       </th>
                     </tr>
                   </thead>
-                </table>
-              </div>
-
-              {/* Scrollable Body */}
-              <div className="flex-1 overflow-auto">
-                <table className="w-full min-w-max table-fixed">
+                  
+                  {/* Scrollable Body */}
                   <tbody>
                     {data.map((row, index) => {
                       const rowId = row.id?.toString() || index.toString();
