@@ -950,14 +950,14 @@ const TableView: React.FC<TableViewProps> = ({
                         // Since only one column can be pinned, it's always at position 48px (after checkbox)
                         const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
                         return (
-                          <th 
-                            key={column.name} 
-                            className={`
-                              px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px]
-                              sticky top-0 
-                              ${isPinned ? 'left-0 z-30 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30' : 'z-20 bg-table-header'}
-                            `}
-                            style={isPinned ? { left: '48px' } : {}}
+                           <th 
+                             key={column.name} 
+                             className={`
+                               px-4 py-4 text-left min-w-[120px]
+                               sticky top-0 
+                               ${isPinned ? 'left-0 z-30 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 font-semibold text-primary' : 'z-20 bg-table-header font-semibold text-muted-foreground'}
+                             `}
+                             style={isPinned ? { left: '48px' } : {}}
                           >
                             <div className="flex items-center justify-between space-x-1">
                               <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
@@ -1078,10 +1078,10 @@ const TableView: React.FC<TableViewProps> = ({
                             // Since only one column can be pinned, it's always at position 48px (after checkbox)
                             const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
                             return (
-                              <td 
-                                key={column.name} 
-                                className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-10' : ''}`}
-                                style={isPinned ? { left: '48px' } : {}}
+                               <td 
+                                 key={column.name} 
+                                 className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-10 font-semibold text-primary' : ''}`}
+                                 style={isPinned ? { left: '48px' } : {}}
                               >
                                 {formatCellValue(row[column.name], column.name)}
                               </td>
