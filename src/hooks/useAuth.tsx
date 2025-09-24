@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { User, Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Profile {
@@ -26,8 +26,10 @@ interface AuthContextType {
   profile: Profile | null;
   userRole: 'sales' | 'manager' | 'admin' | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ data: any; error: AuthError | null }>;
+  signInWithEmail: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
+  signUpWithEmail: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
+  signOut: () => Promise<{ error: AuthError | null }>;
   hasRole: (role: 'sales' | 'manager' | 'admin') => boolean;
   hasPermission: (permission: string) => boolean;
 }
@@ -139,16 +141,47 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signInWithGoogle = async () => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl
-      }
-    });
-    
-    return { error };
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      return { data: null, error: error as AuthError };
+    }
+  };
+
+  const signInWithEmail = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Email sign in error:', error);
+      return { data: null, error: error as AuthError };
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('Email sign up error:', error);
+      return { data: null, error: error as AuthError };
+    }
   };
 
   const signOut = async () => {
@@ -156,6 +189,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (error) {
       console.error('Error signing out:', error);
     }
+    return { error };
   };
 
   const hasRole = (role: 'sales' | 'manager' | 'admin'): boolean => {
@@ -211,6 +245,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     userRole,
     loading,
     signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
     signOut,
     hasRole,
     hasPermission
