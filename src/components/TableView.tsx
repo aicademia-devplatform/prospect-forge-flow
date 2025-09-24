@@ -530,36 +530,34 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
               </div>
             )}
 
-            <Table className="w-full">
-              <TableHeader>
-                <TableRow className="border-b border-table-border hover:bg-transparent">
-                  <TableHead className="w-12 bg-table-header">
-                    <Checkbox
-                      checked={selectedRows.size === data.length && data.length > 0}
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Sélectionner tout"
-                    />
-                  </TableHead>
-                  {displayColumns.slice(0, displayColumns.length - 1).map((column) => (
-                    <TableHead 
-                      key={column.name} 
-                      className="font-semibold text-muted-foreground bg-table-header cursor-pointer hover:bg-muted/80 transition-colors py-4"
-                      onClick={() => handleSort(column.name)}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span className="uppercase text-xs tracking-wider">{column.name}</span>
-                        {getSortIcon(column.name)}
-                      </div>
-                    </TableHead>
-                  ))}
-                  <TableHead className="bg-table-header w-20 text-center">
-                    <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-            </Table>
-            <div className="overflow-auto max-h-[600px]">
+            <div className="border border-table-border rounded-lg overflow-hidden">
               <Table className="w-full">
+                <TableHeader>
+                  <TableRow className="border-b border-table-border hover:bg-transparent">
+                    <TableHead className="w-12 bg-table-header">
+                      <Checkbox
+                        checked={selectedRows.size === data.length && data.length > 0}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Sélectionner tout"
+                      />
+                    </TableHead>
+                    {displayColumns.map((column) => (
+                      <TableHead 
+                        key={column.name} 
+                        className="font-semibold text-muted-foreground bg-table-header cursor-pointer hover:bg-muted/80 transition-colors py-4"
+                        onClick={() => handleSort(column.name)}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span className="uppercase text-xs tracking-wider">{column.name}</span>
+                          {getSortIcon(column.name)}
+                        </div>
+                      </TableHead>
+                    ))}
+                    <TableHead className="bg-table-header w-20 text-center">
+                      <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {data.map((row, index) => {
                     const rowId = row.id?.toString() || index.toString();
@@ -579,7 +577,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                             aria-label={`Sélectionner ligne ${index + 1}`}
                           />
                         </TableCell>
-                        {displayColumns.slice(0, displayColumns.length - 1).map((column) => (
+                        {displayColumns.map((column) => (
                           <TableCell key={column.name} className="py-4">
                             {formatCellValue(row[column.name], column.name)}
                           </TableCell>
