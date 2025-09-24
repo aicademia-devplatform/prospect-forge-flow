@@ -941,7 +941,7 @@ const TableView: React.FC<TableViewProps> = ({
                   {/* Fixed Header */}
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-20">
                     <tr>
-                      <th className={`w-12 px-4 py-4 text-left sticky top-0 left-0 bg-table-header z-30 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
+                      <th className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-table-header z-30">
                         <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
                       {displayColumns.map(column => {
@@ -956,7 +956,6 @@ const TableView: React.FC<TableViewProps> = ({
                               px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px]
                               sticky top-0 
                               ${isPinned ? 'left-0 z-30 bg-muted/30' : 'z-20 bg-table-header'}
-                              ${borderStyle}
                             `}
                             style={isPinned ? { left: '48px' } : {}}
                           >
@@ -1071,7 +1070,7 @@ const TableView: React.FC<TableViewProps> = ({
                   const rowId = row.id?.toString() || index.toString();
                   const isSelected = selectedRows.has(rowId);
                   return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
-                          <td className={`w-12 px-4 py-4 sticky left-0 bg-background z-10 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
+                          <td className="w-12 px-4 py-4 sticky left-0 bg-background z-10">
                             <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
                           {displayColumns.map(column => {
@@ -1081,7 +1080,7 @@ const TableView: React.FC<TableViewProps> = ({
                             return (
                               <td 
                                 key={column.name} 
-                                className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-muted/10 z-10 ${borderStyle}` : ''}`}
+                                className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-muted/10 z-10' : ''}`}
                                 style={isPinned ? { left: '48px' } : {}}
                               >
                                 {formatCellValue(row[column.name], column.name)}
