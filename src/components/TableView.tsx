@@ -37,7 +37,7 @@ const TableView: React.FC<TableViewProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
-  const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set());
+  const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set(['email']));
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [openColumnDropdown, setOpenColumnDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -724,12 +724,22 @@ const TableView: React.FC<TableViewProps> = ({
   };
 
   const toggleColumnPin = (columnName: string) => {
-    const newPinned = new Set(pinnedColumns);
-    if (newPinned.has(columnName)) {
-      newPinned.delete(columnName);
+    const newPinned = new Set<string>();
+    
+    // If the column is already pinned, unpin it
+    if (pinnedColumns.has(columnName)) {
+      // If email is being unpinned, keep it pinned
+      if (columnName === 'email') {
+        return;
+      }
+      // Only keep email pinned
+      newPinned.add('email');
     } else {
+      // Pin the new column (along with email which is always pinned)
+      newPinned.add('email');
       newPinned.add(columnName);
     }
+    
     setPinnedColumns(newPinned);
   };
 
