@@ -149,9 +149,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     try {
       let query: any = supabase.from(tableName).select('*', { count: 'exact' });
       
-      // Charger toutes les données (limité à 10000 pour éviter les problèmes)
-      query = query.range(0, 9999);
-
+      // Charger toutes les données sans limite pour avoir l'ensemble complet
       const { data: result, error } = await query;
 
       if (error) {
