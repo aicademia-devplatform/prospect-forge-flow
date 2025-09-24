@@ -146,7 +146,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     // Special formatting for sections/categories with distinct colors
     if (columnName === 'data_section' && value) {
       const sectionColors: Record<string, string> = {
-        'apollo': 'bg-primary-light text-primary border-primary/20',
+        'Aicademia': 'bg-primary-light text-primary border-primary/20',
         'crm': 'bg-success-light text-success border-success/20',
         'leads': 'bg-warning-light text-warning border-warning/20',
         'prospects': 'bg-secondary-light text-secondary border-secondary/20',
