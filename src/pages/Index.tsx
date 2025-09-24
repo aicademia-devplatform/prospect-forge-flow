@@ -1,6 +1,5 @@
 import React from 'react';
 import { Sidebar } from '@/components/Sidebar';
-import { DashboardHeader } from '@/components/DashboardHeader';
 import { ProspectTable } from '@/components/ProspectTable';
 
 const Index = () => {
@@ -9,10 +8,9 @@ const Index = () => {
       <Sidebar />
       <main className="flex-1 overflow-auto">
         <div className="p-6 space-y-6">
-          <DashboardHeader />
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Prospects</h2>
+              <h1 className="text-2xl font-bold">Prospects</h1>
             </div>
             <ProspectTable />
           </div>
