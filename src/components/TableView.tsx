@@ -21,6 +21,132 @@ interface ColumnInfo {
   type: string;
   nullable: boolean;
 }
+// Fonction de traduction des noms de colonnes
+const translateColumnName = (columnName: string): string => {
+  const translations: Record<string, string> = {
+    // Colonnes communes
+    'id': 'ID',
+    'email': 'Email',
+    'created_at': 'Date de création',
+    'updated_at': 'Date de mise à jour',
+    
+    // Colonnes Apollo
+    'first_name': 'Prénom',
+    'last_name': 'Nom',
+    'company': 'Entreprise',
+    'title': 'Titre',
+    'seniority': 'Ancienneté',
+    'departments': 'Départements',
+    'activity': 'Activité',
+    'lifecycle_stage': 'Étape du cycle de vie',
+    'categorie_fonction': 'Catégorie fonction',
+    'stage': 'Étape',
+    'technologies': 'Technologies',
+    'secteur_activite': 'Secteur d\'activité',
+    'company_phone': 'Téléphone entreprise',
+    'company_country': 'Pays entreprise',
+    'company_state': 'État entreprise',
+    'company_city': 'Ville entreprise',
+    'company_address': 'Adresse entreprise',
+    'country': 'Pays',
+    'state': 'État',
+    'city': 'Ville',
+    'twitter_url': 'URL Twitter',
+    'facebook_url': 'URL Facebook',
+    'company_linkedin_url': 'URL LinkedIn entreprise',
+    'website': 'Site web',
+    'person_linkedin_url': 'URL LinkedIn personne',
+    'subsidiary_of': 'Filiale de',
+    'statut': 'Statut',
+    'contact_owner': 'Propriétaire contact',
+    'account_owner': 'Propriétaire compte',
+    'work_direct_phone': 'Téléphone professionnel direct',
+    'home_phone': 'Téléphone domicile',
+    'mobile_phone': 'Téléphone portable',
+    'corporate_phone': 'Téléphone corporate',
+    'other_phone': 'Autre téléphone',
+    'region': 'Région',
+    'industry': 'Industrie',
+    'keywords': 'Mots-clés',
+    'secondary_email': 'Email secondaire',
+    'tertiary_email': 'Email tertiaire',
+    'num_employees': 'Nombre d\'employés',
+    'nb_employees': 'Nombre d\'employés',
+    'annual_revenue': 'Chiffre d\'affaires annuel',
+    'total_funding': 'Financement total',
+    'latest_funding': 'Dernier financement',
+    'email_sent': 'Email envoyé',
+    'email_open': 'Email ouvert',
+    'email_bounced': 'Email rejeté',
+    'replied': 'Répondu',
+    'demoed': 'Démo effectuée',
+    'apollo_account_id': 'ID compte Apollo',
+    'apollo_contact_id': 'ID contact Apollo',
+    'email_status': 'Statut email',
+    'primary_email_source': 'Source email principal',
+    'email_confidence': 'Confiance email',
+    'last_sync_at': 'Dernière synchronisation',
+    'primary_email_last_verified_at': 'Dernière vérification email principal',
+    'last_raised_at': 'Dernière levée de fonds',
+    'last_contacted': 'Dernier contact',
+    
+    // Colonnes CRM
+    'firstname': 'Prénom',
+    'name': 'Nom',
+    'data_section': 'Section de données',
+    'full_name': 'Nom complet',
+    'email_domain': 'Domaine email',
+    'contact_active': 'Contact actif',
+    'tel': 'Téléphone',
+    'mobile': 'Mobile',
+    'mobile_2': 'Mobile 2',
+    'tel_pro': 'Téléphone professionnel',
+    'address': 'Adresse',
+    'departement': 'Département',
+    'linkedin_function': 'Fonction LinkedIn',
+    'industrie': 'Industrie',
+    'linkedin_url': 'URL LinkedIn',
+    'linkedin_company_url': 'URL LinkedIn entreprise',
+    'company_website': 'Site web entreprise',
+    'systemeio_list': 'Liste Systeme.io',
+    'apollo_list': 'Liste Apollo',
+    'brevo_tag': 'Tag Brevo',
+    'zoho_tag': 'Tag Zoho',
+    'zoho_status': 'Statut Zoho',
+    'apollo_status': 'Statut Apollo',
+    'brevo_status': 'Statut Brevo',
+    'hubspot_status': 'Statut HubSpot',
+    'systemeio_status': 'Statut Systeme.io',
+    'brevo_last_email': 'Dernier email Brevo',
+    'brevo_last_opened': 'Dernière ouverture Brevo',
+    'brevo_last_clicked': 'Dernier clic Brevo',
+    'brevo_unsuscribe': 'Désabonnement Brevo',
+    'brevo_open_number': 'Nombre d\'ouvertures Brevo',
+    'brevo_click_number': 'Nombre de clics Brevo',
+    'brevo_reply_number': 'Nombre de réponses Brevo',
+    'hubspot_lead_status': 'Statut lead HubSpot',
+    'hubspot_contact_owner': 'Propriétaire contact HubSpot',
+    'hubspot_life_cycle_phase': 'Phase cycle de vie HubSpot',
+    'hubspot_buy_role': 'Rôle d\'achat HubSpot',
+    'hubspot_created_at': 'Créé le HubSpot',
+    'hubspot_modified_at': 'Modifié le HubSpot',
+    'hubspot_last_activity': 'Dernière activité HubSpot',
+    'hubspot_notes': 'Notes HubSpot',
+    'hubspot_anis_comment': 'Commentaire Anis HubSpot',
+    'zoho_created_at': 'Créé le Zoho',
+    'zoho_updated_at': 'Mis à jour le Zoho',
+    'zoho_updated_by': 'Mis à jour par Zoho',
+    'zoho_report_to': 'Rapport à Zoho',
+    'zoho_description': 'Description Zoho',
+    'zoho_last_activity': 'Dernière activité Zoho',
+    'zoho_product_interest': 'Intérêt produit Zoho',
+    'zoho_status_2': 'Statut 2 Zoho',
+    'zoho_industrie_tag': 'Tag industrie Zoho'
+  };
+  
+  return translations[columnName] || columnName;
+};
+
 const TableView: React.FC<TableViewProps> = ({
   tableName,
   onBack
@@ -896,7 +1022,7 @@ const TableView: React.FC<TableViewProps> = ({
               </div>
               <DropdownMenuSeparator />
               {filteredColumns.map(column => <DropdownMenuCheckboxItem key={column.name} checked={visibleColumns.has(column.name)} onCheckedChange={() => toggleColumnVisibility(column.name)}>
-                  {column.name}
+                  {translateColumnName(column.name)}
                 </DropdownMenuCheckboxItem>)}
               {filteredColumns.length === 0 && columnSearchTerm && <div className="p-2 text-sm text-muted-foreground text-center">
                   Aucune colonne trouvée
@@ -961,7 +1087,7 @@ const TableView: React.FC<TableViewProps> = ({
                           >
                             <div className="flex items-center justify-between space-x-1">
                               <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
-                                <span className="uppercase text-xs tracking-wider">{column.name}</span>
+                                <span className="uppercase text-xs tracking-wider">{translateColumnName(column.name)}</span>
                                 {getSortIcon(column.name)}
                               </div>
                               <DropdownMenu open={isDropdownOpen} onOpenChange={(open) => setOpenColumnDropdown(open ? column.name : null)}>
@@ -980,13 +1106,13 @@ const TableView: React.FC<TableViewProps> = ({
                                   className="w-56 bg-background border shadow-lg z-50"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <DropdownMenuLabel className="text-xs font-medium">{column.name}</DropdownMenuLabel>
+                                  <DropdownMenuLabel className="text-xs font-medium">{translateColumnName(column.name)}</DropdownMenuLabel>
                                   <DropdownMenuSeparator />
                                   
                                   {/* Recherche dans la colonne */}
                                   <div className="p-2">
                                     <Input
-                                      placeholder={`Filtrer ${column.name}...`}
+                                      placeholder={`Filtrer ${translateColumnName(column.name)}...`}
                                       value={columnFilters[column.name] || ''}
                                       onChange={(e) => handleColumnFilter(column.name, e.target.value)}
                                       className="h-8 text-xs"
