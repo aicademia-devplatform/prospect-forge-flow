@@ -48,10 +48,11 @@ Deno.serve(async (req) => {
       // Handle multiple sections (comma-separated)
       const sections = sectionFilter.split(',').map(s => s.trim()).filter(Boolean)
       if (sections.length === 1) {
-        query = query.eq('data_section', sections[0])
+        // Use ilike for case-insensitive matching
+        query = query.ilike('data_section', sections[0])
       } else if (sections.length > 1) {
-        // For multiple sections, we need to check if data_section contains any of them
-        const orConditions = sections.map(section => `data_section.eq.${section}`)
+        // For multiple sections, use ilike for case-insensitive matching
+        const orConditions = sections.map(section => `data_section.ilike.${section}`)
         query = query.or(orConditions.join(','))
       }
     }

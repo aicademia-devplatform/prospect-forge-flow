@@ -86,13 +86,15 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
       'bg-gradient-to-r from-violet-500 to-violet-600 text-white border-violet-300'
     ];
     
-    // Normalize the section name (lowercase and trim) to handle ARlynk/Arlynk
-    const normalizedName = sectionName.toLowerCase().trim().replace(/^ar?lynk$/i, 'arlynk');
+    // Normalize the section name (case-insensitive, handle ARlynk/Arlynk)
+    const normalizedName = sectionName.toLowerCase().trim();
+    // Normalize all variations of arlynk to the same value
+    const finalName = normalizedName === 'arlynk' || normalizedName === 'arlynk' ? 'arlynk' : normalizedName;
     
     // Use string hash to consistently assign same color to same section
     let hash = 0;
-    for (let i = 0; i < normalizedName.length; i++) {
-      const char = normalizedName.charCodeAt(i);
+    for (let i = 0; i < finalName.length; i++) {
+      const char = finalName.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
