@@ -728,19 +728,13 @@ const TableView: React.FC<TableViewProps> = ({
     
     // If the column is already pinned, unpin it
     if (pinnedColumns.has(columnName)) {
-      // If email is being unpinned, keep it pinned
-      if (columnName === 'email') {
-        return;
-      }
-      // Only keep email pinned
-      newPinned.add('email');
+      // Unpin the column (no columns will be pinned)
+      setPinnedColumns(newPinned);
     } else {
-      // Pin the new column (along with email which is always pinned)
-      newPinned.add('email');
+      // Pin only the new column (automatically unpins any previously pinned column)
       newPinned.add(columnName);
+      setPinnedColumns(newPinned);
     }
-    
-    setPinnedColumns(newPinned);
   };
 
   const handleColumnFilter = (columnName: string, value: string) => {
@@ -953,14 +947,13 @@ const TableView: React.FC<TableViewProps> = ({
                       {displayColumns.map(column => {
                         const isPinned = pinnedColumns.has(column.name);
                         const isDropdownOpen = openColumnDropdown === column.name;
-                        // Calculate left offset for pinned columns
-                        const pinnedIndex = [...pinnedColumns].indexOf(column.name);
+                        // Since only one column can be pinned, it's always at position 48px (after checkbox)
                         const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
                         return (
                           <th 
                             key={column.name} 
                             className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] relative ${isPinned ? `sticky bg-table-header z-20 ${borderStyle}` : ''}`}
-                            style={isPinned ? { left: `${48 + (pinnedIndex * 120)}px` } : {}}
+                            style={isPinned ? { left: '48px' } : {}}
                           >
                             <div className="flex items-center justify-between space-x-1">
                               <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
@@ -1078,13 +1071,13 @@ const TableView: React.FC<TableViewProps> = ({
                           </td>
                           {displayColumns.map(column => {
                             const isPinned = pinnedColumns.has(column.name);
-                            const pinnedIndex = [...pinnedColumns].indexOf(column.name);
+                            // Since only one column can be pinned, it's always at position 48px (after checkbox)
                             const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
                             return (
                               <td 
                                 key={column.name} 
                                 className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-background z-10 ${borderStyle}` : ''}`}
-                                style={isPinned ? { left: `${48 + (pinnedIndex * 120)}px` } : {}}
+                                style={isPinned ? { left: '48px' } : {}}
                               >
                                 {formatCellValue(row[column.name], column.name)}
                               </td>
