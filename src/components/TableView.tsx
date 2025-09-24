@@ -85,20 +85,19 @@ const TableView: React.FC<TableViewProps> = ({
 
   // Handle scroll detection for pinned columns border
   useEffect(() => {
-    const handleScroll = (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target) {
-        const scrollLeft = target.scrollLeft;
+    const handleScroll = () => {
+      if (tableContainerRef.current) {
+        const scrollLeft = tableContainerRef.current.scrollLeft;
         setIsScrolled(scrollLeft > 0);
       }
     };
 
     const tableContainer = tableContainerRef.current;
     if (tableContainer) {
-      tableContainer.addEventListener('scroll', handleScroll, { passive: true });
+      tableContainer.addEventListener('scroll', handleScroll);
       return () => tableContainer.removeEventListener('scroll', handleScroll);
     }
-  }, [data]); // Dependency sur data pour réattacher après le chargement
+  }, []);
 
   // Filter sections based on search term
   const filteredSections = sections.filter(section => section.label.toLowerCase().includes(sectionSearchTerm.toLowerCase()));
@@ -933,14 +932,7 @@ const TableView: React.FC<TableViewProps> = ({
 
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
               {/* Table with horizontal scroll */}
-              <div 
-                className="flex-1 overflow-auto" 
-                ref={tableContainerRef}
-                onScroll={(e) => {
-                  const scrollLeft = e.currentTarget.scrollLeft;
-                  setIsScrolled(scrollLeft > 0);
-                }}
-              >
+              <div className="flex-1 overflow-auto" ref={tableContainerRef}>
                 <table className="w-full min-w-max">
                   {/* Fixed Header */}
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
