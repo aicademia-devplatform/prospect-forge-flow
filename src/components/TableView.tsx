@@ -71,35 +71,19 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
 
   // Generate consistent colors for section badges
   const generateSectionColor = (sectionName: string) => {
-    const colors = [
-      'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-300',
-      'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-300',
-      'bg-gradient-to-r from-green-500 to-green-600 text-white border-green-300',
-      'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-orange-300',
-      'bg-gradient-to-r from-pink-500 to-pink-600 text-white border-pink-300',
-      'bg-gradient-to-r from-teal-500 to-teal-600 text-white border-teal-300',
-      'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white border-indigo-300',
-      'bg-gradient-to-r from-red-500 to-red-600 text-white border-red-300',
-      'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-yellow-300',
-      'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-cyan-300',
-      'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-300',
-      'bg-gradient-to-r from-violet-500 to-violet-600 text-white border-violet-300'
-    ];
-    
     // Normalize the section name (case-insensitive, handle ARlynk/Arlynk)
     const normalizedName = sectionName.toLowerCase().trim();
-    // Normalize all variations of arlynk to the same value
     const finalName = normalizedName === 'arlynk' || normalizedName === 'arlynk' ? 'arlynk' : normalizedName;
     
-    // Use string hash to consistently assign same color to same section
-    let hash = 0;
-    for (let i = 0; i < finalName.length; i++) {
-      const char = finalName.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
+    // Assign specific colors: Arlynk = Blue, Aicademia = Green
+    if (finalName === 'arlynk') {
+      return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-blue-300';
+    } else if (finalName === 'aicademia') {
+      return 'bg-gradient-to-r from-green-500 to-green-600 text-white border-green-300';
     }
     
-    return colors[Math.abs(hash) % colors.length];
+    // Default fallback color
+    return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white border-gray-300';
   };
 
   const toggleSection = (sectionValue: string) => {
