@@ -47,12 +47,16 @@ Deno.serve(async (req) => {
     if (tableName === 'crm_contacts' && sectionFilter && sectionFilter !== 'all') {
       // Handle multiple sections (comma-separated)
       const sections = sectionFilter.split(',').map(s => s.trim()).filter(Boolean)
-      if (sections.length === 1) {
-        // Use ilike for case-insensitive matching
-        query = query.ilike('data_section', sections[0])
-      } else if (sections.length > 1) {
-        // For multiple sections, use ilike for case-insensitive matching
-        const orConditions = sections.map(section => `data_section.ilike.${section}`)
+      
+      if (sections.length > 0) {
+        // For each section, create conditions that match the section name
+        // even when it's part of a comma-separated list in data_section
+        const orConditions = sections.map(section => {
+          // Use ILIKE patterns to match section names within comma-separated values
+          // This handles cases like "Aicademia, Arlynk" or "Arlynk, Aicademia"
+          return `data_section.ilike.%${section}%`
+        })
+        
         query = query.or(orConditions.join(','))
       }
     }

@@ -43,11 +43,27 @@ Deno.serve(async (req) => {
       throw error
     }
 
-    // Count occurrences of each section
+    // Count occurrences of each section, normalizing and splitting combined sections
     const sectionCounts: { [key: string]: number } = {}
+    
     data?.forEach(item => {
       if (item.data_section) {
-        sectionCounts[item.data_section] = (sectionCounts[item.data_section] || 0) + 1
+        // Split combined sections by comma and process each individually
+        const individualSections = item.data_section.split(',').map(s => s.trim()).filter(Boolean)
+        
+        individualSections.forEach(section => {
+          // Normalize section names (case-insensitive, handle ARlynk/Arlynk)
+          let normalizedSection = section.trim()
+          
+          // Normalize ARlynk to Arlynk
+          if (normalizedSection.toLowerCase() === 'arlynk') {
+            normalizedSection = 'Arlynk'
+          } else if (normalizedSection.toLowerCase() === 'aicademia') {
+            normalizedSection = 'Aicademia'
+          }
+          
+          sectionCounts[normalizedSection] = (sectionCounts[normalizedSection] || 0) + 1
+        })
       }
     })
 
