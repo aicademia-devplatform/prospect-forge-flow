@@ -155,7 +155,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
         'vendors': 'bg-muted text-muted-foreground border-muted-foreground/20'
       };
       
-      const colorClass = sectionColors[value.toLowerCase()] || 'bg-muted text-muted-foreground border-muted-foreground/20';
+      const colorClass = sectionColors[value.toLowerCase()] || '';
       
       return (
         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
