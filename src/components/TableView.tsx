@@ -941,7 +941,7 @@ const TableView: React.FC<TableViewProps> = ({
                   {/* Fixed Header */}
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-20">
                     <tr>
-                      <th className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-table-header z-30">
+                      <th className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-30">
                         <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
                       {displayColumns.map(column => {
