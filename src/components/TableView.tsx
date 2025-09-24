@@ -5,9 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DataPagination from './DataPagination';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
@@ -167,6 +168,8 @@ const TableView: React.FC<TableViewProps> = ({
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [openColumnDropdown, setOpenColumnDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [columnDialogOpen, setColumnDialogOpen] = useState(false);
+  const [tempVisibleColumns, setTempVisibleColumns] = useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -823,12 +826,13 @@ const TableView: React.FC<TableViewProps> = ({
   };
   const allColumns = getAllColumns();
 
-  // Initialize visible columns (exclude email and actions from toggleable columns)
+  // Initialize visible columns and sync temp state
   useEffect(() => {
     const defaultColumns = ['id', 'email', 'firstname', 'name', 'first_name', 'last_name', 'company', 'data_section', 'created_at'];
     const toggleableColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').map(col => col.name);
     const initialVisible = toggleableColumns.filter(col => defaultColumns.includes(col));
     setVisibleColumns(new Set(initialVisible));
+    setTempVisibleColumns(new Set(initialVisible));
   }, [tableName]);
 
   // Get columns that should be displayed - pinned columns first
@@ -839,14 +843,28 @@ const TableView: React.FC<TableViewProps> = ({
   // Filter columns for search
   const filteredColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').filter(col => col.name.toLowerCase().includes(columnSearchTerm.toLowerCase()));
   const toggleColumnVisibility = (columnName: string) => {
-    const newVisible = new Set(visibleColumns);
+    const newVisible = new Set(tempVisibleColumns);
     if (newVisible.has(columnName)) {
       newVisible.delete(columnName);
     } else {
       newVisible.add(columnName);
     }
-    setVisibleColumns(newVisible);
-    setOpenColumnDropdown(null);
+    setTempVisibleColumns(newVisible);
+  };
+
+  const openColumnDialog = () => {
+    setTempVisibleColumns(new Set(visibleColumns));
+    setColumnDialogOpen(true);
+  };
+
+  const applyColumnChanges = () => {
+    setVisibleColumns(new Set(tempVisibleColumns));
+    setColumnDialogOpen(false);
+  };
+
+  const cancelColumnChanges = () => {
+    setTempVisibleColumns(new Set(visibleColumns));
+    setColumnDialogOpen(false);
   };
 
   const toggleColumnPin = (columnName: string) => {
@@ -1007,28 +1025,10 @@ const TableView: React.FC<TableViewProps> = ({
             })}
               </div>
             </TooltipProvider>}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Colonnes
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-background max-h-96 overflow-y-auto">
-              <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="p-2">
-                <Input placeholder="Rechercher une colonne..." value={columnSearchTerm} onChange={e => setColumnSearchTerm(e.target.value)} className="h-8 text-xs" />
-              </div>
-              <DropdownMenuSeparator />
-              {filteredColumns.map(column => <DropdownMenuCheckboxItem key={column.name} checked={visibleColumns.has(column.name)} onCheckedChange={() => toggleColumnVisibility(column.name)}>
-                  {translateColumnName(column.name)}
-                </DropdownMenuCheckboxItem>)}
-              {filteredColumns.length === 0 && columnSearchTerm && <div className="p-2 text-sm text-muted-foreground text-center">
-                  Aucune colonne trouvée
-                </div>}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="outline" onClick={openColumnDialog}>
+            <Settings className="h-4 w-4 mr-2" />
+            Colonnes
+          </Button>
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Exporter
@@ -1239,6 +1239,87 @@ const TableView: React.FC<TableViewProps> = ({
             </div>
           </div>}
       </div>
+
+      {/* Dialog de gestion des colonnes */}
+      <Dialog open={columnDialogOpen} onOpenChange={setColumnDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] bg-background">
+          <DialogHeader>
+            <DialogTitle>Gestion des colonnes</DialogTitle>
+            <DialogDescription>
+              Sélectionnez les colonnes à afficher dans le tableau. Déplacez les colonnes entre les sections pour les afficher ou les masquer.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex gap-6 flex-1 min-h-0">
+            {/* Colonnes affichées */}
+            <div className="flex-1 flex flex-col">
+              <h3 className="text-sm font-medium mb-3 text-green-600">Colonnes affichées ({Array.from(tempVisibleColumns).length})</h3>
+              <div className="border rounded-lg p-4 bg-green-50/50 flex-1 min-h-0 overflow-y-auto">
+                <div className="space-y-2">
+                  {allColumns
+                    .filter(col => col.name !== 'email' && col.name !== 'id' && tempVisibleColumns.has(col.name))
+                    .map(column => (
+                      <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-colors">
+                        <span className="text-sm font-medium">{translateColumnName(column.name)}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleColumnVisibility(column.name)}
+                          className="h-8 w-8 p-0 hover:bg-red-100"
+                        >
+                          <ArrowRight className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
+                    ))}
+                  {Array.from(tempVisibleColumns).length === 0 && (
+                    <div className="text-center text-muted-foreground text-sm py-8">
+                      Aucune colonne affichée
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Colonnes non affichées */}
+            <div className="flex-1 flex flex-col">
+              <h3 className="text-sm font-medium mb-3 text-gray-600">Colonnes masquées ({allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).length})</h3>
+              <div className="border rounded-lg p-4 bg-gray-50/50 flex-1 min-h-0 overflow-y-auto">
+                <div className="space-y-2">
+                  {allColumns
+                    .filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name))
+                    .map(column => (
+                      <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors">
+                        <span className="text-sm">{translateColumnName(column.name)}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleColumnVisibility(column.name)}
+                          className="h-8 w-8 p-0 hover:bg-green-100"
+                        >
+                          <ArrowLeftRight className="h-4 w-4 text-green-600" />
+                        </Button>
+                      </div>
+                    ))}
+                  {allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).length === 0 && (
+                    <div className="text-center text-muted-foreground text-sm py-8">
+                      Toutes les colonnes sont affichées
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 pt-4">
+            <Button variant="outline" onClick={cancelColumnChanges}>
+              Annuler
+            </Button>
+            <Button onClick={applyColumnChanges}>
+              Afficher ({Array.from(tempVisibleColumns).length} colonnes)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>;
 };
 export default TableView;
