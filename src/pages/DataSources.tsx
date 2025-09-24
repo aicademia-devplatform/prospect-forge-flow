@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Database, Table, RefreshCw, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import TableView from '@/components/TableView';
 
 interface TableInfo {
   name: string;
@@ -18,7 +18,6 @@ interface TableInfo {
 const DataSources = () => {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTable, setSelectedTable] = useState<'apollo_contacts' | 'crm_contacts' | null>(null);
   const { toast } = useToast();
 
   const fetchTableInfo = async () => {
@@ -80,10 +79,8 @@ const DataSources = () => {
   };
 
   useEffect(() => {
-    if (!selectedTable) {
-      fetchTableInfo();
-    }
-  }, [selectedTable]);
+    fetchTableInfo();
+  }, []);
 
   const formatDate = (dateString: string) => {
     if (dateString === 'Jamais') return dateString;
@@ -108,16 +105,7 @@ const DataSources = () => {
     }
   };
 
-  // Rendu conditionnel APRÈS tous les hooks
-  if (selectedTable) {
-    return (
-      <TableView 
-        tableName={selectedTable} 
-        onBack={() => setSelectedTable(null)} 
-      />
-    );
-  }
-
+  // Rendu principal de la page sources de données
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -195,9 +183,11 @@ const DataSources = () => {
                     variant="outline" 
                     size="sm" 
                     className="flex-1"
-                    onClick={() => setSelectedTable(table.name as 'apollo_contacts' | 'crm_contacts')}
+                    asChild
                   >
-                    Voir les données
+                    <Link to={`/datasources/${table.name}`}>
+                      Voir les données
+                    </Link>
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1">
                     Exporter
