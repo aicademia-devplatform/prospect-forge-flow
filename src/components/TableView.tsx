@@ -37,12 +37,10 @@ const TableView: React.FC<TableViewProps> = ({
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
-  const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set(['email']));
+  const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set());
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [openColumnDropdown, setOpenColumnDropdown] = useState<string | null>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -81,22 +79,6 @@ const TableView: React.FC<TableViewProps> = ({
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Handle scroll detection for pinned columns border
-  useEffect(() => {
-    const handleScroll = () => {
-      if (tableContainerRef.current) {
-        const scrollLeft = tableContainerRef.current.scrollLeft;
-        setIsScrolled(scrollLeft > 0);
-      }
-    };
-
-    const tableContainer = tableContainerRef.current;
-    if (tableContainer) {
-      tableContainer.addEventListener('scroll', handleScroll);
-      return () => tableContainer.removeEventListener('scroll', handleScroll);
-    }
   }, []);
 
   // Filter sections based on search term
@@ -722,21 +704,15 @@ const TableView: React.FC<TableViewProps> = ({
     setVisibleColumns(newVisible);
     setOpenColumnDropdown(null);
   };
-
   const toggleColumnPin = (columnName: string) => {
-    const newPinned = new Set<string>();
-    
-    // If the column is already pinned, unpin it
-    if (pinnedColumns.has(columnName)) {
-      // Unpin the column (no columns will be pinned)
-      setPinnedColumns(newPinned);
+    const newPinned = new Set(pinnedColumns);
+    if (newPinned.has(columnName)) {
+      newPinned.delete(columnName);
     } else {
-      // Pin only the new column (automatically unpins any previously pinned column)
       newPinned.add(columnName);
-      setPinnedColumns(newPinned);
     }
+    setPinnedColumns(newPinned);
   };
-
   const handleColumnFilter = (columnName: string, value: string) => {
     setColumnFilters(prev => ({
       ...prev,
@@ -744,10 +720,11 @@ const TableView: React.FC<TableViewProps> = ({
     }));
     setCurrentPage(1);
   };
-
   const clearColumnFilter = (columnName: string) => {
     setColumnFilters(prev => {
-      const newFilters = { ...prev };
+      const newFilters = {
+        ...prev
+      };
       delete newFilters[columnName];
       return newFilters;
     });
@@ -936,96 +913,58 @@ const TableView: React.FC<TableViewProps> = ({
 
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
               {/* Table with horizontal scroll */}
-              <div className="flex-1 overflow-auto" ref={tableContainerRef}>
+              <div className="flex-1 overflow-auto">
                 <table className="w-full min-w-max">
                   {/* Fixed Header */}
-                  <thead className="sticky top-0 bg-table-header border-b border-table-border z-20">
+                  <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
                     <tr>
-                      <th className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-30">
+                      <th className="w-12 px-4 py-4 text-left">
                         <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
                       {displayColumns.map(column => {
-                        const isPinned = pinnedColumns.has(column.name);
-                        const isDropdownOpen = openColumnDropdown === column.name;
-                        // Since only one column can be pinned, it's always at position 48px (after checkbox)
-                        const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
-                        return (
-                           <th 
-                             key={column.name} 
-                             className={`
-                               px-4 py-4 text-left min-w-[120px]
-                               sticky top-0 
-                               ${isPinned ? 'left-0 z-30 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 font-semibold text-primary' : 'z-20 bg-table-header font-semibold text-muted-foreground'}
-                             `}
-                             style={isPinned ? { left: '48px' } : {}}
-                          >
+                    const isPinned = pinnedColumns.has(column.name);
+                    const isDropdownOpen = openColumnDropdown === column.name;
+                    return <th key={column.name} className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] relative ${isPinned ? 'sticky left-0 bg-table-header border-r-2 border-primary/20 z-20' : ''}`}>
                             <div className="flex items-center justify-between space-x-1">
                               <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
                                 <span className="uppercase text-xs tracking-wider">{column.name}</span>
                                 {getSortIcon(column.name)}
                               </div>
-                              <DropdownMenu open={isDropdownOpen} onOpenChange={(open) => setOpenColumnDropdown(open ? column.name : null)}>
+                              <DropdownMenu open={isDropdownOpen} onOpenChange={open => setOpenColumnDropdown(open ? column.name : null)}>
                                 <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-6 w-6 p-0 hover:bg-muted/80"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-muted/80" onClick={e => e.stopPropagation()}>
                                     <MoreHorizontal className="h-3 w-3" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent 
-                                  align="end" 
-                                  className="w-56 bg-background border shadow-lg z-50"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
+                                <DropdownMenuContent align="end" className="w-56 bg-background border shadow-lg z-50" onClick={e => e.stopPropagation()}>
                                   <DropdownMenuLabel className="text-xs font-medium">{column.name}</DropdownMenuLabel>
                                   <DropdownMenuSeparator />
                                   
                                   {/* Recherche dans la colonne */}
                                   <div className="p-2">
-                                    <Input
-                                      placeholder={`Filtrer ${column.name}...`}
-                                      value={columnFilters[column.name] || ''}
-                                      onChange={(e) => handleColumnFilter(column.name, e.target.value)}
-                                      className="h-8 text-xs"
-                                    />
-                                    {columnFilters[column.name] && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="mt-1 h-6 w-full text-xs"
-                                        onClick={() => clearColumnFilter(column.name)}
-                                      >
+                                    <Input placeholder={`Filtrer ${column.name}...`} value={columnFilters[column.name] || ''} onChange={e => handleColumnFilter(column.name, e.target.value)} className="h-8 text-xs" />
+                                    {columnFilters[column.name] && <Button variant="ghost" size="sm" className="mt-1 h-6 w-full text-xs" onClick={() => clearColumnFilter(column.name)}>
                                         <X className="h-3 w-3 mr-1" />
                                         Effacer
-                                      </Button>
-                                    )}
+                                      </Button>}
                                   </div>
                                   <DropdownMenuSeparator />
                                   
                                   {/* Tri */}
-                                  <DropdownMenuCheckboxItem
-                                    checked={sortBy === column.name && sortOrder === 'asc'}
-                                    onCheckedChange={() => {
-                                      setSortBy(column.name);
-                                      setSortOrder('asc');
-                                      setCurrentPage(1);
-                                    }}
-                                  >
-                                    <ArrowUp className="h-3 w-3 mr-2" />
+                                  <DropdownMenuCheckboxItem checked={sortBy === column.name && sortOrder === 'asc'} onCheckedChange={() => {
+                              setSortBy(column.name);
+                              setSortOrder('asc');
+                              setCurrentPage(1);
+                            }}>
+                                    
                                     Trier croissant
                                   </DropdownMenuCheckboxItem>
                                   
-                                  <DropdownMenuCheckboxItem
-                                    checked={sortBy === column.name && sortOrder === 'desc'}
-                                    onCheckedChange={() => {
-                                      setSortBy(column.name);
-                                      setSortOrder('desc');
-                                      setCurrentPage(1);
-                                    }}
-                                  >
+                                  <DropdownMenuCheckboxItem checked={sortBy === column.name && sortOrder === 'desc'} onCheckedChange={() => {
+                              setSortBy(column.name);
+                              setSortOrder('desc');
+                              setCurrentPage(1);
+                            }}>
                                     <ArrowDown className="h-3 w-3 mr-2" />
                                     Trier décroissant
                                   </DropdownMenuCheckboxItem>
@@ -1033,32 +972,23 @@ const TableView: React.FC<TableViewProps> = ({
                                   <DropdownMenuSeparator />
                                   
                                   {/* Épingler */}
-                                  <DropdownMenuCheckboxItem
-                                    checked={pinnedColumns.has(column.name)}
-                                    onCheckedChange={() => toggleColumnPin(column.name)}
-                                  >
+                                  <DropdownMenuCheckboxItem checked={pinnedColumns.has(column.name)} onCheckedChange={() => toggleColumnPin(column.name)}>
                                     {isPinned ? '📌 Désépingler' : '📍 Épingler à gauche'}
                                   </DropdownMenuCheckboxItem>
                                   
                                   {/* Masquer la colonne (sauf id et email) */}
-                                  {column.name !== 'id' && column.name !== 'email' && (
-                                    <>
+                                  {column.name !== 'id' && column.name !== 'email' && <>
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuCheckboxItem
-                                        checked={false}
-                                        onCheckedChange={() => toggleColumnVisibility(column.name)}
-                                      >
+                                      <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => toggleColumnVisibility(column.name)}>
                                         👁️‍🗨️ Masquer la colonne
                                       </DropdownMenuCheckboxItem>
-                                    </>
-                                  )}
+                                    </>}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
-                          </th>
-                        );
-                      })}
-                      <th className="w-20 px-4 py-4 text-center sticky top-0 bg-table-header z-20">
+                          </th>;
+                  })}
+                      <th className="w-20 px-4 py-4 text-center">
                         <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
                       </th>
                     </tr>
@@ -1070,23 +1000,12 @@ const TableView: React.FC<TableViewProps> = ({
                   const rowId = row.id?.toString() || index.toString();
                   const isSelected = selectedRows.has(rowId);
                   return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
-                          <td className="w-12 px-4 py-4 sticky left-0 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-10">
+                          <td className="w-12 px-4 py-4">
                             <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
-                          {displayColumns.map(column => {
-                            const isPinned = pinnedColumns.has(column.name);
-                            // Since only one column can be pinned, it's always at position 48px (after checkbox)
-                            const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
-                            return (
-                               <td 
-                                 key={column.name} 
-                                 className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-10 font-semibold text-primary' : ''}`}
-                                 style={isPinned ? { left: '48px' } : {}}
-                              >
-                                {formatCellValue(row[column.name], column.name)}
-                              </td>
-                            );
-                          })}
+                          {displayColumns.map(column => <td key={column.name} className="px-4 py-4 min-w-[120px]">
+                              {formatCellValue(row[column.name], column.name)}
+                            </td>)}
                           <td className="w-20 px-4 py-4">
                             <div className="flex items-center justify-center space-x-1">
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
