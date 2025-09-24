@@ -532,8 +532,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
 
             <div className="flex flex-col h-[600px] border border-table-border rounded-lg overflow-hidden">
               {/* Fixed Header */}
-              <div className="flex-shrink-0 bg-table-header border-b border-table-border">
-                <table className="w-full table-fixed">
+              <div className="flex-shrink-0 bg-table-header border-b border-table-border overflow-x-auto">
+                <table className="w-full min-w-max table-fixed">
                   <thead>
                     <tr>
                       <th className="w-12 px-4 py-4 text-left">
@@ -546,7 +546,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                       {displayColumns.map((column) => (
                         <th 
                           key={column.name} 
-                          className="px-4 py-4 text-left font-semibold text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors"
+                          className="px-4 py-4 text-left font-semibold text-muted-foreground cursor-pointer hover:bg-muted/80 transition-colors min-w-[120px]"
                           onClick={() => handleSort(column.name)}
                         >
                           <div className="flex items-center space-x-1">
@@ -565,7 +565,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
 
               {/* Scrollable Body */}
               <div className="flex-1 overflow-auto">
-                <table className="w-full table-fixed">
+                <table className="w-full min-w-max table-fixed">
                   <tbody>
                     {data.map((row, index) => {
                       const rowId = row.id?.toString() || index.toString();
@@ -586,7 +586,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                             />
                           </td>
                           {displayColumns.map((column) => (
-                            <td key={column.name} className="px-4 py-4">
+                            <td key={column.name} className="px-4 py-4 min-w-[120px]">
                               {formatCellValue(row[column.name], column.name)}
                             </td>
                           ))}
