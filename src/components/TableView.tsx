@@ -81,7 +81,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     }
 
     try {
-      let query = supabase.from(tableName).select('*', { count: 'exact' });
+      // Add explicit type to break type inference recursion
+      let query: any = supabase.from(tableName).select('*', { count: 'exact' });
 
       // Appliquer le filtre de section pour CRM contacts
       if (tableName === 'crm_contacts' && sectionFilter !== 'all') {
