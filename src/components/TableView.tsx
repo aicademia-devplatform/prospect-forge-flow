@@ -952,8 +952,8 @@ const TableView: React.FC<TableViewProps> = ({
                         return (
                           <th 
                             key={column.name} 
-                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] ${isPinned ? `sticky bg-table-header z-30 ${borderStyle}` : ''}`}
-                            style={isPinned ? { left: '48px', top: '0' } : {}}
+                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] ${isPinned ? `sticky bg-table-header z-20 ${borderStyle}` : ''}`}
+                            style={isPinned ? { left: '48px' } : {}}
                           >
                             <div className="flex items-center justify-between space-x-1">
                               <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
