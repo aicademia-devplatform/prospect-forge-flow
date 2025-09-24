@@ -143,23 +143,23 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
       return <Badge variant={value ? 'default' : 'secondary'}>{value ? 'Oui' : 'Non'}</Badge>;
     }
 
-    // Special formatting for sections/categories with distinct colors
+    // Special formatting for sections/categories with modern vibrant colors
     if (columnName === 'data_section' && value) {
       const sectionColors: Record<string, string> = {
-        'apollo': 'bg-primary-light text-primary border-primary/20',
-        'crm': 'bg-success-light text-success border-success/20',
-        'leads': 'bg-warning-light text-warning border-warning/20',
-        'prospects': 'bg-secondary-light text-secondary border-secondary/20',
-        'customers': 'bg-danger-light text-danger border-danger/20',
-        'partners': 'bg-accent text-accent-foreground border-accent/20',
-        'vendors': 'bg-muted text-muted-foreground border-muted-foreground/20'
+        'apollo': 'bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-700 border-violet-500/30 shadow-violet-500/10 shadow-sm',
+        'crm': 'bg-gradient-to-r from-emerald-500/20 to-green-500/20 text-emerald-700 border-emerald-500/30 shadow-emerald-500/10 shadow-sm',
+        'leads': 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-700 border-amber-500/30 shadow-amber-500/10 shadow-sm',
+        'prospects': 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-700 border-blue-500/30 shadow-blue-500/10 shadow-sm',
+        'customers': 'bg-gradient-to-r from-rose-500/20 to-pink-500/20 text-rose-700 border-rose-500/30 shadow-rose-500/10 shadow-sm',
+        'partners': 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-700 border-indigo-500/30 shadow-indigo-500/10 shadow-sm',
+        'vendors': 'bg-gradient-to-r from-slate-500/20 to-gray-500/20 text-slate-700 border-slate-500/30 shadow-slate-500/10 shadow-sm'
       };
       
-      const colorClass = sectionColors[value.toLowerCase()] || 'bg-muted text-muted-foreground border-muted-foreground/20';
+      const colorClass = sectionColors[value.toLowerCase()] || 'bg-gradient-to-r from-slate-500/20 to-gray-500/20 text-slate-700 border-slate-500/30 shadow-slate-500/10 shadow-sm';
       
       return (
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
-          {value}
+        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold tracking-wide border backdrop-blur-sm ${colorClass}`}>
+          {value.toUpperCase()}
         </span>
       );
     }
