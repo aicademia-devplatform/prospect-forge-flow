@@ -789,7 +789,7 @@ const TableView: React.FC<TableViewProps> = ({
     return <span className="text-sm">{value}</span>;
   };
   const tableTitle = tableName === 'apollo_contacts' ? 'Contacts Apollo' : 'Contacts CRM';
-  return <div className="p-6 space-y-6">
+  return <div className="h-full flex flex-col p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button variant="outline" onClick={onBack}>
