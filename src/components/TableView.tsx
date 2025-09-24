@@ -939,9 +939,9 @@ const TableView: React.FC<TableViewProps> = ({
               <div className="flex-1 overflow-auto" ref={tableContainerRef}>
                 <table className="w-full min-w-max">
                   {/* Fixed Header */}
-                  <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
+                  <thead className="sticky top-0 bg-table-header border-b border-table-border z-20">
                     <tr>
-                      <th className={`w-12 px-4 py-4 text-left sticky left-0 bg-table-header z-30 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
+                      <th className={`w-12 px-4 py-4 text-left sticky top-0 left-0 bg-table-header z-30 ${isScrolled ? 'border-r-4 border-primary/30 shadow-lg' : 'border-r-2 border-primary/20 shadow-md'}`}>
                         <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
                       {displayColumns.map(column => {
@@ -952,7 +952,12 @@ const TableView: React.FC<TableViewProps> = ({
                         return (
                           <th 
                             key={column.name} 
-                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px] ${isPinned ? `sticky bg-table-header z-20 ${borderStyle}` : ''}`}
+                            className={`
+                              px-4 py-4 text-left font-semibold text-muted-foreground min-w-[120px]
+                              sticky top-0 bg-table-header
+                              ${isPinned ? 'left-0 z-30' : 'z-20'}
+                              ${borderStyle}
+                            `}
                             style={isPinned ? { left: '48px' } : {}}
                           >
                             <div className="flex items-center justify-between space-x-1">
@@ -1054,7 +1059,7 @@ const TableView: React.FC<TableViewProps> = ({
                           </th>
                         );
                       })}
-                      <th className="w-20 px-4 py-4 text-center">
+                      <th className="w-20 px-4 py-4 text-center sticky top-0 bg-table-header z-20">
                         <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
                       </th>
                     </tr>
