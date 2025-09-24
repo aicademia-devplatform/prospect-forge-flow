@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -42,6 +42,9 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+  // Memoize visible columns array to prevent infinite re-renders
+  const visibleColumnsArray = useMemo(() => Array.from(visibleColumns), [visibleColumns]);
+
   // Fetch data using server-side pagination
   const { data, totalCount, totalPages, loading } = useTableData({
     tableName,
@@ -51,7 +54,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     sectionFilter: selectedSections.length > 0 ? selectedSections.join(',') : 'all',
     sortBy,
     sortOrder,
-    visibleColumns: Array.from(visibleColumns)
+    visibleColumns: visibleColumnsArray
   });
 
   // Fetch available sections
