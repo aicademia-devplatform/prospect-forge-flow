@@ -879,7 +879,7 @@ const TableView: React.FC<TableViewProps> = ({
                 </div>
               </div>}
 
-            <div className="flex flex-col h-[600px] border border-table-border rounded-lg overflow-hidden">
+            <div className="flex flex-col flex-1 border border-table-border rounded-lg overflow-hidden">
               {/* Table with horizontal scroll */}
               <div className="flex-1 overflow-auto">
                 <table className="w-full min-w-max">
