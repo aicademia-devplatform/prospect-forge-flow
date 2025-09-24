@@ -5,8 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import DataPagination from './DataPagination';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
@@ -34,6 +35,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   // Debounce search term to avoid too many API calls
@@ -129,6 +131,27 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   };
 
   const columns = getColumns();
+
+  // Initialize visible columns (exclude email and actions from toggleable columns)
+  useEffect(() => {
+    const toggleableColumns = columns.filter(col => col.name !== 'email' && col.name !== 'id').map(col => col.name);
+    setVisibleColumns(new Set(toggleableColumns));
+  }, [tableName]);
+
+  // Get columns that should be displayed
+  const displayColumns = columns.filter(col => 
+    col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name)
+  );
+
+  const toggleColumnVisibility = (columnName: string) => {
+    const newVisible = new Set(visibleColumns);
+    if (newVisible.has(columnName)) {
+      newVisible.delete(columnName);
+    } else {
+      newVisible.add(columnName);
+    }
+    setVisibleColumns(newVisible);
+  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -300,6 +323,29 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
               </div>
             </TooltipProvider>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Colonnes
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-background">
+              <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {columns
+                .filter(col => col.name !== 'email' && col.name !== 'id')
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.name}
+                    checked={visibleColumns.has(column.name)}
+                    onCheckedChange={() => toggleColumnVisibility(column.name)}
+                  >
+                    {column.name}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Exporter
@@ -346,7 +392,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                       aria-label="Sélectionner tout"
                     />
                   </TableHead>
-                  {columns.slice(0, 7).map((column) => (
+                  {displayColumns.slice(0, displayColumns.length - 1).map((column) => (
                     <TableHead 
                       key={column.name} 
                       className="font-semibold text-muted-foreground bg-table-header cursor-pointer hover:bg-muted/80 transition-colors py-4"
@@ -385,7 +431,7 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
                             aria-label={`Sélectionner ligne ${index + 1}`}
                           />
                         </TableCell>
-                        {columns.slice(0, 7).map((column) => (
+                        {displayColumns.slice(0, displayColumns.length - 1).map((column) => (
                           <TableCell key={column.name} className="py-4">
                             {formatCellValue(row[column.name], column.name)}
                           </TableCell>
