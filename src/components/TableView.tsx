@@ -274,13 +274,15 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
             <div className="flex items-center space-x-2">
               {sections.map((section) => {
                 const isSelected = selectedSections.includes(section.value);
-                const colorClass = generateSectionColor(section.value);
-                const opacityClass = isSelected ? '' : 'opacity-50';
                 
                 return (
                   <span
                     key={section.value}
-                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-80 border ${colorClass} ${opacityClass}`}
+                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-80 border ${
+                      isSelected 
+                        ? generateSectionColor(section.value)
+                        : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                    }`}
                     onClick={() => toggleSection(section.value)}
                   >
                     {section.value}
