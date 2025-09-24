@@ -287,77 +287,23 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
             />
           </div>
           {tableName === 'crm_contacts' && sections.length > 0 && (
-            <div className="relative" ref={dropdownRef}>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium">Sections:</span>
-                <div 
-                  className="min-w-[300px] p-3 border border-input rounded-md bg-background cursor-pointer hover:border-primary/50 transition-colors"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                >
-                  <div className="flex flex-wrap gap-1 min-h-[24px] items-center">
-                    {selectedSections.length === 0 ? (
-                      <span className="text-muted-foreground text-sm">Sélectionner des sections...</span>
-                    ) : (
-                      selectedSections.map((sectionValue) => {
-                        const section = sections.find(s => s.value === sectionValue);
-                        const colorClass = generateSectionColor(section?.label || sectionValue);
-                        return (
-                          <span 
-                            key={sectionValue}
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${colorClass} cursor-pointer hover:opacity-80`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeSection(sectionValue);
-                            }}
-                          >
-                            {section?.label || sectionValue}
-                            <X className="h-3 w-3 ml-1" />
-                          </span>
-                        );
-                      })
-                    )}
-                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                  </div>
-                </div>
-              </div>
-              
-              {isDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-background border border-input rounded-md shadow-lg z-50 max-h-64 overflow-hidden">
-                  <div className="p-2 border-b border-border">
-                    <Input
-                      placeholder="Rechercher une section..."
-                      value={sectionSearchTerm}
-                      onChange={(e) => setSectionSearchTerm(e.target.value)}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="max-h-48 overflow-y-auto">
-                    {filteredSections.map((section) => {
-                      const isSelected = selectedSections.includes(section.value);
-                      const colorClass = generateSectionColor(section.label);
-                      return (
-                        <div
-                          key={section.value}
-                          className="flex items-center justify-between p-2 hover:bg-muted cursor-pointer transition-colors"
-                          onClick={() => toggleSection(section.value)}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
-                              {section.label}
-                            </span>
-                          </div>
-                          <Checkbox checked={isSelected} disabled />
-                        </div>
-                      );
-                    })}
-                    {filteredSections.length === 0 && (
-                      <div className="p-4 text-center text-muted-foreground text-sm">
-                        Aucune section trouvée
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+            <div className="flex items-center space-x-2">
+              {sections.map((section) => {
+                const isSelected = selectedSections.includes(section.value);
+                const colorClass = isSelected 
+                  ? generateSectionColor(section.label) 
+                  : 'bg-muted text-muted-foreground border-muted';
+                
+                return (
+                  <span
+                    key={section.value}
+                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-80 border ${colorClass}`}
+                    onClick={() => toggleSection(section.value)}
+                  >
+                    {section.value}
+                  </span>
+                );
+              })}
             </div>
           )}
           <Button variant="outline">
