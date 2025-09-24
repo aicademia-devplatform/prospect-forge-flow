@@ -916,192 +916,353 @@ const TableView: React.FC<TableViewProps> = ({
               </div>}
 
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-              {/* Table with horizontal scroll */}
-              <div 
-                className="flex-1 overflow-auto" 
-                ref={tableContainerRef}
-                onScroll={(e) => {
-                  const scrollLeft = e.currentTarget.scrollLeft;
-                  setIsScrolled(scrollLeft > 0);
-                }}
-              >
-                <table className="w-full">
-                  {/* Fixed Header */}
-                  <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
-                    <tr>
-                      <th className="w-12 px-4 py-4 text-left sticky left-0 bg-table-header z-30 border-r border-border">
-                        <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
-                      </th>
-                      {displayColumns.map((column, columnIndex) => {
-                        const isPinned = pinnedColumns.has(column.name);
-                        const isDropdownOpen = openColumnDropdown === column.name;
-                        
-                        // Calculate left offset for pinned columns sequentially
-                        let leftOffset = 48; // Start after checkbox column (48px)
-                        const pinnedColumnsArray = Array.from(pinnedColumns);
-                        if (isPinned) {
-                          const currentPinnedIndex = pinnedColumnsArray.indexOf(column.name);
-                          leftOffset = 48 + (currentPinnedIndex * 150); // 150px per pinned column
-                        }
-                        
-                        return (
-                          <th 
-                            key={column.name} 
-                            className={`px-4 py-4 text-left font-semibold text-muted-foreground min-w-[150px] w-[150px] relative border-r border-border ${isPinned ? 'sticky bg-table-header z-20' : ''}`}
-                            style={isPinned ? { left: `${leftOffset}px` } : {}}
-                          >
-                            <div className="flex items-center justify-between space-x-1">
-                              <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
-                                <span className="uppercase text-xs tracking-wider">{column.name}</span>
-                                {getSortIcon(column.name)}
-                              </div>
-                              <DropdownMenu open={isDropdownOpen} onOpenChange={(open) => setOpenColumnDropdown(open ? column.name : null)}>
-                                <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-6 w-6 p-0 hover:bg-muted/80"
+              {/* Table container with relative positioning for overlay */}
+              <div className="flex-1 relative">
+                {/* Sticky overlay table for checkbox and pinned columns */}
+                <div className="absolute top-0 left-0 z-30 bg-background">
+                  <table>
+                    {/* Sticky header */}
+                    <thead className="bg-table-header border-b border-table-border">
+                      <tr>
+                        {/* Always show checkbox */}
+                        <th className="w-12 px-4 py-4 text-left bg-table-header border-r border-border">
+                          <Checkbox 
+                            checked={selectedRows.size === data.length && data.length > 0} 
+                            onCheckedChange={handleSelectAll} 
+                            aria-label="Sélectionner tout" 
+                          />
+                        </th>
+                        {/* Show pinned columns */}
+                        {Array.from(pinnedColumns).map((columnName) => {
+                          const column = displayColumns.find(col => col.name === columnName);
+                          if (!column) return null;
+                          
+                          const isDropdownOpen = openColumnDropdown === column.name;
+                          
+                          return (
+                            <th 
+                              key={column.name} 
+                              className="px-4 py-4 text-left font-semibold text-muted-foreground min-w-[150px] w-[150px] bg-table-header border-r border-border"
+                            >
+                              <div className="flex items-center justify-between space-x-1">
+                                <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
+                                  <span className="uppercase text-xs tracking-wider">{column.name}</span>
+                                  {getSortIcon(column.name)}
+                                </div>
+                                <DropdownMenu open={isDropdownOpen} onOpenChange={(open) => setOpenColumnDropdown(open ? column.name : null)}>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-6 w-6 p-0 hover:bg-muted/80"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <MoreHorizontal className="h-3 w-3" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent 
+                                    align="end" 
+                                    className="w-56 bg-background border shadow-lg z-50"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <MoreHorizontal className="h-3 w-3" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent 
-                                  align="end" 
-                                  className="w-56 bg-background border shadow-lg z-50"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <DropdownMenuLabel className="text-xs font-medium">{column.name}</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  
-                                  {/* Recherche dans la colonne */}
-                                  <div className="p-2">
-                                    <Input
-                                      placeholder={`Filtrer ${column.name}...`}
-                                      value={columnFilters[column.name] || ''}
-                                      onChange={(e) => handleColumnFilter(column.name, e.target.value)}
-                                      className="h-8 text-xs"
-                                    />
-                                    {columnFilters[column.name] && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="mt-1 h-6 w-full text-xs"
-                                        onClick={() => clearColumnFilter(column.name)}
-                                      >
-                                        <X className="h-3 w-3 mr-1" />
-                                        Effacer
-                                      </Button>
+                                    <DropdownMenuLabel className="text-xs font-medium">{column.name}</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    
+                                    {/* Recherche dans la colonne */}
+                                    <div className="p-2">
+                                      <Input
+                                        placeholder={`Filtrer ${column.name}...`}
+                                        value={columnFilters[column.name] || ''}
+                                        onChange={(e) => handleColumnFilter(column.name, e.target.value)}
+                                        className="h-8 text-xs"
+                                      />
+                                      {columnFilters[column.name] && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="mt-1 h-6 w-full text-xs"
+                                          onClick={() => clearColumnFilter(column.name)}
+                                        >
+                                          <X className="h-3 w-3 mr-1" />
+                                          Effacer
+                                        </Button>
+                                      )}
+                                    </div>
+                                    <DropdownMenuSeparator />
+                                    
+                                    {/* Tri */}
+                                    <DropdownMenuCheckboxItem
+                                      checked={sortBy === column.name && sortOrder === 'asc'}
+                                      onCheckedChange={() => {
+                                        setSortBy(column.name);
+                                        setSortOrder('asc');
+                                        setCurrentPage(1);
+                                      }}
+                                    >
+                                      <ArrowUp className="h-3 w-3 mr-2" />
+                                      Trier croissant
+                                    </DropdownMenuCheckboxItem>
+                                    
+                                    <DropdownMenuCheckboxItem
+                                      checked={sortBy === column.name && sortOrder === 'desc'}
+                                      onCheckedChange={() => {
+                                        setSortBy(column.name);
+                                        setSortOrder('desc');
+                                        setCurrentPage(1);
+                                      }}
+                                    >
+                                      <ArrowDown className="h-3 w-3 mr-2" />
+                                      Trier décroissant
+                                    </DropdownMenuCheckboxItem>
+                                    
+                                    <DropdownMenuSeparator />
+                                    
+                                    {/* Épingler */}
+                                    <DropdownMenuCheckboxItem
+                                      checked={pinnedColumns.has(column.name)}
+                                      onCheckedChange={() => toggleColumnPin(column.name)}
+                                    >
+                                      📌 Désépingler
+                                    </DropdownMenuCheckboxItem>
+                                    
+                                    {/* Masquer la colonne (sauf id et email) */}
+                                    {column.name !== 'id' && column.name !== 'email' && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuCheckboxItem
+                                          checked={false}
+                                          onCheckedChange={() => toggleColumnVisibility(column.name)}
+                                        >
+                                          👁️‍🗨️ Masquer la colonne
+                                        </DropdownMenuCheckboxItem>
+                                      </>
                                     )}
-                                  </div>
-                                  <DropdownMenuSeparator />
-                                  
-                                  {/* Tri */}
-                                  <DropdownMenuCheckboxItem
-                                    checked={sortBy === column.name && sortOrder === 'asc'}
-                                    onCheckedChange={() => {
-                                      setSortBy(column.name);
-                                      setSortOrder('asc');
-                                      setCurrentPage(1);
-                                    }}
-                                  >
-                                    <ArrowUp className="h-3 w-3 mr-2" />
-                                    Trier croissant
-                                  </DropdownMenuCheckboxItem>
-                                  
-                                  <DropdownMenuCheckboxItem
-                                    checked={sortBy === column.name && sortOrder === 'desc'}
-                                    onCheckedChange={() => {
-                                      setSortBy(column.name);
-                                      setSortOrder('desc');
-                                      setCurrentPage(1);
-                                    }}
-                                  >
-                                    <ArrowDown className="h-3 w-3 mr-2" />
-                                    Trier décroissant
-                                  </DropdownMenuCheckboxItem>
-                                  
-                                  <DropdownMenuSeparator />
-                                  
-                                  {/* Épingler */}
-                                  <DropdownMenuCheckboxItem
-                                    checked={pinnedColumns.has(column.name)}
-                                    onCheckedChange={() => toggleColumnPin(column.name)}
-                                  >
-                                    {isPinned ? '📌 Désépingler' : '📍 Épingler à gauche'}
-                                  </DropdownMenuCheckboxItem>
-                                  
-                                  {/* Masquer la colonne (sauf id et email) */}
-                                  {column.name !== 'id' && column.name !== 'email' && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuCheckboxItem
-                                        checked={false}
-                                        onCheckedChange={() => toggleColumnVisibility(column.name)}
-                                      >
-                                        👁️‍🗨️ Masquer la colonne
-                                      </DropdownMenuCheckboxItem>
-                                    </>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </th>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    
+                    {/* Sticky body */}
+                    <tbody>
+                      {data.map((row, index) => {
+                        const rowId = row.id?.toString() || index.toString();
+                        const isSelected = selectedRows.has(rowId);
+                        
+                        return (
+                          <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
+                            {/* Checkbox cell */}
+                            <td className="px-4 py-4 bg-background border-r border-border">
+                              <Checkbox 
+                                checked={isSelected} 
+                                onCheckedChange={checked => handleSelectRow(rowId, !!checked)} 
+                                aria-label={`Sélectionner ligne ${index + 1}`} 
+                              />
+                            </td>
+                            {/* Pinned columns data */}
+                            {Array.from(pinnedColumns).map((columnName) => {
+                              const column = displayColumns.find(col => col.name === columnName);
+                              if (!column) return null;
+                              
+                              return (
+                                <td 
+                                  key={column.name} 
+                                  className="px-4 py-4 min-w-[150px] w-[150px] bg-background border-r border-border"
+                                >
+                                  {formatCellValue(row[column.name], column.name)}
+                                </td>
+                              );
+                            })}
+                          </tr>
                         );
                       })}
-                      <th className="w-20 px-4 py-4 text-center">
-                        <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  
-                  {/* Scrollable Body */}
-                  <tbody>
-                    {data.map((row, index) => {
-                  const rowId = row.id?.toString() || index.toString();
-                  const isSelected = selectedRows.has(rowId);
-                  return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
-                          <td className="px-4 py-4 sticky left-0 bg-background z-20 border-r border-border">
-                            <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
-                          </td>
-                          {displayColumns.map((column, columnIndex) => {
-                            const isPinned = pinnedColumns.has(column.name);
-                            
-                            // Calculate left offset sequentially for pinned columns
-                            let leftOffset = 48; // Start after checkbox column
-                            const pinnedColumnsArray = Array.from(pinnedColumns);
-                            if (isPinned) {
-                              const currentPinnedIndex = pinnedColumnsArray.indexOf(column.name);
-                              leftOffset = 48 + (currentPinnedIndex * 150); // 150px per pinned column
-                            }
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Main scrollable table */}
+                <div 
+                  className="overflow-auto h-full" 
+                  ref={tableContainerRef}
+                  style={{ 
+                    marginLeft: pinnedColumns.size > 0 ? `${48 + (pinnedColumns.size * 150)}px` : '48px' 
+                  }}
+                >
+                  <table className="w-full">
+                    {/* Main header */}
+                    <thead className="sticky top-0 bg-table-header border-b border-table-border z-10">
+                      <tr>
+                        {/* Spacer for checkbox when no pinned columns */}
+                        {pinnedColumns.size === 0 && (
+                          <th className="w-12 px-4 py-4 opacity-0 pointer-events-none"></th>
+                        )}
+                        
+                        {/* All columns (excluding pinned ones) */}
+                        {displayColumns
+                          .filter(column => !pinnedColumns.has(column.name))
+                          .map((column) => {
+                            const isDropdownOpen = openColumnDropdown === column.name;
                             
                             return (
-                              <td 
+                              <th 
                                 key={column.name} 
-                                className={`px-4 py-4 min-w-[150px] w-[150px] border-r border-border ${isPinned ? 'sticky bg-background z-10' : ''}`}
-                                style={isPinned ? { left: `${leftOffset}px` } : {}}
+                                className="px-4 py-4 text-left font-semibold text-muted-foreground min-w-[150px] w-[150px] border-r border-border"
                               >
-                                {formatCellValue(row[column.name], column.name)}
-                              </td>
+                                <div className="flex items-center justify-between space-x-1">
+                                  <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
+                                    <span className="uppercase text-xs tracking-wider">{column.name}</span>
+                                    {getSortIcon(column.name)}
+                                  </div>
+                                  <DropdownMenu open={isDropdownOpen} onOpenChange={(open) => setOpenColumnDropdown(open ? column.name : null)}>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-6 w-6 p-0 hover:bg-muted/80"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <MoreHorizontal className="h-3 w-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent 
+                                      align="end" 
+                                      className="w-56 bg-background border shadow-lg z-50"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <DropdownMenuLabel className="text-xs font-medium">{column.name}</DropdownMenuLabel>
+                                      <DropdownMenuSeparator />
+                                      
+                                      {/* Recherche dans la colonne */}
+                                      <div className="p-2">
+                                        <Input
+                                          placeholder={`Filtrer ${column.name}...`}
+                                          value={columnFilters[column.name] || ''}
+                                          onChange={(e) => handleColumnFilter(column.name, e.target.value)}
+                                          className="h-8 text-xs"
+                                        />
+                                        {columnFilters[column.name] && (
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="mt-1 h-6 w-full text-xs"
+                                            onClick={() => clearColumnFilter(column.name)}
+                                          >
+                                            <X className="h-3 w-3 mr-1" />
+                                            Effacer
+                                          </Button>
+                                        )}
+                                      </div>
+                                      <DropdownMenuSeparator />
+                                      
+                                      {/* Tri */}
+                                      <DropdownMenuCheckboxItem
+                                        checked={sortBy === column.name && sortOrder === 'asc'}
+                                        onCheckedChange={() => {
+                                          setSortBy(column.name);
+                                          setSortOrder('asc');
+                                          setCurrentPage(1);
+                                        }}
+                                      >
+                                        <ArrowUp className="h-3 w-3 mr-2" />
+                                        Trier croissant
+                                      </DropdownMenuCheckboxItem>
+                                      
+                                      <DropdownMenuCheckboxItem
+                                        checked={sortBy === column.name && sortOrder === 'desc'}
+                                        onCheckedChange={() => {
+                                          setSortBy(column.name);
+                                          setSortOrder('desc');
+                                          setCurrentPage(1);
+                                        }}
+                                      >
+                                        <ArrowDown className="h-3 w-3 mr-2" />
+                                        Trier décroissant
+                                      </DropdownMenuCheckboxItem>
+                                      
+                                      <DropdownMenuSeparator />
+                                      
+                                      {/* Épingler */}
+                                      <DropdownMenuCheckboxItem
+                                        checked={pinnedColumns.has(column.name)}
+                                        onCheckedChange={() => toggleColumnPin(column.name)}
+                                      >
+                                        📍 Épingler à gauche
+                                      </DropdownMenuCheckboxItem>
+                                      
+                                      {/* Masquer la colonne (sauf id et email) */}
+                                      {column.name !== 'id' && column.name !== 'email' && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuCheckboxItem
+                                            checked={false}
+                                            onCheckedChange={() => toggleColumnVisibility(column.name)}
+                                          >
+                                            👁️‍🗨️ Masquer la colonne
+                                          </DropdownMenuCheckboxItem>
+                                        </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </th>
                             );
                           })}
-                          <td className="w-20 px-4 py-4">
-                            <div className="flex items-center justify-center space-x-1">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
-                                <Edit2 className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
-                                <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>;
-                })}
-                  </tbody>
-                </table>
+                        
+                        {/* Actions column */}
+                        <th className="w-20 px-4 py-4 text-center border-r border-border">
+                          <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    
+                    {/* Main body */}
+                    <tbody>
+                      {data.map((row, index) => {
+                        const rowId = row.id?.toString() || index.toString();
+                        const isSelected = selectedRows.has(rowId);
+                        
+                        return (
+                          <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
+                            {/* Spacer for checkbox when no pinned columns */}
+                            {pinnedColumns.size === 0 && (
+                              <td className="w-12 px-4 py-4 opacity-0 pointer-events-none"></td>
+                            )}
+                            
+                            {/* Non-pinned columns data */}
+                            {displayColumns
+                              .filter(column => !pinnedColumns.has(column.name))
+                              .map((column) => (
+                                <td 
+                                  key={column.name} 
+                                  className="px-4 py-4 min-w-[150px] w-[150px] border-r border-border"
+                                >
+                                  {formatCellValue(row[column.name], column.name)}
+                                </td>
+                              ))}
+                            
+                            {/* Actions */}
+                            <td className="w-20 px-4 py-4 border-r border-border">
+                              <div className="flex items-center justify-center space-x-1">
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
+                                  <Edit2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
+                                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
