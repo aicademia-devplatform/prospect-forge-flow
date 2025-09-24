@@ -3,20 +3,25 @@ import { BarChart3, Users, Upload, FileText, Database, Settings, ShieldCheck } f
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 
+interface SidebarProps {
+  activeSection?: string;
+  onSectionChange?: (section: string) => void;
+}
+
 const navigation = [
-  { name: 'Dashboard', icon: BarChart3, active: false, permission: 'view_prospects' },
-  { name: 'Prospects', icon: Users, active: true, permission: 'view_prospects' },
-  { name: 'Import Data', icon: Upload, active: false, permission: 'create_prospects' },
-  { name: 'Reports', icon: FileText, active: false, permission: 'view_prospects' },
+  { name: 'Dashboard', icon: BarChart3, key: 'dashboard', permission: 'view_prospects' },
+  { name: 'Prospects', icon: Users, key: 'prospects', permission: 'view_prospects' },
+  { name: 'Import Data', icon: Upload, key: 'import', permission: 'create_prospects' },
+  { name: 'Reports', icon: FileText, key: 'reports', permission: 'view_prospects' },
 ];
 
 const adminNavigation = [
-  { name: 'Data Sources', icon: Database, active: false, permission: 'manage_settings' },
-  { name: 'Admin Panel', icon: ShieldCheck, active: false, permission: 'access_admin_panel' },
-  { name: 'Settings', icon: Settings, active: false, permission: 'manage_settings' },
+  { name: 'Data Sources', icon: Database, key: 'datasources', permission: 'manage_settings' },
+  { name: 'Admin Panel', icon: ShieldCheck, key: 'admin', permission: 'access_admin_panel' },
+  { name: 'Settings', icon: Settings, key: 'settings', permission: 'manage_settings' },
 ];
 
-export const Sidebar = () => {
+export const Sidebar = ({ activeSection = 'prospects', onSectionChange }: SidebarProps) => {
   const { hasPermission } = useAuth();
 
   const filteredNavigation = navigation.filter(item => hasPermission(item.permission));
@@ -39,8 +44,9 @@ export const Sidebar = () => {
                 <Tooltip key={item.name}>
                   <TooltipTrigger asChild>
                     <button
+                      onClick={() => onSectionChange?.(item.key)}
                       className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
-                        item.active
+                        activeSection === item.key
                           ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                           : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       }`}
@@ -67,7 +73,12 @@ export const Sidebar = () => {
                     <Tooltip key={item.name}>
                       <TooltipTrigger asChild>
                         <button
-                          className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          onClick={() => onSectionChange?.(item.key)}
+                          className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
+                            activeSection === item.key
+                              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                              : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                          }`}
                         >
                           <Icon className="h-5 w-5" />
                         </button>
