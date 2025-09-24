@@ -10,6 +10,7 @@ interface UseTableDataParams {
   sectionFilter: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  visibleColumns?: string[];
 }
 
 interface TableDataResponse {
@@ -69,7 +70,8 @@ export const useTableData = (params: UseTableDataParams) => {
     params.searchTerm,
     params.sectionFilter,
     params.sortBy,
-    params.sortOrder
+    params.sortOrder,
+    params.visibleColumns
   ]);
 
   return {

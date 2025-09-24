@@ -50,7 +50,8 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
     searchTerm: debouncedSearchTerm,
     sectionFilter: selectedSections.length > 0 ? selectedSections.join(',') : 'all',
     sortBy,
-    sortOrder
+    sortOrder,
+    visibleColumns: Array.from(visibleColumns)
   });
 
   // Fetch available sections

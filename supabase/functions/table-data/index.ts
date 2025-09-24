@@ -13,6 +13,7 @@ interface QueryParams {
   sectionFilter?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+  visibleColumns?: string[]
 }
 
 Deno.serve(async (req) => {
@@ -35,13 +36,19 @@ Deno.serve(async (req) => {
       searchTerm, 
       sectionFilter, 
       sortBy = 'created_at', 
-      sortOrder = 'desc' 
+      sortOrder = 'desc',
+      visibleColumns = []
     }: QueryParams = await req.json()
 
-    console.log('Query params:', { tableName, page, pageSize, searchTerm, sectionFilter, sortBy, sortOrder })
+    console.log('Query params:', { tableName, page, pageSize, searchTerm, sectionFilter, sortBy, sortOrder, visibleColumns })
+
+    // Build the column selection
+    const baseColumns = ['id', 'email']
+    const allColumns = [...baseColumns, ...visibleColumns].filter((col, index, arr) => arr.indexOf(col) === index)
+    const selectColumns = allColumns.length > 0 ? allColumns.join(',') : '*'
 
     // Build the query
-    let query = supabase.from(tableName).select('*', { count: 'exact' })
+    let query = supabase.from(tableName).select(selectColumns, { count: 'exact' })
 
     // Apply section filter for CRM contacts
     if (tableName === 'crm_contacts' && sectionFilter && sectionFilter !== 'all') {
