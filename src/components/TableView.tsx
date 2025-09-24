@@ -147,15 +147,39 @@ const TableView: React.FC<TableViewProps> = ({ tableName, onBack }) => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      let query: any = supabase.from(tableName).select('*', { count: 'exact' });
-      
-      const { data: result, error } = await query;
+      let allResults: any[] = [];
+      let from = 0;
+      const chunkSize = 1000;
+      let hasMore = true;
 
-      if (error) {
-        throw error;
+      // Charger toutes les données par chunks de 1000
+      while (hasMore) {
+        let query: any = supabase
+          .from(tableName)
+          .select('*', { count: 'exact' })
+          .range(from, from + chunkSize - 1);
+
+        const { data: result, error, count } = await query;
+
+        if (error) {
+          throw error;
+        }
+
+        if (result) {
+          allResults = [...allResults, ...result];
+        }
+
+        // Vérifier s'il y a encore des données à charger
+        hasMore = result && result.length === chunkSize;
+        from += chunkSize;
+
+        // Pour éviter les boucles infinies, arrêter si on dépasse le count total
+        if (count && allResults.length >= count) {
+          hasMore = false;
+        }
       }
 
-      setAllData(result || []);
+      setAllData(allResults);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       toast({
