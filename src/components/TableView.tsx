@@ -1261,24 +1261,25 @@ const TableView: React.FC<TableViewProps> = ({
                             return (
                               <Draggable key={column.name} draggableId={column.name} index={index}>
                                 {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${
-                                      snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'
-                                    }`}
-                                    style={{
-                                      ...provided.draggableProps.style,
-                                      transform: snapshot.isDragging 
-                                        ? `${provided.draggableProps.style?.transform} rotate(1deg)` 
-                                        : provided.draggableProps.style?.transform
-                                    }}
+                                   <div
+                                     ref={provided.innerRef}
+                                     {...provided.draggableProps}
+                                     className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 ${
+                                       snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50 transition-none' : 'hover:shadow-md transition-all duration-200'
+                                     }`}
+                                     style={{
+                                       ...provided.draggableProps.style,
+                                       transform: snapshot.isDragging 
+                                         ? `${provided.draggableProps.style?.transform} rotate(1deg)` 
+                                         : provided.draggableProps.style?.transform,
+                                       transition: snapshot.isDragging ? 'none' : provided.draggableProps.style?.transition
+                                     }}
                                   >
-                                    <div 
-                                      {...provided.dragHandleProps}
-                                      className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded transition-colors duration-150"
-                                      title="Glisser pour réorganiser"
-                                    >
+                                     <div 
+                                       {...provided.dragHandleProps}
+                                       className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+                                       title="Glisser pour réorganiser"
+                                     >
                                       <GripVertical className="h-4 w-4 text-gray-400" />
                                     </div>
                                     <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
