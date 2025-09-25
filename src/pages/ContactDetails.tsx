@@ -353,11 +353,12 @@ const ContactDetails: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background">
+      {/* Header Section - Informations de résumé */}
+      <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-b shadow-sm">
+        <div className="max-w-6xl mx-auto p-6">
+          {/* Navigation */}
+          <div className="flex items-center gap-4 mb-6">
             <Button variant="outline" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Retour
@@ -369,44 +370,47 @@ const ContactDetails: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Contact Overview */}
-        <Card className="mb-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-6">
-              <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="h-8 w-8 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold mb-2">{getDisplayName()}</h2>
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {contact.company && (
-                    <div className="flex items-center gap-1">
-                      <Building className="h-4 w-4" />
-                      {contact.company}
-                    </div>
-                  )}
-                  {(contact.title || contact.linkedin_function) && (
-                    <div className="flex items-center gap-1">
-                      <Briefcase className="h-4 w-4" />
-                      {contact.title || contact.linkedin_function}
-                    </div>
-                  )}
-                  {(contact.city || contact.company_city) && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {contact.city || contact.company_city}
-                    </div>
-                  )}
+          {/* Contact Overview Card */}
+          <Card className="bg-white/50 backdrop-blur-sm border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-6">
+                <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
+                  <User className="h-8 w-8 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold mb-2">{getDisplayName()}</h2>
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                    {contact.company && (
+                      <div className="flex items-center gap-1">
+                        <Building className="h-4 w-4" />
+                        {contact.company}
+                      </div>
+                    )}
+                    {(contact.title || contact.linkedin_function) && (
+                      <div className="flex items-center gap-1">
+                        <Briefcase className="h-4 w-4" />
+                        {contact.title || contact.linkedin_function}
+                      </div>
+                    )}
+                    {(contact.city || contact.company_city) && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {contact.city || contact.company_city}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
+      {/* Body Section - Informations détaillées */}
+      <div className="max-w-6xl mx-auto p-6">
         {/* Detailed Information */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {renderFieldGroup('Informations personnelles', categorizedFields.personalFields, <User className="h-5 w-5" />)}
           {renderFieldGroup('Entreprise', categorizedFields.companyFields, <Building className="h-5 w-5" />)}
           {renderFieldGroup('Contact', categorizedFields.contactFields, <Phone className="h-5 w-5" />)}
@@ -421,7 +425,7 @@ const ContactDetails: React.FC = () => {
         </div>
 
         {/* Dates importantes */}
-        <Card className="mt-6">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
