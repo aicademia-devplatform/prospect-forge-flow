@@ -221,6 +221,38 @@ const TableView: React.FC<TableViewProps> = ({
     }
   }, [data]);
 
+  // Real-time updates setup
+  useEffect(() => {
+    const channel = supabase
+      .channel('table-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: tableName
+        },
+        (payload) => {
+          // Update local data with real-time changes from other users
+          const updatedRecord = payload.new;
+          if (updatedRecord) {
+            setLocalData(prev => 
+              prev.map(row => 
+                row.id === updatedRecord.id 
+                  ? { ...row, ...updatedRecord }
+                  : row
+              )
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tableName]);
+
   // Fetch available sections
   const {
     sections
@@ -964,10 +996,7 @@ const TableView: React.FC<TableViewProps> = ({
         });
       }, 2000);
 
-      // Refresh data in background without blocking UI
-      if (refetch) {
-        refetch();
-      }
+      // Note: Pas de refetch automatique pour garder l'expérience fluide
       
     } catch (error) {
       console.error('Error saving edit:', error);
@@ -1117,11 +1146,23 @@ const TableView: React.FC<TableViewProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <div className="relative w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher..." value={searchTerm} onChange={e => handleSearch(e.target.value)} className="pl-8" />
-          </div>
+          <div className="flex items-center space-x-4">
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Rechercher..." value={searchTerm} onChange={e => handleSearch(e.target.value)} className="pl-8" />
+            </div>
+            
+            {/* Bouton de rafraîchissement manuel */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch && refetch()}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <Loader2 className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Actualiser
+            </Button>
           {tableName === 'crm_contacts' && sections.length > 0 && <TooltipProvider>
               <div className="flex items-center space-x-2">
                 {sections.map(section => {
