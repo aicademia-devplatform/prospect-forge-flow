@@ -380,7 +380,7 @@ const ContactDetails: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-2xl font-bold mb-2">{getDisplayName()}</h2>
-                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
                     {contact.company && (
                       <div className="flex items-center gap-1">
                         <Building className="h-4 w-4" />
@@ -400,6 +400,26 @@ const ContactDetails: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  
+                  {/* Data Section Badges */}
+                  {contact.data_section && (
+                    <div className="flex flex-wrap gap-2">
+                      {contact.data_section.includes(',') ? (
+                        contact.data_section.split(',').map((section: string) => section.trim()).filter(Boolean).map((section: string, index: number) => {
+                          const colorClass = generateSectionColor(section);
+                          return (
+                            <span key={index} className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${colorClass}`}>
+                              {section}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm ${generateSectionColor(contact.data_section)}`}>
+                          {contact.data_section}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
