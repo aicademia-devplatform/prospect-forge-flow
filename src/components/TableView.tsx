@@ -828,7 +828,15 @@ const TableView: React.FC<TableViewProps> = ({
 
   // Initialize visible columns and sync temp state
   useEffect(() => {
-    const defaultColumns = ['id', 'email', 'firstname', 'name', 'first_name', 'last_name', 'company', 'data_section', 'created_at'];
+    // Default columns based on user requirements: email, data_section, name, phone, company
+    let defaultColumns: string[] = [];
+    
+    if (tableName === 'crm_contacts') {
+      defaultColumns = ['email', 'data_section', 'name', 'tel_pro', 'company'];
+    } else if (tableName === 'apollo_contacts') {
+      defaultColumns = ['email', 'data_section', 'last_name', 'work_direct_phone', 'company'];
+    }
+    
     const toggleableColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').map(col => col.name);
     const initialVisible = toggleableColumns.filter(col => defaultColumns.includes(col));
     setVisibleColumns(new Set(initialVisible));
