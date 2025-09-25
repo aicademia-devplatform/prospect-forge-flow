@@ -189,6 +189,7 @@ const TableView: React.FC<TableViewProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [localData, setLocalData] = useState<any[]>([]);
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
+  const [recentlyUpdatedByMe, setRecentlyUpdatedByMe] = useState<Set<string>>(new Set()); // Nouvelles mises à jour par l'utilisateur actuel
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -242,6 +243,18 @@ const TableView: React.FC<TableViewProps> = ({
           // Update local data with real-time changes from other users
           const updatedRecord = payload.new;
           if (updatedRecord) {
+            // Vérifier si cette mise à jour vient de nous (pour éviter les conflits avec la mise à jour optimiste)
+            const recordKey = `${updatedRecord.id}`;
+            if (recentlyUpdatedByMe.has(recordKey)) {
+              // C'est notre propre mise à jour, on l'ignore pour éviter d'écraser la mise à jour optimiste
+              setRecentlyUpdatedByMe(prev => {
+                const updated = new Set(prev);
+                updated.delete(recordKey);
+                return updated;
+              });
+              return;
+            }
+            
             setLocalData(prev => 
               prev.map(row => 
                 row.id === updatedRecord.id 
@@ -1001,6 +1014,9 @@ const TableView: React.FC<TableViewProps> = ({
     cancelEditing();
     
     setIsSaving(true);
+    
+    // Marquer cet enregistrement comme récemment mis à jour par nous
+    setRecentlyUpdatedByMe(prev => new Set([...prev, rowId.toString()]));
     try {
       const { error } = await supabase
         .from(tableName)
@@ -1056,6 +1072,9 @@ const TableView: React.FC<TableViewProps> = ({
           : row
       );
       setLocalData(optimisticData);
+      
+      // Marquer cet enregistrement comme récemment mis à jour par nous
+      setRecentlyUpdatedByMe(prev => new Set([...prev, pendingEmailEdit.rowId.toString()]));
       
       // S'assurer que l'état d'édition est défini avant la sauvegarde
       setEditingCell({ rowId: pendingEmailEdit.rowId, columnName: pendingEmailEdit.columnName });
