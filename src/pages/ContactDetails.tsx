@@ -524,7 +524,7 @@ const ContactDetails: React.FC = () => {
                   <Button 
                     variant="outline" 
                     onClick={handleEdit}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
+                    className="w-[160px] h-10 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200 font-medium"
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     Modifier
