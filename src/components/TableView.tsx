@@ -1265,15 +1265,9 @@ const TableView: React.FC<TableViewProps> = ({
                                      ref={provided.innerRef}
                                      {...provided.draggableProps}
                                      className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 ${
-                                       snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50 transition-none' : 'hover:shadow-md transition-all duration-200'
+                                       snapshot.isDragging ? 'shadow-lg bg-green-50 z-50' : 'hover:shadow-md transition-all duration-200'
                                      }`}
-                                     style={{
-                                       ...provided.draggableProps.style,
-                                       transform: snapshot.isDragging 
-                                         ? `${provided.draggableProps.style?.transform} rotate(1deg)` 
-                                         : provided.draggableProps.style?.transform,
-                                       transition: snapshot.isDragging ? 'none' : provided.draggableProps.style?.transition
-                                     }}
+                                     style={provided.draggableProps.style}
                                   >
                                      <div 
                                        {...provided.dragHandleProps}
