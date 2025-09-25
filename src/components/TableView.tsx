@@ -10,6 +10,7 @@ import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import DataPagination from './DataPagination';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
@@ -189,6 +190,9 @@ const TableView: React.FC<TableViewProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
+  // Email warning dialog state
+  const [emailWarningOpen, setEmailWarningOpen] = useState(false);
+  const [pendingEmailEdit, setPendingEmailEdit] = useState<{ rowId: string; columnName: string; value: string } | null>(null);
 
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -944,30 +948,23 @@ const TableView: React.FC<TableViewProps> = ({
     const isEmailField = columnName === 'email' || columnName.toLowerCase().includes('email');
     
     if (isEmailField) {
-      // Afficher une popup d'avertissement pour les modifications d'email
-      const confirmed = window.confirm(
-        "⚠️ ATTENTION: Vous êtes sur le point de modifier une adresse email.\n\n" +
-        "Cette modification peut affecter:\n" +
-        "• Les campagnes email en cours\n" +
-        "• L'historique des communications\n" +
-        "• La délivrabilité des futures campagnes\n\n" +
-        "Êtes-vous sûr de vouloir continuer?"
-      );
-      
-      if (!confirmed) {
-        // Si l'utilisateur annule, remettre la valeur originale
-        const originalValue = localData.find(row => row.id === rowId)?.[columnName] || '';
-        setEditingValue(originalValue);
-        return;
-      }
+      // Stocker les détails de l'édition en attente
+      setPendingEmailEdit({ rowId, columnName, value: editingValue });
+      setEmailWarningOpen(true);
+      return;
     }
     
+    // Continuer avec la sauvegarde normale
+    await proceedWithSave(rowId, columnName, editingValue);
+  };
+
+  const proceedWithSave = async (rowId: string, columnName: string, value: string) => {
     // Convert value based on column type
-    let processedValue: any = editingValue;
+    let processedValue: any = value;
     const column = allColumns.find(col => col.name === columnName);
     
     if (column?.type === 'number') {
-      processedValue = editingValue === '' ? null : Number(editingValue);
+      processedValue = value === '' ? null : Number(value);
       if (isNaN(processedValue)) {
         toast({
           variant: "destructive",
@@ -977,7 +974,7 @@ const TableView: React.FC<TableViewProps> = ({
         return;
       }
     } else if (column?.type === 'boolean') {
-      processedValue = editingValue.toLowerCase() === 'true' || editingValue === '1';
+      processedValue = value.toLowerCase() === 'true' || value === '1';
     }
 
     // Optimistic update - update local data immediately
@@ -1034,6 +1031,24 @@ const TableView: React.FC<TableViewProps> = ({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleEmailWarningConfirm = async () => {
+    if (pendingEmailEdit) {
+      setEmailWarningOpen(false);
+      await proceedWithSave(pendingEmailEdit.rowId, pendingEmailEdit.columnName, pendingEmailEdit.value);
+      setPendingEmailEdit(null);
+    }
+  };
+
+  const handleEmailWarningCancel = () => {
+    if (pendingEmailEdit) {
+      // Remettre la valeur originale
+      const originalValue = localData.find(row => row.id === pendingEmailEdit.rowId)?.[pendingEmailEdit.columnName] || '';
+      setEditingValue(originalValue);
+    }
+    setEmailWarningOpen(false);
+    setPendingEmailEdit(null);
   };
 
   // Focus input when editing starts
@@ -1578,6 +1593,37 @@ const TableView: React.FC<TableViewProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Email warning dialog */}
+      <AlertDialog open={emailWarningOpen} onOpenChange={setEmailWarningOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              ⚠️ Modification d'email
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-left space-y-2">
+              <p>Vous êtes sur le point de modifier une adresse email.</p>
+              <p className="font-medium">Cette modification peut affecter :</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Les campagnes email en cours</li>
+                <li>L'historique des communications</li>
+                <li>La délivrabilité des futures campagnes</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleEmailWarningCancel}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleEmailWarningConfirm}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Continuer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
