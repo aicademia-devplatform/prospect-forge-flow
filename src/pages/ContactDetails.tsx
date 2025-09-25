@@ -398,7 +398,7 @@ const ContactDetails: React.FC = () => {
             {/* Assign Button */}
             <div className="flex items-center gap-2">
               <Select onValueChange={handleAssignContact} disabled={isAssigning}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[200px] bg-primary text-primary-foreground hover:bg-primary/90 border-primary">
                   <UserPlus className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Assigner à..." />
                 </SelectTrigger>
