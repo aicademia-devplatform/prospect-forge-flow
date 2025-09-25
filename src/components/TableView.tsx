@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import DataPagination from './DataPagination';
@@ -1425,26 +1426,46 @@ const TableView: React.FC<TableViewProps> = ({
                                   style={isPinned ? { left: '48px' } : {}}
                                   onDoubleClick={() => canEdit && startEditing(rowId, column.name, row[column.name])}
                                >
-                                 {isEditing ? (
-                                   <div className="flex items-center gap-2">
-                                     <Input
-                                       ref={editInputRef}
-                                       value={editingValue}
-                                       onChange={(e) => setEditingValue(e.target.value)}
-                                        onKeyDown={async (e) => {
-                                          if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            await saveEdit();
-                                          } else if (e.key === 'Escape') {
-                                            cancelEditing();
-                                          }
-                                        }}
-                                       onBlur={saveEdit}
-                                       className="h-8 text-sm"
-                                       disabled={isSaving}
-                                     />
-                                     {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-                                   </div>
+                                  {isEditing ? (
+                                    <div className="flex items-center gap-2">
+                                      {column.name === 'data_section' ? (
+                                        <Select
+                                          value={editingValue}
+                                          onValueChange={(value) => setEditingValue(value)}
+                                          onOpenChange={(open) => {
+                                            if (!open) {
+                                              saveEdit();
+                                            }
+                                          }}
+                                        >
+                                          <SelectTrigger className="h-8 text-sm">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="Arlynk">Arlynk</SelectItem>
+                                            <SelectItem value="Aicademia">Aicademia</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      ) : (
+                                        <Input
+                                          ref={editInputRef}
+                                          value={editingValue}
+                                          onChange={(e) => setEditingValue(e.target.value)}
+                                          onKeyDown={async (e) => {
+                                            if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              await saveEdit();
+                                            } else if (e.key === 'Escape') {
+                                              cancelEditing();
+                                            }
+                                          }}
+                                          onBlur={saveEdit}
+                                          className="h-8 text-sm"
+                                          disabled={isSaving}
+                                        />
+                                      )}
+                                      {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    </div>
                                  ) : (
                                    <div className="flex items-center justify-between group">
                                      <span>{formatCellValue(row[column.name], column.name)}</span>
