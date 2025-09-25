@@ -1009,6 +1009,26 @@ const TableView: React.FC<TableViewProps> = ({
 
       if (error) throw error;
 
+      // Récupérer la ligne mise à jour depuis la base pour s'assurer d'avoir les vraies données
+      const { data: updatedRow, error: fetchError } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('id', rowId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Mettre à jour seulement cette ligne dans localData
+      if (updatedRow) {
+        setLocalData(prev => 
+          prev.map(row => 
+            row.id === rowId 
+              ? { ...row, ...updatedRow }
+              : row
+          )
+        );
+      }
+
       toast({
         title: "Modification sauvegardée",
         description: `${translateColumnName(columnName)} mis à jour avec succès.`
@@ -1059,15 +1079,30 @@ const TableView: React.FC<TableViewProps> = ({
 
         if (error) throw error;
 
+        // Récupérer la ligne mise à jour depuis la base pour s'assurer d'avoir les vraies données
+        const { data: updatedRow, error: fetchError } = await supabase
+          .from(tableName)
+          .select('*')
+          .eq('id', pendingEmailEdit.rowId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        // Mettre à jour seulement cette ligne dans localData
+        if (updatedRow) {
+          setLocalData(prev => 
+            prev.map(row => 
+              row.id === pendingEmailEdit.rowId 
+                ? { ...row, ...updatedRow }
+                : row
+            )
+          );
+        }
+
         toast({
           title: "Modification sauvegardée",
           description: `${translateColumnName(pendingEmailEdit.columnName)} mis à jour avec succès.`
         });
-
-        // Rafraîchir les données depuis le serveur
-        if (refetch) {
-          refetch();
-        }
 
       } catch (error) {
         console.error('Error saving email edit:', error);
