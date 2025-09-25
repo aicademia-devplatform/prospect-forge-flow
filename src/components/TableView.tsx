@@ -1062,14 +1062,14 @@ const TableView: React.FC<TableViewProps> = ({
                         const isPinned = pinnedColumns.has(column.name);
                         const isDropdownOpen = openColumnDropdown === column.name;
                         // Since only one column can be pinned, it's always at position 48px (after checkbox)
-                        const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
+                         const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
                         return (
                            <th 
                              key={column.name} 
                              className={`
                                px-4 py-4 text-left min-w-[120px]
                                sticky top-0 
-                               ${isPinned ? 'left-0 z-30 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 font-semibold text-primary' : 'z-20 bg-table-header font-semibold text-muted-foreground'}
+                               ${isPinned ? `left-0 z-30 bg-primary/5 backdrop-blur-sm font-semibold text-primary ${borderStyle}` : 'z-20 bg-table-header font-semibold text-muted-foreground'}
                              `}
                              style={isPinned ? { left: '48px' } : {}}
                           >
@@ -1194,11 +1194,11 @@ const TableView: React.FC<TableViewProps> = ({
                           {displayColumns.map(column => {
                             const isPinned = pinnedColumns.has(column.name);
                             // Since only one column can be pinned, it's always at position 48px (after checkbox)
-                            const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/30 shadow-lg' : isPinned ? 'border-r-2 border-primary/20 shadow-md' : '';
+                            const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
                             return (
                                <td 
                                  key={column.name} 
-                                 className={`px-4 py-4 min-w-[120px] ${isPinned ? 'sticky bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-10 font-semibold text-primary' : ''}`}
+                                 className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''}`}
                                  style={isPinned ? { left: '48px' } : {}}
                               >
                                 {formatCellValue(row[column.name], column.name)}
