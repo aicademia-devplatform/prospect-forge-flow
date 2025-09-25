@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -124,6 +124,7 @@ const generateSectionColor = (sectionName: string) => {
 const ContactDetails: React.FC = () => {
   const { tableName, contactId } = useParams<{ tableName: 'apollo_contacts' | 'crm_contacts'; contactId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [isAssigning, setIsAssigning] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -135,6 +136,22 @@ const ContactDetails: React.FC = () => {
     tableName: tableName!,
     contactId: contactId!
   });
+
+  // Function to handle back navigation while preserving sorting parameters
+  const handleBackNavigation = () => {
+    // Check if we have sorting parameters in the current URL
+    const urlParams = new URLSearchParams(location.search);
+    const sortBy = urlParams.get('sortBy');
+    const sortOrder = urlParams.get('sortOrder');
+    
+    if (sortBy && sortOrder) {
+      // Navigate back to the data source table with sorting parameters
+      navigate(`/datasources/${tableName}?sortBy=${sortBy}&sortOrder=${sortOrder}`);
+    } else {
+      // Default navigation back
+      navigate(-1);
+    }
+  };
 
   const handleAssignContact = async (salesEmail: string) => {
     setIsAssigning(true);
@@ -221,7 +238,7 @@ const ContactDetails: React.FC = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">Contact non trouvé</h2>
           <p className="text-muted-foreground mb-4">Le contact demandé n'existe pas ou n'est plus disponible.</p>
-          <Button onClick={() => navigate(-1)}>
+          <Button onClick={handleBackNavigation}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour
           </Button>
@@ -505,7 +522,7 @@ const ContactDetails: React.FC = () => {
           {/* Navigation */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={() => navigate(-1)}>
+              <Button variant="outline" onClick={handleBackNavigation}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour
               </Button>

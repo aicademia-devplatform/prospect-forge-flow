@@ -16,7 +16,7 @@ import DataPagination from './DataPagination';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -162,6 +162,7 @@ const TableView: React.FC<TableViewProps> = ({
   onBack
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -171,8 +172,10 @@ const TableView: React.FC<TableViewProps> = ({
   const [sectionSearchTerm, setSectionSearchTerm] = useState('');
   const [columnSearchTerm, setColumnSearchTerm] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [sortBy, setSortBy] = useState('created_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  // Initialize sorting state from URL parameters or default values
+  const urlParams = new URLSearchParams(location.search);
+  const [sortBy, setSortBy] = useState(urlParams.get('sortBy') || 'created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>((urlParams.get('sortOrder') as 'asc' | 'desc') || 'desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
   const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set(['email']));
@@ -1168,13 +1171,24 @@ const TableView: React.FC<TableViewProps> = ({
     setCurrentPage(1);
   };
   const handleSort = (columnName: string) => {
+    let newSortBy = columnName;
+    let newSortOrder: 'asc' | 'desc';
+    
     if (sortBy === columnName) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
-      setSortBy(columnName);
-      setSortOrder('asc');
+      newSortOrder = 'asc';
     }
+    
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
     setCurrentPage(1);
+    
+    // Update URL parameters to persist sorting
+    const params = new URLSearchParams(location.search);
+    params.set('sortBy', newSortBy);
+    params.set('sortOrder', newSortOrder);
+    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
   };
   const getSortIcon = (columnName: string) => {
     if (sortBy !== columnName) {
@@ -1401,25 +1415,35 @@ const TableView: React.FC<TableViewProps> = ({
                                   <DropdownMenuSeparator />
                                   
                                   {/* Tri */}
-                                  <DropdownMenuCheckboxItem
-                                    checked={sortBy === column.name && sortOrder === 'asc'}
-                                    onCheckedChange={() => {
-                                      setSortBy(column.name);
-                                      setSortOrder('asc');
-                                      setCurrentPage(1);
-                                    }}
+                                   <DropdownMenuCheckboxItem
+                                     checked={sortBy === column.name && sortOrder === 'asc'}
+                                     onCheckedChange={() => {
+                                       setSortBy(column.name);
+                                       setSortOrder('asc');
+                                       setCurrentPage(1);
+                                       // Update URL parameters
+                                       const params = new URLSearchParams(location.search);
+                                       params.set('sortBy', column.name);
+                                       params.set('sortOrder', 'asc');
+                                       navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+                                     }}
                                   >
                                     <ArrowUp className="h-3 w-3 mr-2" />
                                     Trier croissant
                                   </DropdownMenuCheckboxItem>
                                   
-                                  <DropdownMenuCheckboxItem
-                                    checked={sortBy === column.name && sortOrder === 'desc'}
-                                    onCheckedChange={() => {
-                                      setSortBy(column.name);
-                                      setSortOrder('desc');
-                                      setCurrentPage(1);
-                                    }}
+                                   <DropdownMenuCheckboxItem
+                                     checked={sortBy === column.name && sortOrder === 'desc'}
+                                     onCheckedChange={() => {
+                                       setSortBy(column.name);
+                                       setSortOrder('desc');
+                                       setCurrentPage(1);
+                                       // Update URL parameters
+                                       const params = new URLSearchParams(location.search);
+                                       params.set('sortBy', column.name);
+                                       params.set('sortOrder', 'desc');
+                                       navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+                                     }}
                                   >
                                     <ArrowDown className="h-3 w-3 mr-2" />
                                     Trier décroissant
@@ -1548,7 +1572,11 @@ const TableView: React.FC<TableViewProps> = ({
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-8 w-8 p-0 hover:bg-muted"
-                                onClick={() => navigate(`/contact/${tableName}/${rowId}`)}
+                                onClick={() => {
+                                  // Preserve current sort parameters when navigating to details
+                                  const currentParams = new URLSearchParams(location.search);
+                                  navigate(`/contact/${tableName}/${rowId}?${currentParams.toString()}`);
+                                }}
                               >
                                 <ExternalLink className="h-4 w-4 text-muted-foreground" />
                               </Button>
