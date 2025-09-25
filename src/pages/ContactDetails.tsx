@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Mail, Phone, Building, Globe, Linkedin, User, Calendar, Tag, Briefcase, MapPin } from 'lucide-react';
-import { useTableData } from '@/hooks/useTableData';
+import { useContact } from '@/hooks/useContact';
 
 // Fonction de traduction des noms de colonnes (importée depuis TableView)
 const translateColumnName = (columnName: string): string => {
@@ -121,15 +121,9 @@ const ContactDetails: React.FC = () => {
   const navigate = useNavigate();
 
   // Récupérer les données du contact spécifique
-  const { data, loading } = useTableData({
+  const { data: contact, loading } = useContact({
     tableName: tableName!,
-    page: 1,
-    pageSize: 1,
-    searchTerm: contactId!,
-    sectionFilter: 'all',
-    sortBy: 'created_at',
-    sortOrder: 'desc',
-    visibleColumns: []
+    contactId: contactId!
   });
 
   if (loading) {
@@ -143,7 +137,6 @@ const ContactDetails: React.FC = () => {
     );
   }
 
-  const contact = data[0];
   if (!contact) {
     return (
       <div className="min-h-screen flex items-center justify-center">

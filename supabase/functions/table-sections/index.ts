@@ -52,9 +52,9 @@ Deno.serve(async (req) => {
     data?.forEach(item => {
       if (item.data_section) {
         // Split combined sections by comma and process each individually
-        const individualSections = item.data_section.split(',').map(s => s.trim()).filter(Boolean)
+        const individualSections = item.data_section.split(',').map((s: string) => s.trim()).filter(Boolean)
         
-        individualSections.forEach(section => {
+        individualSections.forEach((section: string) => {
           // Normalize section names and count only Arlynk and Aicademia
           const normalizedSection = section.trim().toLowerCase()
           
@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error', 
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
