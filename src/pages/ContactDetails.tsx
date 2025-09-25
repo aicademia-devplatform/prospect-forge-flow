@@ -530,14 +530,46 @@ const ContactDetails: React.FC = () => {
                     Modifier
                   </Button>
                   <Select onValueChange={handleAssignContact} disabled={isAssigning}>
-                    <SelectTrigger className="w-[200px] bg-secondary hover:bg-secondary/80">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Assigner à..." />
+                    <SelectTrigger className="w-[240px] h-10 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200 font-medium">
+                      <div className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        <span>Assigner à un commercial</span>
+                      </div>
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sales1@company.com">John Doe (Sales)</SelectItem>
-                      <SelectItem value="sales2@company.com">Jane Smith (Sales)</SelectItem>
-                      <SelectItem value="sales3@company.com">Mike Johnson (Sales)</SelectItem>
+                    <SelectContent className="w-[240px]">
+                      <SelectItem value="sales1@company.com" className="flex items-center gap-3 p-3 hover:bg-blue-50 cursor-pointer">
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <User className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">John Doe</div>
+                            <div className="text-sm text-gray-500">Commercial Senior</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="sales2@company.com" className="flex items-center gap-3 p-3 hover:bg-green-50 cursor-pointer">
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                            <User className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">Jane Smith</div>
+                            <div className="text-sm text-gray-500">Responsable Ventes</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="sales3@company.com" className="flex items-center gap-3 p-3 hover:bg-purple-50 cursor-pointer">
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                            <User className="h-4 w-4 text-purple-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">Mike Johnson</div>
+                            <div className="text-sm text-gray-500">Commercial Junior</div>
+                          </div>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </>
