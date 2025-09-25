@@ -1047,6 +1047,9 @@ const TableView: React.FC<TableViewProps> = ({
   const handleEmailWarningConfirm = async () => {
     if (pendingEmailEdit) {
       setEmailWarningOpen(false);
+      // S'assurer que l'état d'édition est défini avant la sauvegarde
+      setEditingCell({ rowId: pendingEmailEdit.rowId, columnName: pendingEmailEdit.columnName });
+      setEditingValue(pendingEmailEdit.value);
       await proceedWithSave(pendingEmailEdit.rowId, pendingEmailEdit.columnName, pendingEmailEdit.value);
       setPendingEmailEdit(null);
     }
