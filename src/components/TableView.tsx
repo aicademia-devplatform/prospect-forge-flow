@@ -1048,6 +1048,15 @@ const TableView: React.FC<TableViewProps> = ({
   const handleEmailWarningConfirm = async () => {
     if (pendingEmailEdit) {
       setEmailWarningOpen(false);
+      
+      // Mise à jour optimiste immédiate pour l'email
+      const optimisticData = localData.map(row => 
+        row.id === pendingEmailEdit.rowId 
+          ? { ...row, [pendingEmailEdit.columnName]: pendingEmailEdit.value }
+          : row
+      );
+      setLocalData(optimisticData);
+      
       // S'assurer que l'état d'édition est défini avant la sauvegarde
       setEditingCell({ rowId: pendingEmailEdit.rowId, columnName: pendingEmailEdit.columnName });
       setEditingValue(pendingEmailEdit.value);
