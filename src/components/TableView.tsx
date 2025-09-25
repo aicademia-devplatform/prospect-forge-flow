@@ -184,6 +184,8 @@ const TableView: React.FC<TableViewProps> = ({
   const [editingCell, setEditingCell] = useState<{ rowId: string; columnName: string } | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  const [localData, setLocalData] = useState<any[]>([]);
+  const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -199,7 +201,8 @@ const TableView: React.FC<TableViewProps> = ({
     data,
     totalCount,
     totalPages,
-    loading
+    loading,
+    refetch
   } = useTableData({
     tableName,
     page: currentPage,
@@ -210,6 +213,13 @@ const TableView: React.FC<TableViewProps> = ({
     sortOrder,
     visibleColumns: visibleColumnsArray
   });
+
+  // Update local data when server data changes
+  useEffect(() => {
+    if (data) {
+      setLocalData(data);
+    }
+  }, [data]);
 
   // Fetch available sections
   const {
@@ -896,23 +906,39 @@ const TableView: React.FC<TableViewProps> = ({
   const saveEdit = async () => {
     if (!editingCell) return;
     
+    const { rowId, columnName } = editingCell;
+    
+    // Convert value based on column type
+    let processedValue: any = editingValue;
+    const column = allColumns.find(col => col.name === columnName);
+    
+    if (column?.type === 'number') {
+      processedValue = editingValue === '' ? null : Number(editingValue);
+      if (isNaN(processedValue)) {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Valeur numérique invalide."
+        });
+        return;
+      }
+    } else if (column?.type === 'boolean') {
+      processedValue = editingValue.toLowerCase() === 'true' || editingValue === '1';
+    }
+
+    // Optimistic update - update local data immediately
+    const optimisticData = localData.map(row => 
+      row.id === rowId 
+        ? { ...row, [columnName]: processedValue }
+        : row
+    );
+    setLocalData(optimisticData);
+    
+    // Clear editing state immediately for fluid UX
+    cancelEditing();
+    
     setIsSaving(true);
     try {
-      const { rowId, columnName } = editingCell;
-      
-      // Convert value based on column type
-      let processedValue: any = editingValue;
-      const column = allColumns.find(col => col.name === columnName);
-      
-      if (column?.type === 'number') {
-        processedValue = editingValue === '' ? null : Number(editingValue);
-        if (isNaN(processedValue)) {
-          throw new Error('Valeur numérique invalide');
-        }
-      } else if (column?.type === 'boolean') {
-        processedValue = editingValue.toLowerCase() === 'true' || editingValue === '1';
-      }
-
       const { error } = await supabase
         .from(tableName)
         .update({ [columnName]: processedValue })
@@ -925,11 +951,30 @@ const TableView: React.FC<TableViewProps> = ({
         description: `${translateColumnName(columnName)} mis à jour avec succès.`
       });
 
-      // Refresh data
-      window.location.reload();
+      // Add visual feedback for successful update
+      const cellKey = `${rowId}-${columnName}`;
+      setRecentlyUpdated(prev => new Set([...prev, cellKey]));
+      
+      // Remove visual feedback after 2 seconds
+      setTimeout(() => {
+        setRecentlyUpdated(prev => {
+          const updated = new Set(prev);
+          updated.delete(cellKey);
+          return updated;
+        });
+      }, 2000);
+
+      // Refresh data in background without blocking UI
+      if (refetch) {
+        refetch();
+      }
       
     } catch (error) {
       console.error('Error saving edit:', error);
+      
+      // Revert optimistic update on error
+      setLocalData(data || []);
+      
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -937,7 +982,6 @@ const TableView: React.FC<TableViewProps> = ({
       });
     } finally {
       setIsSaving(false);
-      cancelEditing();
     }
   };
 
@@ -997,7 +1041,8 @@ const TableView: React.FC<TableViewProps> = ({
   };
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = data.map(row => row.id?.toString() || '');
+      const allIds = localData.map(row => row.id?.toString() || '');
+      setSelectedRows(new Set(allIds));
       setSelectedRows(new Set(allIds));
     } else {
       setSelectedRows(new Set());
@@ -1137,7 +1182,7 @@ const TableView: React.FC<TableViewProps> = ({
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-20">
                     <tr>
                       <th className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-30">
-                        <Checkbox checked={selectedRows.size === data.length && data.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
+                        <Checkbox checked={selectedRows.size === localData.length && localData.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
                       {displayColumns.map(column => {
                         const isPinned = pinnedColumns.has(column.name);
@@ -1265,7 +1310,7 @@ const TableView: React.FC<TableViewProps> = ({
                   
                   {/* Scrollable Body */}
                   <tbody>
-                    {data.map((row, index) => {
+                    {localData.map((row, index) => {
                   const rowId = row.id?.toString() || index.toString();
                   const isSelected = selectedRows.has(rowId);
                   return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
@@ -1278,11 +1323,13 @@ const TableView: React.FC<TableViewProps> = ({
                              const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
                              const isEditing = editingCell?.rowId === rowId && editingCell?.columnName === column.name;
                              const canEdit = column.name !== 'id' && column.name !== 'created_at' && column.name !== 'updated_at';
+                             const cellKey = `${rowId}-${column.name}`;
+                             const wasRecentlyUpdated = recentlyUpdated.has(cellKey);
                              
                              return (
                                 <td 
                                   key={column.name} 
-                                  className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''} ${canEdit ? 'cursor-pointer hover:bg-muted/30' : ''}`}
+                                  className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''} ${canEdit ? 'cursor-pointer hover:bg-muted/30' : ''} ${wasRecentlyUpdated ? 'bg-green-50 border-green-200 transition-all duration-1000' : ''}`}
                                   style={isPinned ? { left: '48px' } : {}}
                                   onDoubleClick={() => canEdit && startEditing(rowId, column.name, row[column.name])}
                                >
