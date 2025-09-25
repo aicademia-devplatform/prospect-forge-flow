@@ -944,6 +944,17 @@ const TableView: React.FC<TableViewProps> = ({
     
     const { rowId, columnName } = editingCell;
     
+    // Récupérer la valeur originale
+    const originalValue = localData.find(row => row.id === rowId)?.[columnName];
+    const originalValueStr = originalValue?.toString() || '';
+    
+    // Vérifier si la valeur a vraiment changé
+    if (editingValue === originalValueStr) {
+      // Aucun changement, annuler l'édition sans faire de requête
+      cancelEditing();
+      return;
+    }
+    
     // Vérifier si c'est une modification d'email
     const isEmailField = columnName === 'email' || columnName.toLowerCase().includes('email');
     
