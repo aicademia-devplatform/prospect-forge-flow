@@ -184,6 +184,7 @@ const TableView: React.FC<TableViewProps> = ({
   // Inline editing states
   const [editingCell, setEditingCell] = useState<{ rowId: string; columnName: string } | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
+  const [originalValue, setOriginalValue] = useState<string>(''); // Nouvelle variable pour stocker la valeur originale
   const [isSaving, setIsSaving] = useState(false);
   const [localData, setLocalData] = useState<any[]>([]);
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
@@ -930,13 +931,16 @@ const TableView: React.FC<TableViewProps> = ({
       return;
     }
     
+    const valueStr = currentValue?.toString() || '';
     setEditingCell({ rowId, columnName });
-    setEditingValue(currentValue?.toString() || '');
+    setEditingValue(valueStr);
+    setOriginalValue(valueStr); // Stocker la valeur originale au moment de l'édition
   };
 
   const cancelEditing = () => {
     setEditingCell(null);
     setEditingValue('');
+    setOriginalValue(''); // Reset la valeur originale
   };
 
   const saveEdit = async () => {
@@ -944,12 +948,8 @@ const TableView: React.FC<TableViewProps> = ({
     
     const { rowId, columnName } = editingCell;
     
-    // Récupérer la valeur originale depuis les données du serveur, pas localData
-    const originalValue = data?.find(row => row.id === rowId)?.[columnName];
-    const originalValueStr = originalValue?.toString() || '';
-    
-    // Vérifier si la valeur a vraiment changé
-    if (editingValue === originalValueStr) {
+    // Vérifier si la valeur a vraiment changé en comparant avec la valeur originale
+    if (editingValue === originalValue) {
       // Aucun changement, annuler l'édition sans faire de requête
       cancelEditing();
       return;
