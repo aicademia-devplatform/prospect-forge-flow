@@ -5,9 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Mail, Phone, Building, Globe, Linkedin, User, Calendar, Tag, Briefcase, MapPin, UserPlus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, Mail, Phone, Building, Globe, Linkedin, User, Calendar, Tag, Briefcase, MapPin, UserPlus, Edit, Save, X } from 'lucide-react';
 import { useContact } from '@/hooks/useContact';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Fonction de traduction des noms de colonnes (importée depuis TableView)
 const translateColumnName = (columnName: string): string => {
@@ -123,6 +126,9 @@ const ContactDetails: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState<any>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   // Récupérer les données du contact spécifique
   const { data: contact, loading } = useContact({
@@ -147,6 +153,55 @@ const ContactDetails: React.FC = () => {
     } finally {
       setIsAssigning(false);
     }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditedData({ ...contact });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedData({});
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from(tableName!)
+        .update(editedData)
+        .eq('id', contactId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Contact mis à jour",
+        description: "Les modifications ont été sauvegardées avec succès."
+      });
+      
+      setIsEditing(false);
+      setEditedData({});
+      
+      // Refresh the contact data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating contact:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de sauvegarder les modifications."
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleFieldChange = (fieldName: string, value: any) => {
+    setEditedData((prev: any) => ({
+      ...prev,
+      [fieldName]: value
+    }));
   };
 
   if (loading) {
@@ -357,7 +412,7 @@ const ContactDetails: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {fields.map(field => {
-            const value = contact[field];
+            const value = isEditing ? editedData[field] : contact[field];
             
             return (
               <div key={field} className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -365,13 +420,80 @@ const ContactDetails: React.FC = () => {
                   {translateColumnName(field)}:
                 </span>
                 <div className="flex-1">
-                  {formatValue(value, field)}
+                  {isEditing ? renderEditableField(field, value) : formatValue(value, field)}
                 </div>
               </div>
             );
           })}
         </CardContent>
       </Card>
+    );
+  };
+
+  const renderEditableField = (fieldName: string, value: any) => {
+    // Handle data_section as a select
+    if (fieldName === 'data_section') {
+      return (
+        <Select value={value || ''} onValueChange={(newValue) => handleFieldChange(fieldName, newValue)}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Sélectionner une section" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Arlynk">Arlynk</SelectItem>
+            <SelectItem value="Aicademia">Aicademia</SelectItem>
+            <SelectItem value="Arlynk, Aicademia">Arlynk, Aicademia</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    // Handle boolean fields
+    if (typeof contact[fieldName] === 'boolean') {
+      return (
+        <Select value={value?.toString() || 'false'} onValueChange={(newValue) => handleFieldChange(fieldName, newValue === 'true')}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">Oui</SelectItem>
+            <SelectItem value="false">Non</SelectItem>
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    // Handle long text fields with textarea
+    if (fieldName.includes('description') || fieldName.includes('note') || fieldName.includes('comment')) {
+      return (
+        <Textarea
+          value={value || ''}
+          onChange={(e) => handleFieldChange(fieldName, e.target.value)}
+          className="w-full"
+          rows={3}
+        />
+      );
+    }
+
+    // Handle number fields
+    if (typeof contact[fieldName] === 'number' || fieldName.includes('score') || fieldName.includes('employees') || fieldName.includes('revenue') || fieldName.includes('funding')) {
+      return (
+        <Input
+          type="number"
+          value={value || ''}
+          onChange={(e) => handleFieldChange(fieldName, e.target.value ? parseFloat(e.target.value) : null)}
+          className="w-full"
+        />
+      );
+    }
+
+    // Default: text input
+    return (
+      <Input
+        type="text"
+        value={value || ''}
+        onChange={(e) => handleFieldChange(fieldName, e.target.value)}
+        className="w-full"
+      />
     );
   };
 
@@ -395,19 +517,59 @@ const ContactDetails: React.FC = () => {
               </div>
             </div>
             
-            {/* Assign Button */}
+            {/* Action Buttons */}
             <div className="flex items-center gap-2">
-              <Select onValueChange={handleAssignContact} disabled={isAssigning}>
-                <SelectTrigger className="w-[200px] bg-primary text-primary-foreground hover:bg-primary/90 border-primary">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Assigner à..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sales1@company.com">John Doe (Sales)</SelectItem>
-                  <SelectItem value="sales2@company.com">Jane Smith (Sales)</SelectItem>
-                  <SelectItem value="sales3@company.com">Mike Johnson (Sales)</SelectItem>
-                </SelectContent>
-              </Select>
+              {!isEditing ? (
+                <>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleEdit}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 border-primary"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                  <Select onValueChange={handleAssignContact} disabled={isAssigning}>
+                    <SelectTrigger className="w-[200px] bg-secondary hover:bg-secondary/80">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Assigner à..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sales1@company.com">John Doe (Sales)</SelectItem>
+                      <SelectItem value="sales2@company.com">Jane Smith (Sales)</SelectItem>
+                      <SelectItem value="sales3@company.com">Mike Johnson (Sales)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Annuler
+                  </Button>
+                  <Button 
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {isSaving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Sauvegarde...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Sauvegarder
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
