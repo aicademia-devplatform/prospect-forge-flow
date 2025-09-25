@@ -12,6 +12,7 @@ import Import from "./pages/Import";
 import Reports from "./pages/Reports";
 import DataSources from "./pages/DataSources";
 import DataSourceTable from "./pages/DataSourceTable";
+import ContactDetails from "./pages/ContactDetails";
 import AdminPanel from "./pages/AdminPanel";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
@@ -84,6 +85,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <DataSourceTable />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/contact/:tableName/:contactId" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ContactDetails />
                   </Layout>
                 </ProtectedRoute>
               } 

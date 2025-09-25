@@ -14,6 +14,7 @@ import DataPagination from './DataPagination';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useNavigate } from 'react-router-dom';
 
 interface TableViewProps {
   tableName: 'apollo_contacts' | 'crm_contacts';
@@ -156,6 +157,7 @@ const TableView: React.FC<TableViewProps> = ({
   tableName,
   onBack
 }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -1208,7 +1210,12 @@ const TableView: React.FC<TableViewProps> = ({
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
                                 <Edit2 className="h-4 w-4 text-muted-foreground" />
                               </Button>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 w-8 p-0 hover:bg-muted"
+                                onClick={() => navigate(`/contact/${tableName}/${rowId}`)}
+                              >
                                 <ExternalLink className="h-4 w-4 text-muted-foreground" />
                               </Button>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive">
