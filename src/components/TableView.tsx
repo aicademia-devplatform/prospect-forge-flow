@@ -944,8 +944,8 @@ const TableView: React.FC<TableViewProps> = ({
     
     const { rowId, columnName } = editingCell;
     
-    // Récupérer la valeur originale
-    const originalValue = localData.find(row => row.id === rowId)?.[columnName];
+    // Récupérer la valeur originale depuis les données du serveur, pas localData
+    const originalValue = data?.find(row => row.id === rowId)?.[columnName];
     const originalValueStr = originalValue?.toString() || '';
     
     // Vérifier si la valeur a vraiment changé
