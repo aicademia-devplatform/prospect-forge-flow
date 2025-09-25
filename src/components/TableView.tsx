@@ -1428,13 +1428,14 @@ const TableView: React.FC<TableViewProps> = ({
                                        ref={editInputRef}
                                        value={editingValue}
                                        onChange={(e) => setEditingValue(e.target.value)}
-                                       onKeyDown={(e) => {
-                                         if (e.key === 'Enter') {
-                                           saveEdit();
-                                         } else if (e.key === 'Escape') {
-                                           cancelEditing();
-                                         }
-                                       }}
+                                        onKeyDown={async (e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            await saveEdit();
+                                          } else if (e.key === 'Escape') {
+                                            cancelEditing();
+                                          }
+                                        }}
                                        onBlur={saveEdit}
                                        className="h-8 text-sm"
                                        disabled={isSaving}
