@@ -14,6 +14,16 @@ interface QueryParams {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
   visibleColumns?: string[]
+  advancedFilters?: {
+    dateCreatedFrom?: string
+    dateCreatedTo?: string
+    dataSection?: string
+    zohoStatus?: string
+    apolloStatus?: string
+    contactActive?: string
+    industrie?: string
+    company?: string
+  }
 }
 
 Deno.serve(async (req) => {
@@ -37,10 +47,11 @@ Deno.serve(async (req) => {
       sectionFilter, 
       sortBy = 'created_at', 
       sortOrder = 'desc',
-      visibleColumns = []
+      visibleColumns = [],
+      advancedFilters = {}
     }: QueryParams = await req.json()
 
-    console.log('Query params:', { tableName, page, pageSize, searchTerm, sectionFilter, sortBy, sortOrder, visibleColumns })
+    console.log('Query params:', { tableName, page, pageSize, searchTerm, sectionFilter, sortBy, sortOrder, visibleColumns, advancedFilters })
 
     // Build the column selection
     const baseColumns = ['id', 'email']
@@ -65,6 +76,40 @@ Deno.serve(async (req) => {
         })
         
         query = query.or(orConditions.join(','))
+      }
+    }
+
+    // Apply advanced filters (only for crm_contacts)
+    if (tableName === 'crm_contacts' && Object.keys(advancedFilters).length > 0) {
+      // Date filters
+      if (advancedFilters.dateCreatedFrom) {
+        query = query.gte('created_at', advancedFilters.dateCreatedFrom)
+      }
+      if (advancedFilters.dateCreatedTo) {
+        // Add one day to include the end date
+        const endDate = new Date(advancedFilters.dateCreatedTo)
+        endDate.setDate(endDate.getDate() + 1)
+        query = query.lt('created_at', endDate.toISOString())
+      }
+      
+      // String filters - exact matches
+      if (advancedFilters.dataSection) {
+        query = query.ilike('data_section', `%${advancedFilters.dataSection}%`)
+      }
+      if (advancedFilters.zohoStatus) {
+        query = query.eq('zoho_status', advancedFilters.zohoStatus)
+      }
+      if (advancedFilters.apolloStatus) {
+        query = query.eq('apollo_status', advancedFilters.apolloStatus)
+      }
+      if (advancedFilters.contactActive) {
+        query = query.eq('contact_active', advancedFilters.contactActive)
+      }
+      if (advancedFilters.industrie) {
+        query = query.eq('industrie', advancedFilters.industrie)
+      }
+      if (advancedFilters.company) {
+        query = query.ilike('company', `%${advancedFilters.company}%`)
       }
     }
 

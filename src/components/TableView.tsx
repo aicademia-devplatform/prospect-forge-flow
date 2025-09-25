@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import DataPagination from './DataPagination';
+import TableFilters, { FilterValues } from './TableFilters';
 import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -193,6 +194,7 @@ const TableView: React.FC<TableViewProps> = ({
   const [localData, setLocalData] = useState<any[]>([]);
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
   const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set()); // Track pending updates to ignore realtime
+  const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -221,7 +223,8 @@ const TableView: React.FC<TableViewProps> = ({
     sectionFilter: selectedSections.length > 0 ? selectedSections.join(',') : 'all',
     sortBy,
     sortOrder,
-    visibleColumns: visibleColumnsArray
+    visibleColumns: visibleColumnsArray,
+    advancedFilters
   });
 
   // Update local data when server data changes
@@ -1166,6 +1169,16 @@ const TableView: React.FC<TableViewProps> = ({
     setSearchTerm(value);
     setCurrentPage(1);
   };
+
+  const handleAdvancedFiltersChange = (filters: FilterValues) => {
+    setAdvancedFilters(filters);
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setAdvancedFilters({});
+    setCurrentPage(1);
+  };
   const handleSectionFilterChange = (value: string) => {
     setSectionFilter(value);
     setCurrentPage(1);
@@ -1318,6 +1331,14 @@ const TableView: React.FC<TableViewProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Advanced Filters */}
+      <TableFilters
+        tableName={tableName}
+        filters={advancedFilters}
+        onFiltersChange={handleAdvancedFiltersChange}
+        onReset={handleResetFilters}
+      />
 
       <div className="bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-6">
         {loading ? <div className="flex items-center justify-center flex-1">

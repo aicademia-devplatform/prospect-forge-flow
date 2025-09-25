@@ -11,6 +11,16 @@ interface UseTableDataParams {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   visibleColumns?: string[];
+  advancedFilters?: {
+    dateCreatedFrom?: Date;
+    dateCreatedTo?: Date;
+    dataSection?: string;
+    zohoStatus?: string;
+    apolloStatus?: string;
+    contactActive?: string;
+    industrie?: string;
+    company?: string;
+  };
 }
 
 interface TableDataResponse {
@@ -71,7 +81,8 @@ export const useTableData = (params: UseTableDataParams) => {
     params.sectionFilter,
     params.sortBy,
     params.sortOrder,
-    params.visibleColumns
+    params.visibleColumns,
+    params.advancedFilters
   ]);
 
   return {
