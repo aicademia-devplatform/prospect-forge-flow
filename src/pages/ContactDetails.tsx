@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Mail, Phone, Building, Globe, Linkedin, User, Calendar, Tag, Briefcase, MapPin } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Mail, Phone, Building, Globe, Linkedin, User, Calendar, Tag, Briefcase, MapPin, UserPlus } from 'lucide-react';
 import { useContact } from '@/hooks/useContact';
+import { useToast } from '@/hooks/use-toast';
 
 // Fonction de traduction des noms de colonnes (importée depuis TableView)
 const translateColumnName = (columnName: string): string => {
@@ -119,12 +121,33 @@ const generateSectionColor = (sectionName: string) => {
 const ContactDetails: React.FC = () => {
   const { tableName, contactId } = useParams<{ tableName: 'apollo_contacts' | 'crm_contacts'; contactId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isAssigning, setIsAssigning] = useState(false);
 
   // Récupérer les données du contact spécifique
   const { data: contact, loading } = useContact({
     tableName: tableName!,
     contactId: contactId!
   });
+
+  const handleAssignContact = async (salesEmail: string) => {
+    setIsAssigning(true);
+    try {
+      // TODO: Implémenter la logique d'assignation
+      toast({
+        title: "Contact assigné",
+        description: `Contact assigné à ${salesEmail} avec succès.`
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'assigner le contact."
+      });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -358,16 +381,33 @@ const ContactDetails: React.FC = () => {
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-b shadow-sm">
         <div className="max-w-6xl mx-auto p-6">
           {/* Navigation */}
-          <div className="flex items-center gap-4 mb-6">
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">{getDisplayName()}</h1>
-              <p className="text-muted-foreground">
-                {tableName === 'apollo_contacts' ? 'Contact Apollo' : 'Contact CRM'}
-              </p>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" onClick={() => navigate(-1)}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold">{getDisplayName()}</h1>
+                <p className="text-muted-foreground">
+                  {tableName === 'apollo_contacts' ? 'Contact Apollo' : 'Contact CRM'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Assign Button */}
+            <div className="flex items-center gap-2">
+              <Select onValueChange={handleAssignContact} disabled={isAssigning}>
+                <SelectTrigger className="w-[200px]">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Assigner à..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sales1@company.com">John Doe (Sales)</SelectItem>
+                  <SelectItem value="sales2@company.com">Jane Smith (Sales)</SelectItem>
+                  <SelectItem value="sales3@company.com">Mike Johnson (Sales)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
