@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,6 +15,8 @@ import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TableViewProps {
   tableName: 'apollo_contacts' | 'crm_contacts';
@@ -158,6 +160,7 @@ const TableView: React.FC<TableViewProps> = ({
   onBack
 }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -177,8 +180,13 @@ const TableView: React.FC<TableViewProps> = ({
   const [columnDialogOpen, setColumnDialogOpen] = useState(false);
   const [tempVisibleColumns, setTempVisibleColumns] = useState<Set<string>>(new Set());
   const [tempColumnOrder, setTempColumnOrder] = useState<string[]>([]);
+  // Inline editing states
+  const [editingCell, setEditingCell] = useState<{ rowId: string; columnName: string } | null>(null);
+  const [editingValue, setEditingValue] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -869,6 +877,78 @@ const TableView: React.FC<TableViewProps> = ({
     }
   };
 
+  // Inline editing functions
+  const startEditing = (rowId: string, columnName: string, currentValue: any) => {
+    // Don't edit readonly columns
+    if (columnName === 'id' || columnName === 'created_at' || columnName === 'updated_at') {
+      return;
+    }
+    
+    setEditingCell({ rowId, columnName });
+    setEditingValue(currentValue?.toString() || '');
+  };
+
+  const cancelEditing = () => {
+    setEditingCell(null);
+    setEditingValue('');
+  };
+
+  const saveEdit = async () => {
+    if (!editingCell) return;
+    
+    setIsSaving(true);
+    try {
+      const { rowId, columnName } = editingCell;
+      
+      // Convert value based on column type
+      let processedValue: any = editingValue;
+      const column = allColumns.find(col => col.name === columnName);
+      
+      if (column?.type === 'number') {
+        processedValue = editingValue === '' ? null : Number(editingValue);
+        if (isNaN(processedValue)) {
+          throw new Error('Valeur numérique invalide');
+        }
+      } else if (column?.type === 'boolean') {
+        processedValue = editingValue.toLowerCase() === 'true' || editingValue === '1';
+      }
+
+      const { error } = await supabase
+        .from(tableName)
+        .update({ [columnName]: processedValue })
+        .eq('id', rowId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Modification sauvegardée",
+        description: `${translateColumnName(columnName)} mis à jour avec succès.`
+      });
+
+      // Refresh data
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Error saving edit:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de sauvegarder la modification."
+      });
+    } finally {
+      setIsSaving(false);
+      cancelEditing();
+    }
+  };
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (editingCell && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingCell]);
+
   const handleColumnFilter = (columnName: string, value: string) => {
     setColumnFilters(prev => ({
       ...prev,
@@ -1194,16 +1274,46 @@ const TableView: React.FC<TableViewProps> = ({
                           {displayColumns.map(column => {
                             const isPinned = pinnedColumns.has(column.name);
                             // Since only one column can be pinned, it's always at position 48px (after checkbox)
-                            const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
-                            return (
-                               <td 
-                                 key={column.name} 
-                                 className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''}`}
-                                 style={isPinned ? { left: '48px' } : {}}
-                              >
-                                {formatCellValue(row[column.name], column.name)}
-                              </td>
-                            );
+                             const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
+                             const isEditing = editingCell?.rowId === rowId && editingCell?.columnName === column.name;
+                             const canEdit = column.name !== 'id' && column.name !== 'created_at' && column.name !== 'updated_at';
+                             
+                             return (
+                                <td 
+                                  key={column.name} 
+                                  className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''} ${canEdit ? 'cursor-pointer hover:bg-muted/30' : ''}`}
+                                  style={isPinned ? { left: '48px' } : {}}
+                                  onDoubleClick={() => canEdit && startEditing(rowId, column.name, row[column.name])}
+                               >
+                                 {isEditing ? (
+                                   <div className="flex items-center gap-2">
+                                     <Input
+                                       ref={editInputRef}
+                                       value={editingValue}
+                                       onChange={(e) => setEditingValue(e.target.value)}
+                                       onKeyDown={(e) => {
+                                         if (e.key === 'Enter') {
+                                           saveEdit();
+                                         } else if (e.key === 'Escape') {
+                                           cancelEditing();
+                                         }
+                                       }}
+                                       onBlur={saveEdit}
+                                       className="h-8 text-sm"
+                                       disabled={isSaving}
+                                     />
+                                     {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                                   </div>
+                                 ) : (
+                                   <div className="flex items-center justify-between group">
+                                     <span>{formatCellValue(row[column.name], column.name)}</span>
+                                     {canEdit && (
+                                       <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity ml-2" />
+                                     )}
+                                   </div>
+                                 )}
+                               </td>
+                             );
                           })}
                           <td className="w-20 px-4 py-4">
                             <div className="flex items-center justify-center space-x-1">
@@ -1357,6 +1467,7 @@ const TableView: React.FC<TableViewProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 };
 export default TableView;
