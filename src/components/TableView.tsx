@@ -940,6 +940,28 @@ const TableView: React.FC<TableViewProps> = ({
     
     const { rowId, columnName } = editingCell;
     
+    // Vérifier si c'est une modification d'email
+    const isEmailField = columnName === 'email' || columnName.toLowerCase().includes('email');
+    
+    if (isEmailField) {
+      // Afficher une popup d'avertissement pour les modifications d'email
+      const confirmed = window.confirm(
+        "⚠️ ATTENTION: Vous êtes sur le point de modifier une adresse email.\n\n" +
+        "Cette modification peut affecter:\n" +
+        "• Les campagnes email en cours\n" +
+        "• L'historique des communications\n" +
+        "• La délivrabilité des futures campagnes\n\n" +
+        "Êtes-vous sûr de vouloir continuer?"
+      );
+      
+      if (!confirmed) {
+        // Si l'utilisateur annule, remettre la valeur originale
+        const originalValue = localData.find(row => row.id === rowId)?.[columnName] || '';
+        setEditingValue(originalValue);
+        return;
+      }
+    }
+    
     // Convert value based on column type
     let processedValue: any = editingValue;
     const column = allColumns.find(col => col.name === columnName);
