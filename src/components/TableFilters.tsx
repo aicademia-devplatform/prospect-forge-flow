@@ -211,12 +211,12 @@ const TableFilters: React.FC<TableFiltersProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Section de données</label>
-              <Select value={localFilters.dataSection || ""} onValueChange={(value) => updateFilter('dataSection', value || undefined)}>
+              <Select value={localFilters.dataSection || "all"} onValueChange={(value) => updateFilter('dataSection', value === "all" ? undefined : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Toutes les sections" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les sections</SelectItem>
+                  <SelectItem value="all">Toutes les sections</SelectItem>
                   <SelectItem value="Arlynk">Arlynk</SelectItem>
                   <SelectItem value="Aicademia">Aicademia</SelectItem>
                 </SelectContent>
@@ -225,12 +225,12 @@ const TableFilters: React.FC<TableFiltersProps> = ({
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Statut Zoho</label>
-              <Select value={localFilters.zohoStatus || ""} onValueChange={(value) => updateFilter('zohoStatus', value || undefined)}>
+              <Select value={localFilters.zohoStatus || "all"} onValueChange={(value) => updateFilter('zohoStatus', value === "all" ? undefined : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les statuts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les statuts</SelectItem>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
                   {ZOHO_STATUS_OPTIONS.map(status => (
                     <SelectItem key={status} value={status}>{status}</SelectItem>
                   ))}
@@ -240,12 +240,12 @@ const TableFilters: React.FC<TableFiltersProps> = ({
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Statut Apollo</label>
-              <Select value={localFilters.apolloStatus || ""} onValueChange={(value) => updateFilter('apolloStatus', value || undefined)}>
+              <Select value={localFilters.apolloStatus || "all"} onValueChange={(value) => updateFilter('apolloStatus', value === "all" ? undefined : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les statuts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les statuts</SelectItem>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
                   {APOLLO_STATUS_OPTIONS.map(status => (
                     <SelectItem key={status} value={status}>{status}</SelectItem>
                   ))}
@@ -255,12 +255,12 @@ const TableFilters: React.FC<TableFiltersProps> = ({
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Contact actif</label>
-              <Select value={localFilters.contactActive || ""} onValueChange={(value) => updateFilter('contactActive', value || undefined)}>
+              <Select value={localFilters.contactActive || "all"} onValueChange={(value) => updateFilter('contactActive', value === "all" ? undefined : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les contacts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous les contacts</SelectItem>
+                  <SelectItem value="all">Tous les contacts</SelectItem>
                   {CONTACT_ACTIVE_OPTIONS.map(status => (
                     <SelectItem key={status} value={status}>{status}</SelectItem>
                   ))}
@@ -270,12 +270,12 @@ const TableFilters: React.FC<TableFiltersProps> = ({
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Industrie</label>
-              <Select value={localFilters.industrie || ""} onValueChange={(value) => updateFilter('industrie', value || undefined)}>
+              <Select value={localFilters.industrie || "all"} onValueChange={(value) => updateFilter('industrie', value === "all" ? undefined : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Toutes les industries" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les industries</SelectItem>
+                  <SelectItem value="all">Toutes les industries</SelectItem>
                   {INDUSTRIE_OPTIONS.map(industry => (
                     <SelectItem key={industry} value={industry}>{industry}</SelectItem>
                   ))}
