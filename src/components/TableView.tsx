@@ -189,6 +189,7 @@ const TableView: React.FC<TableViewProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [localData, setLocalData] = useState<any[]>([]);
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
+  const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set()); // Track pending updates to ignore realtime
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -242,6 +243,14 @@ const TableView: React.FC<TableViewProps> = ({
           // Update local data with real-time changes from other users
           const updatedRecord = payload.new;
           if (updatedRecord) {
+            const updateKey = `${updatedRecord.id}`;
+            
+            // If we have a pending update for this record, ignore this realtime update to avoid conflicts
+            if (pendingUpdates.has(updateKey)) {
+              console.log('Ignoring realtime update for pending record:', updateKey);
+              return;
+            }
+            
             setLocalData(prev => 
               prev.map(row => 
                 row.id === updatedRecord.id 
@@ -997,6 +1006,10 @@ const TableView: React.FC<TableViewProps> = ({
     );
     setLocalData(optimisticData);
     
+    // Mark this record as having a pending update to ignore realtime conflicts
+    const updateKey = `${rowId}`;
+    setPendingUpdates(prev => new Set([...prev, updateKey]));
+    
     // Clear editing state immediately for fluid UX
     cancelEditing();
     
@@ -1047,13 +1060,25 @@ const TableView: React.FC<TableViewProps> = ({
         });
       }, 2000);
 
-      // Note: Pas de refetch automatique pour garder l'expérience fluide
-      
     } catch (error) {
       console.error('Error saving edit:', error);
       
-      // Revert optimistic update on error
-      setLocalData(data || []);
+      // Revert optimistic update on error - fetch fresh data
+      const { data: freshData, error: fetchError } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('id', rowId)
+        .single();
+
+      if (!fetchError && freshData) {
+        setLocalData(prev => 
+          prev.map(row => 
+            row.id === rowId 
+              ? { ...row, ...freshData }
+              : row
+          )
+        );
+      }
       
       toast({
         variant: "destructive",
@@ -1062,6 +1087,14 @@ const TableView: React.FC<TableViewProps> = ({
       });
     } finally {
       setIsSaving(false);
+      // Clear pending update flag after a delay to allow realtime to arrive
+      setTimeout(() => {
+        setPendingUpdates(prev => {
+          const updated = new Set(prev);
+          updated.delete(updateKey);
+          return updated;
+        });
+      }, 1000);
     }
   };
 
@@ -1069,53 +1102,11 @@ const TableView: React.FC<TableViewProps> = ({
     if (pendingEmailEdit) {
       setEmailWarningOpen(false);
       
-      // Pour les emails, on fait directement la sauvegarde puis on rafraîchit
-      setIsSaving(true);
-      try {
-        const { error } = await supabase
-          .from(tableName)
-          .update({ [pendingEmailEdit.columnName]: pendingEmailEdit.value })
-          .eq('id', pendingEmailEdit.rowId);
-
-        if (error) throw error;
-
-        // Récupérer la ligne mise à jour depuis la base pour s'assurer d'avoir les vraies données
-        const { data: updatedRow, error: fetchError } = await supabase
-          .from(tableName)
-          .select('*')
-          .eq('id', pendingEmailEdit.rowId)
-          .single();
-
-        if (fetchError) throw fetchError;
-
-        // Mettre à jour seulement cette ligne dans localData
-        if (updatedRow) {
-          setLocalData(prev => 
-            prev.map(row => 
-              row.id === pendingEmailEdit.rowId 
-                ? { ...row, ...updatedRow }
-                : row
-            )
-          );
-        }
-
-        toast({
-          title: "Modification sauvegardée",
-          description: `${translateColumnName(pendingEmailEdit.columnName)} mis à jour avec succès.`
-        });
-
-      } catch (error) {
-        console.error('Error saving email edit:', error);
-        toast({
-          variant: "destructive",
-          title: "Erreur",
-          description: "Impossible de sauvegarder la modification."
-        });
-      } finally {
-        setIsSaving(false);
-        cancelEditing();
-        setPendingEmailEdit(null);
-      }
+      // Utiliser proceedWithSave qui gère déjà la mise à jour optimiste et le real-time
+      setEditingCell({ rowId: pendingEmailEdit.rowId, columnName: pendingEmailEdit.columnName });
+      setEditingValue(pendingEmailEdit.value);
+      await proceedWithSave(pendingEmailEdit.rowId, pendingEmailEdit.columnName, pendingEmailEdit.value);
+      setPendingEmailEdit(null);
     }
   };
 
