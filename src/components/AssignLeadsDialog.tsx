@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +22,7 @@ interface SalesUser {
   first_name: string;
   last_name: string;
   email: string;
+  avatar_url?: string;
 }
 
 export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
@@ -64,7 +66,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
       // Ensuite, récupérer les profils de ces utilisateurs
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email')
+        .select('id, first_name, last_name, email, avatar_url')
         .in('id', salesUserIds);
 
       if (error) throw error;
@@ -161,13 +163,50 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
           <div>
             <Label htmlFor="sales-select">Assigner à</Label>
             <Select value={selectedSalesId} onValueChange={setSelectedSalesId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un sales" />
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionner un sales">
+                  {selectedSalesId && (() => {
+                    const selectedUser = salesUsers.find(user => user.id === selectedSalesId);
+                    return selectedUser ? (
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={selectedUser.avatar_url || ''} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                            {(selectedUser.first_name?.charAt(0) || '') + (selectedUser.last_name?.charAt(0) || '')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium text-sm">
+                            {selectedUser.first_name} {selectedUser.last_name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {selectedUser.email}
+                          </span>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+                </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50">
                 {salesUsers.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name} ({user.email})
+                  <SelectItem key={user.id} value={user.id} className="p-3">
+                    <div className="flex items-center space-x-3 w-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.avatar_url || ''} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          {(user.first_name?.charAt(0) || '') + (user.last_name?.charAt(0) || '')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium text-sm">
+                          {user.first_name} {user.last_name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {user.email}
+                        </span>
+                      </div>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
