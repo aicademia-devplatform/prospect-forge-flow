@@ -335,15 +335,42 @@ const TableView: React.FC<TableViewProps> = ({
     return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white border-gray-300';
   };
   const toggleSection = (sectionValue: string) => {
+    let newSelectedSections: string[];
     if (selectedSections.includes(sectionValue)) {
-      setSelectedSections(selectedSections.filter(s => s !== sectionValue));
+      newSelectedSections = selectedSections.filter(s => s !== sectionValue);
     } else {
-      setSelectedSections([...selectedSections, sectionValue]);
+      newSelectedSections = [...selectedSections, sectionValue];
     }
+    
+    setSelectedSections(newSelectedSections);
+    
+    // Synchroniser avec les filtres avancés
+    const newAdvancedFilters = { ...advancedFilters };
+    if (newSelectedSections.length === 0) {
+      delete newAdvancedFilters.dataSection;
+    } else if (newSelectedSections.length === 1) {
+      newAdvancedFilters.dataSection = newSelectedSections[0];
+    } else {
+      // Si plusieurs sections sont sélectionnées, utiliser la première
+      newAdvancedFilters.dataSection = newSelectedSections[0];
+    }
+    
+    setAdvancedFilters(newAdvancedFilters);
     setCurrentPage(1);
   };
   const removeSection = (sectionValue: string) => {
-    setSelectedSections(selectedSections.filter(s => s !== sectionValue));
+    const newSelectedSections = selectedSections.filter(s => s !== sectionValue);
+    setSelectedSections(newSelectedSections);
+    
+    // Synchroniser avec les filtres avancés
+    const newAdvancedFilters = { ...advancedFilters };
+    if (newSelectedSections.length === 0) {
+      delete newAdvancedFilters.dataSection;
+    } else {
+      newAdvancedFilters.dataSection = newSelectedSections[0];
+    }
+    
+    setAdvancedFilters(newAdvancedFilters);
     setCurrentPage(1);
   };
 
@@ -1363,16 +1390,34 @@ const TableView: React.FC<TableViewProps> = ({
     }
   }, [tableName]);
 
+  // Synchronisation initiale des filtres avec les badges de section
+  useEffect(() => {
+    if (advancedFilters.dataSection && !selectedSections.includes(advancedFilters.dataSection)) {
+      setSelectedSections([advancedFilters.dataSection]);
+    } else if (!advancedFilters.dataSection && selectedSections.length > 0) {
+      setSelectedSections([]);
+    }
+  }, [advancedFilters.dataSection]);
+
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
   };
   const handleAdvancedFiltersChange = (filters: FilterValues) => {
     setAdvancedFilters(filters);
+    
+    // Synchroniser avec les badges de section
+    if (filters.dataSection) {
+      setSelectedSections([filters.dataSection]);
+    } else {
+      setSelectedSections([]);
+    }
+    
     setCurrentPage(1);
   };
   const handleResetFilters = () => {
     setAdvancedFilters({});
+    setSelectedSections([]); // Réinitialiser aussi les badges de section
     setCurrentPage(1);
   };
   const handleSectionFilterChange = (value: string) => {
