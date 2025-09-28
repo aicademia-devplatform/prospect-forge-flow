@@ -1277,7 +1277,7 @@ const TableView: React.FC<TableViewProps> = ({
       </AnimatePresence>
 
       {/* All Controls - Above Table */}
-      <div className="flex items-center justify-between gap-2 mb-3 my-[16px]">
+      <div className="flex items-center justify-between gap-2 mt-5 -mb-0.5 ">
         {/* Section Filters - Left Side */}
         {tableName === 'crm_contacts' && sections.length > 0 && <TooltipProvider>
             <div className="flex items-center space-x-2">
