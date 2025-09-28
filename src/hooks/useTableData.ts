@@ -7,6 +7,7 @@ interface UseTableDataParams {
   page: number;
   pageSize: number;
   searchTerm: string;
+  searchColumns?: string[]; // Add search columns parameter
   sectionFilter: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -80,6 +81,7 @@ export const useTableData = (params: UseTableDataParams) => {
     params.page,
     params.pageSize,
     params.searchTerm,
+    params.searchColumns,
     params.sectionFilter,
     params.sortBy,
     params.sortOrder,

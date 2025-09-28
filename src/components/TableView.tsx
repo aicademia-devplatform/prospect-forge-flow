@@ -219,6 +219,10 @@ const TableView: React.FC<TableViewProps> = ({
   const [contactToDelete, setContactToDelete] = useState<{id: string, email: string, name: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Search columns suggestion state
+  const [searchColumnsOpen, setSearchColumnsOpen] = useState(false);
+  const [selectedSearchColumns, setSelectedSearchColumns] = useState<string[]>(['email', 'first_name', 'last_name', 'company']); // Default columns
+
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -237,6 +241,7 @@ const TableView: React.FC<TableViewProps> = ({
     page: currentPage,
     pageSize,
     searchTerm: debouncedSearchTerm,
+    searchColumns: selectedSearchColumns, // Pass selected search columns
     sectionFilter: selectedSections.length > 0 ? selectedSections.join(',') : 'all',
     sortBy,
     sortOrder,
@@ -1326,6 +1331,28 @@ const TableView: React.FC<TableViewProps> = ({
     setPageSize(size);
     setCurrentPage(1);
   };
+  // Get text columns for search suggestions
+  const getTextColumns = (): {name: string, label: string}[] => {
+    return allColumns
+      .filter(col => col.type === 'string' && col.name !== 'id') // Only text columns, exclude ID
+      .map(col => ({
+        name: col.name,
+        label: translateColumnName(col.name)
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  };
+
+  const textColumns = getTextColumns();
+
+  // Set default search columns based on table type
+  useEffect(() => {
+    if (tableName === 'apollo_contacts') {
+      setSelectedSearchColumns(['email', 'first_name', 'last_name', 'company', 'title']);
+    } else {
+      setSelectedSearchColumns(['email', 'firstname', 'name', 'company']);
+    }
+  }, [tableName]);
+
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
@@ -1449,9 +1476,83 @@ const TableView: React.FC<TableViewProps> = ({
         </div>
 
           <div className="flex items-center space-x-4">
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Rechercher..." value={searchTerm} onChange={e => handleSearch(e.target.value)} className="pl-8" />
+            <div className="flex items-center space-x-2">
+              {/* Search input with column suggestions */}
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder={`Rechercher dans ${selectedSearchColumns.length} colonne(s)...`} 
+                  value={searchTerm} 
+                  onChange={e => handleSearch(e.target.value)} 
+                  className="pl-8 pr-10" 
+                />
+                {/* Column selector button */}
+                <DropdownMenu open={searchColumnsOpen} onOpenChange={setSearchColumnsOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="absolute right-1 top-1 h-7 w-7 p-0 hover:bg-muted"
+                    >
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80">
+                    <DropdownMenuLabel className="flex items-center justify-between">
+                      <span>Colonnes de recherche</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {selectedSearchColumns.length} sélectionnée(s)
+                      </Badge>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <div className="max-h-60 overflow-y-auto">
+                      {textColumns.map(column => (
+                        <DropdownMenuCheckboxItem
+                          key={column.name}
+                          checked={selectedSearchColumns.includes(column.name)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSearchColumns(prev => [...prev, column.name]);
+                            } else {
+                              setSelectedSearchColumns(prev => prev.filter(col => col !== column.name));
+                            }
+                          }}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{column.label}</span>
+                            <span className="text-xs text-muted-foreground">{column.name}</span>
+                          </div>
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </div>
+                    <DropdownMenuSeparator />
+                    <div className="p-2 space-y-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full justify-start text-xs"
+                        onClick={() => setSelectedSearchColumns(textColumns.map(col => col.name))}
+                      >
+                        Tout sélectionner
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full justify-start text-xs"
+                        onClick={() => {
+                          if (tableName === 'apollo_contacts') {
+                            setSelectedSearchColumns(['email', 'first_name', 'last_name', 'company', 'title']);
+                          } else {
+                            setSelectedSearchColumns(['email', 'firstname', 'name', 'company']);
+                          }
+                        }}
+                      >
+                        Réinitialiser par défaut
+                      </Button>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
             
             {/* Bouton de rafraîchissement manuel */}

@@ -10,6 +10,7 @@ interface QueryParams {
   page: number
   pageSize: number
   searchTerm?: string
+  searchColumns?: string[] // Add search columns parameter
   sectionFilter?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
@@ -46,6 +47,7 @@ Deno.serve(async (req) => {
       page, 
       pageSize, 
       searchTerm, 
+      searchColumns = [],
       sectionFilter, 
       sortBy = 'created_at', 
       sortOrder = 'desc',
@@ -53,7 +55,7 @@ Deno.serve(async (req) => {
       advancedFilters = {}
     }: QueryParams = await req.json()
 
-    console.log('Query params:', { tableName, page, pageSize, searchTerm, sectionFilter, sortBy, sortOrder, visibleColumns, advancedFilters })
+    console.log('Query params:', { tableName, page, pageSize, searchTerm, searchColumns, sectionFilter, sortBy, sortOrder, visibleColumns, advancedFilters })
 
     // Build the column selection
     const baseColumns = ['id', 'email']
@@ -169,14 +171,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Apply search filter
+    // Apply search filter with custom search columns
     if (searchTerm && searchTerm.trim()) {
       const searchPattern = `%${searchTerm.trim()}%`
       
-      if (tableName === 'apollo_contacts') {
-        query = query.or(`email.ilike.${searchPattern},first_name.ilike.${searchPattern},last_name.ilike.${searchPattern},company.ilike.${searchPattern}`)
-      } else if (tableName === 'crm_contacts') {
-        query = query.or(`email.ilike.${searchPattern},firstname.ilike.${searchPattern},name.ilike.${searchPattern},company.ilike.${searchPattern}`)
+      // Use custom search columns if provided, otherwise fall back to defaults
+      if (searchColumns && searchColumns.length > 0) {
+        const searchConditions = searchColumns.map(column => `${column}.ilike.${searchPattern}`)
+        query = query.or(searchConditions.join(','))
+      } else {
+        // Default search columns for backwards compatibility
+        if (tableName === 'apollo_contacts') {
+          query = query.or(`email.ilike.${searchPattern},first_name.ilike.${searchPattern},last_name.ilike.${searchPattern},company.ilike.${searchPattern}`)
+        } else if (tableName === 'crm_contacts') {
+          query = query.or(`email.ilike.${searchPattern},firstname.ilike.${searchPattern},name.ilike.${searchPattern},company.ilike.${searchPattern}`)
+        }
       }
     }
 
