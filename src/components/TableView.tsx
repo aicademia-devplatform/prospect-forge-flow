@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon, Columns } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -1321,24 +1321,44 @@ const TableView: React.FC<TableViewProps> = ({
             })}
               </div>
             </TooltipProvider>}
-          <Button variant="outline" onClick={openColumnDialog}>
-            <Settings className="h-4 w-4 mr-2" />
-            Colonnes
-          </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Exporter
-          </Button>
         </div>
       </div>
 
-      {/* Advanced Filters */}
-      <TableFilters
-        tableName={tableName}
-        filters={advancedFilters}
-        onFiltersChange={handleAdvancedFiltersChange}
-        onReset={handleResetFilters}
-      />
+      {/* Filters and Controls */}
+      <div className="flex items-center gap-2 mb-4">
+        <TableFilters
+          tableName={tableName}
+          filters={advancedFilters}
+          onFiltersChange={handleAdvancedFiltersChange}
+          onReset={handleResetFilters}
+        />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" onClick={openColumnDialog} className="h-9 px-3">
+                <Columns className="h-4 w-4 mr-2" />
+                Colonnes
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Gérer l'affichage et l'ordre des colonnes du tableau</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 px-3">
+                <Download className="h-4 w-4 mr-2" />
+                Exporter
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Exporter les données du tableau</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
 
       <div className="bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-6">
         {loading ? <div className="flex items-center justify-center flex-1">
