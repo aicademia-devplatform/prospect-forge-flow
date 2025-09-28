@@ -121,6 +121,14 @@ const generateSectionColor = (sectionName: string) => {
   return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white border-gray-300';
 };
 
+const getTableDisplayName = (tableName: string) => {
+  const tableNames: Record<string, string> = {
+    'crm_contacts': 'CRM Contacts',
+    'apollo_contacts': 'Apollo Contacts'
+  };
+  return tableNames[tableName] || tableName;
+};
+
 const ContactDetails: React.FC = () => {
   const { tableName, contactId } = useParams<{ tableName: 'apollo_contacts' | 'crm_contacts'; contactId: string }>();
   const navigate = useNavigate();
@@ -131,11 +139,17 @@ const ContactDetails: React.FC = () => {
   const [editedData, setEditedData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // Récupérer les données du contact spécifique
-  const { data: contact, loading } = useContact({
+  // Récupérer les données du contact spécifique avec sources multiples
+  const { data: contactsData, loading } = useContact({
     tableName: tableName!,
     contactId: contactId!
   });
+
+  // Contact principal (celui de la table demandée)
+  const contact = contactsData?.find((c: any) => c.source_table === tableName)?.data;
+  
+  // Autres sources de données
+  const otherSources = contactsData?.filter((c: any) => c.source_table !== tableName) || [];
 
   // Function to handle back navigation while preserving sorting parameters
   const handleBackNavigation = () => {
@@ -232,7 +246,7 @@ const ContactDetails: React.FC = () => {
     );
   }
 
-  if (!contact) {
+  if (!contact || !contactsData || contactsData.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -343,6 +357,17 @@ const ContactDetails: React.FC = () => {
     );
   };
 
+  // Fonction pour obtenir les champs disponibles pour un contact spécifique
+  const getAllAvailableFieldsForContact = (contactData: any) => {
+    if (!contactData) return [];
+    return Object.keys(contactData).filter(field => 
+      contactData[field] !== null && 
+      contactData[field] !== undefined && 
+      contactData[field] !== '' &&
+      field !== 'id' // Exclure l'ID car déjà affiché
+    );
+  };
+
   const categorizeFields = (fields: string[]) => {
     const personalFields = fields.filter(field => 
       ['firstname', 'name', 'full_name', 'first_name', 'last_name', 'email', 'title', 'linkedin_function', 'seniority', 'person_linkedin_url', 'linkedin_url'].includes(field)
@@ -438,6 +463,37 @@ const ContactDetails: React.FC = () => {
                 </span>
                 <div className="flex-1">
                   {isEditing ? renderEditableField(field, value) : formatValue(value, field)}
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderFieldGroupForSource = (sourceData: any, title: string, fields: string[], icon: React.ReactNode) => {
+    if (fields.length === 0) return null;
+    
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            {icon}
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {fields.map(field => {
+            const value = sourceData[field];
+            
+            return (
+              <div key={field} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="font-medium text-sm text-muted-foreground min-w-[200px]">
+                  {translateColumnName(field)}:
+                </span>
+                <div className="flex-1">
+                  {formatValue(value, field)}
                 </div>
               </div>
             );
@@ -680,20 +736,59 @@ const ContactDetails: React.FC = () => {
 
       {/* Body Section - Informations détaillées */}
       <div className="max-w-6xl mx-auto p-6">
-        {/* Detailed Information */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {renderFieldGroup('Informations personnelles', categorizedFields.personalFields, <User className="h-5 w-5" />)}
-          {renderFieldGroup('Entreprise', categorizedFields.companyFields, <Building className="h-5 w-5" />)}
-          {renderFieldGroup('Contact', categorizedFields.contactFields, <Phone className="h-5 w-5" />)}
-          {renderFieldGroup('Statut & Suivi', categorizedFields.statusFields, <Tag className="h-5 w-5" />)}
-          {renderFieldGroup('Scores & Évaluations', categorizedFields.scoresFields, <User className="h-5 w-5" />)}
-          {renderFieldGroup('Plateformes & Intégrations', categorizedFields.platformFields, <Building className="h-5 w-5" />)}
-          {renderFieldGroup('Activité & Engagement', categorizedFields.activityFields, <Phone className="h-5 w-5" />)}
-          {renderFieldGroup('Séquences Marketing', categorizedFields.sequenceFields, <Tag className="h-5 w-5" />)}
-          {renderFieldGroup('Cold Outreach', categorizedFields.coldOutreachFields, <User className="h-5 w-5" />)}
-          {renderFieldGroup('Informations techniques', categorizedFields.technicalFields, <Building className="h-5 w-5" />)}
-          {renderFieldGroup('Autres informations', categorizedFields.otherFields, <Tag className="h-5 w-5" />)}
+        {/* Section pour le contact principal */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Badge variant="outline" className="text-base px-4 py-2 bg-primary/10 border-primary/20">
+              {getTableDisplayName(tableName!)} - Contact Principal
+            </Badge>
+          </div>
+          
+          {/* Detailed Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {renderFieldGroup('Informations personnelles', categorizedFields.personalFields, <User className="h-5 w-5" />)}
+            {renderFieldGroup('Entreprise', categorizedFields.companyFields, <Building className="h-5 w-5" />)}
+            {renderFieldGroup('Contact', categorizedFields.contactFields, <Phone className="h-5 w-5" />)}
+            {renderFieldGroup('Statut & Suivi', categorizedFields.statusFields, <Tag className="h-5 w-5" />)}
+            {renderFieldGroup('Scores & Évaluations', categorizedFields.scoresFields, <User className="h-5 w-5" />)}
+            {renderFieldGroup('Plateformes & Intégrations', categorizedFields.platformFields, <Building className="h-5 w-5" />)}
+            {renderFieldGroup('Activité & Engagement', categorizedFields.activityFields, <Phone className="h-5 w-5" />)}
+            {renderFieldGroup('Séquences Marketing', categorizedFields.sequenceFields, <Tag className="h-5 w-5" />)}
+            {renderFieldGroup('Cold Outreach', categorizedFields.coldOutreachFields, <User className="h-5 w-5" />)}
+            {renderFieldGroup('Informations techniques', categorizedFields.technicalFields, <Building className="h-5 w-5" />)}
+            {renderFieldGroup('Autres informations', categorizedFields.otherFields, <Tag className="h-5 w-5" />)}
+          </div>
         </div>
+
+        {/* Sections pour les autres sources de données */}
+        {otherSources.map((source: any, index: number) => {
+          const otherCategorizedFields = categorizeFields(getAllAvailableFieldsForContact(source.data));
+          
+          return (
+            <div key={index} className="mb-8">
+              <Separator className="mb-6" />
+              <div className="flex items-center gap-3 mb-6">
+                <Badge variant="outline" className="text-base px-4 py-2 bg-secondary/10 border-secondary/20">
+                  {getTableDisplayName(source.source_table)} - Données Additionnelles
+                </Badge>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {renderFieldGroupForSource(source.data, 'Informations personnelles', otherCategorizedFields.personalFields, <User className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Entreprise', otherCategorizedFields.companyFields, <Building className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Contact', otherCategorizedFields.contactFields, <Phone className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Statut & Suivi', otherCategorizedFields.statusFields, <Tag className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Scores & Évaluations', otherCategorizedFields.scoresFields, <User className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Plateformes & Intégrations', otherCategorizedFields.platformFields, <Building className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Activité & Engagement', otherCategorizedFields.activityFields, <Phone className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Séquences Marketing', otherCategorizedFields.sequenceFields, <Tag className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Cold Outreach', otherCategorizedFields.coldOutreachFields, <User className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Informations techniques', otherCategorizedFields.technicalFields, <Building className="h-5 w-5" />)}
+                {renderFieldGroupForSource(source.data, 'Autres informations', otherCategorizedFields.otherFields, <Tag className="h-5 w-5" />)}
+              </div>
+            </div>
+          );
+        })}
 
         {/* Dates importantes */}
         <Card>

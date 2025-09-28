@@ -10,6 +10,11 @@ interface QueryParams {
   contactId: string
 }
 
+interface ContactData {
+  source_table: string
+  data: any
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -27,23 +32,71 @@ Deno.serve(async (req) => {
 
     console.log('Getting contact:', { tableName, contactId })
 
-    // Query by ID
-    const { data, error } = await supabase
+    // Récupérer le contact principal
+    const { data: mainContact, error: mainError } = await supabase
       .from(tableName)
       .select('*')
       .eq('id', contactId)
       .single()
 
-    if (error) {
-      console.error('Database error:', error)
-      throw error
+    if (mainError) {
+      console.error('Database error:', mainError)
+      throw mainError
     }
 
-    console.log(`Found contact:`, data ? 'Yes' : 'No')
+    if (!mainContact) {
+      console.log('Contact not found')
+      return new Response(
+        JSON.stringify({
+          data: null,
+          success: false,
+          error: 'Contact not found'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404,
+        }
+      )
+    }
+
+    console.log(`Found main contact:`, mainContact ? 'Yes' : 'No')
+
+    // Rechercher le même contact dans les autres tables par email
+    const email = mainContact.email
+    const allContactData: ContactData[] = []
+
+    // Ajouter le contact principal
+    allContactData.push({
+      source_table: tableName,
+      data: mainContact
+    })
+
+    // Rechercher dans l'autre table si l'email existe
+    const otherTableName = tableName === 'crm_contacts' ? 'apollo_contacts' : 'crm_contacts'
+    
+    if (email) {
+      const { data: otherContact, error: otherError } = await supabase
+        .from(otherTableName)
+        .select('*')
+        .eq('email', email)
+        .maybeSingle()
+
+      if (!otherError && otherContact) {
+        console.log(`Found contact in ${otherTableName}:`, 'Yes')
+        allContactData.push({
+          source_table: otherTableName,
+          data: otherContact
+        })
+      } else if (otherError) {
+        console.error(`Error searching in ${otherTableName}:`, otherError)
+      } else {
+        console.log(`No contact found in ${otherTableName}`)
+      }
+    }
 
     return new Response(
       JSON.stringify({
-        data,
+        data: allContactData,
         success: true
       }),
       {
