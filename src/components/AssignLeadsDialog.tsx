@@ -37,7 +37,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
   const { toast } = useToast();
-  const { userRole } = useAuth();
+  const { user, userRole } = useAuth();
 
   // Charger les utilisateurs sales
   React.useEffect(() => {
@@ -56,12 +56,17 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
 
       if (rolesError) throw rolesError;
 
-      if (!salesRoles || salesRoles.length === 0) {
+      let salesUserIds = salesRoles ? salesRoles.map(role => role.user_id) : [];
+      
+      // Ajouter l'utilisateur connecté s'il n'est pas déjà dans la liste
+      if (user?.id && !salesUserIds.includes(user.id)) {
+        salesUserIds.push(user.id);
+      }
+
+      if (salesUserIds.length === 0) {
         setSalesUsers([]);
         return;
       }
-
-      const salesUserIds = salesRoles.map(role => role.user_id);
 
       // Ensuite, récupérer les profils de ces utilisateurs
       const { data, error } = await supabase
@@ -178,6 +183,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
                         <div className="flex flex-col items-start">
                           <span className="font-medium text-sm">
                             {selectedUser.first_name} {selectedUser.last_name}
+                            {selectedUser.id === user?.id && <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Moi</span>}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {selectedUser.email}
@@ -189,21 +195,22 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="z-50">
-                {salesUsers.map((user) => (
-                  <SelectItem key={user.id} value={user.id} className="p-3">
+                {salesUsers.map((salesUser) => (
+                  <SelectItem key={salesUser.id} value={salesUser.id} className="p-3">
                     <div className="flex items-center space-x-3 w-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar_url || ''} />
+                        <AvatarImage src={salesUser.avatar_url || ''} />
                         <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {(user.first_name?.charAt(0) || '') + (user.last_name?.charAt(0) || '')}
+                          {(salesUser.first_name?.charAt(0) || '') + (salesUser.last_name?.charAt(0) || '')}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col items-start">
                         <span className="font-medium text-sm">
-                          {user.first_name} {user.last_name}
+                          {salesUser.first_name} {salesUser.last_name}
+                          {salesUser.id === user?.id && <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Moi</span>}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {user.email}
+                          {salesUser.email}
                         </span>
                       </div>
                     </div>
