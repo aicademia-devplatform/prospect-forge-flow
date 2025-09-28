@@ -110,44 +110,41 @@ const TableFilters: React.FC<TableFiltersProps> = ({
         <CollapsibleTrigger asChild>
           <Button
             variant="outline"
-            className="w-full justify-between transition-all duration-200 hover:bg-accent/50"
+            size="sm"
+            className="h-9 px-3 justify-start gap-2 transition-all duration-200 hover:bg-accent/50"
           >
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              <span className="font-medium">Filtres avancés</span>
-              {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="ml-2 animate-scale-in">
-                  {activeFilterCount}
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onReset();
-                  }}
-                  className="h-6 px-2 text-xs hover:bg-destructive/10 hover:text-destructive transition-colors"
-                >
-                  <RotateCcw className="h-3 w-3 mr-1" />
-                  Reset
-                </Button>
-              )}
-              {isOpen ? (
-                <ChevronUp className="h-4 w-4 transition-transform duration-200" />
-              ) : (
-                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
-              )}
-            </div>
+            <Filter className="h-4 w-4" />
+            <span className="font-medium">Filtres</span>
+            {activeFilterCount > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs animate-scale-in">
+                {activeFilterCount}
+              </Badge>
+            )}
+            {isOpen ? (
+              <ChevronUp className="h-4 w-4 ml-auto transition-transform duration-200" />
+            ) : (
+              <ChevronDown className="h-4 w-4 ml-auto transition-transform duration-200" />
+            )}
           </Button>
         </CollapsibleTrigger>
 
         <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
           <Card className="mt-2 border-l-4 border-l-primary/20">
             <CardContent className="pt-6 space-y-6">
+              {/* Reset button inside the content */}
+              {hasActiveFilters && (
+                <div className="flex justify-end animate-fade-in">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onReset}
+                    className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  >
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Réinitialiser
+                  </Button>
+                </div>
+              )}
               {/* Date range filter */}
               <div className="space-y-2 animate-fade-in" style={{ animationDelay: '100ms' }}>
                 <label className="text-sm font-medium text-foreground/80">Période de création</label>
