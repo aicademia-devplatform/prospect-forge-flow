@@ -67,7 +67,8 @@ export const useTableData = (params: UseTableDataParams) => {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de charger les données."
+        description: "Impossible de charger les données.",
+        duration: 4000 // 4 secondes pour les erreurs
       });
     } finally {
       setLoading(false);

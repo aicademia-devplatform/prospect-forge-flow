@@ -1002,7 +1002,8 @@ const TableView: React.FC<TableViewProps> = ({
         toast({
           variant: "destructive",
           title: "Erreur",
-          description: "Valeur numérique invalide."
+          description: "Valeur numérique invalide.",
+          duration: 4000 // 4 secondes pour les erreurs
         });
         return;
       }
@@ -1048,7 +1049,8 @@ const TableView: React.FC<TableViewProps> = ({
       }
       toast({
         title: "Modification sauvegardée",
-        description: `${translateColumnName(columnName)} mis à jour avec succès.`
+        description: `${translateColumnName(columnName)} mis à jour avec succès.`,
+        duration: 2500 // 2.5 secondes pour les succès
       });
 
       // Add visual feedback for successful update
@@ -1080,7 +1082,8 @@ const TableView: React.FC<TableViewProps> = ({
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de sauvegarder la modification."
+        description: "Impossible de sauvegarder la modification.",
+        duration: 4000 // 4 secondes pour les erreurs
       });
     } finally {
       setIsSaving(false);
@@ -1134,7 +1137,8 @@ const TableView: React.FC<TableViewProps> = ({
         toast({
           title: "Aucune donnée",
           description: "Aucun contact à exporter avec les filtres appliqués",
-          variant: "destructive"
+          variant: "destructive",
+          duration: 4000 // 4 secondes pour les erreurs
         });
         return;
       }
@@ -1204,12 +1208,14 @@ const TableView: React.FC<TableViewProps> = ({
       XLSX.writeFile(workbook, fileName);
       toast({
         title: "Export réussi",
-        description: `${contacts.length} contacts exportés dans ${fileName}`
+        description: `${contacts.length} contacts exportés dans ${fileName}`,
+        duration: 3000 // 3 secondes pour les succès importants
       });
       if (options.includeGoogleSheets) {
         toast({
           title: "Google Sheets",
-          description: "La synchronisation Google Sheets sera disponible prochainement"
+          description: "La synchronisation Google Sheets sera disponible prochainement",
+          duration: 3000 // 3 secondes pour les informations
         });
       }
     } catch (error) {
@@ -1217,7 +1223,8 @@ const TableView: React.FC<TableViewProps> = ({
       toast({
         title: "Erreur d'export",
         description: "Impossible d'exporter les données",
-        variant: "destructive"
+        variant: "destructive",
+        duration: 4000 // 4 secondes pour les erreurs
       });
     }
   };
@@ -1238,7 +1245,8 @@ const TableView: React.FC<TableViewProps> = ({
       toast({
         variant: "destructive",
         title: "Permission refusée",
-        description: "Vous n'avez pas les droits pour supprimer des contacts."
+        description: "Vous n'avez pas les droits pour supprimer des contacts.",
+        duration: 4000 // 4 secondes pour les erreurs importantes
       });
       return;
     }
@@ -1278,7 +1286,8 @@ const TableView: React.FC<TableViewProps> = ({
 
       toast({
         title: "Contact supprimé",
-        description: `Le contact ${contactToDelete.name} (${contactToDelete.email}) a été supprimé avec succès.`
+        description: `Le contact ${contactToDelete.name} (${contactToDelete.email}) a été supprimé avec succès.`,
+        duration: 3000 // 3 secondes pour les actions importantes
       });
 
       setDeleteDialogOpen(false);
@@ -1288,7 +1297,8 @@ const TableView: React.FC<TableViewProps> = ({
       toast({
         variant: "destructive",
         title: "Erreur de suppression",
-        description: "Impossible de supprimer le contact. Veuillez réessayer."
+        description: "Impossible de supprimer le contact. Veuillez réessayer.",
+        duration: 4000 // 4 secondes pour les erreurs
       });
     } finally {
       setIsDeleting(false);
