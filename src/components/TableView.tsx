@@ -21,12 +21,10 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
 interface TableViewProps {
   tableName: 'apollo_contacts' | 'crm_contacts';
   onBack: () => void;
 }
-
 interface ColumnInfo {
   name: string;
   type: string;
@@ -41,7 +39,6 @@ const translateColumnName = (columnName: string): string => {
     'email': 'Email',
     'created_at': 'Date de création',
     'updated_at': 'Date de mise à jour',
-    
     // Colonnes Apollo
     'first_name': 'Prénom',
     'last_name': 'Nom',
@@ -101,7 +98,6 @@ const translateColumnName = (columnName: string): string => {
     'primary_email_last_verified_at': 'Dernière vérification email principal',
     'last_raised_at': 'Dernière levée de fonds',
     'last_contacted': 'Dernier contact',
-    
     // Colonnes CRM
     'firstname': 'Prénom',
     'name': 'Nom',
@@ -155,17 +151,17 @@ const translateColumnName = (columnName: string): string => {
     'zoho_status_2': 'Statut 2 Zoho',
     'zoho_industrie_tag': 'Tag industrie Zoho'
   };
-  
   return translations[columnName] || columnName;
 };
-
 const TableView: React.FC<TableViewProps> = ({
   tableName,
   onBack
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -177,7 +173,7 @@ const TableView: React.FC<TableViewProps> = ({
   // Initialize sorting state from URL parameters or default values
   const urlParams = new URLSearchParams(location.search);
   const [sortBy, setSortBy] = useState(urlParams.get('sortBy') || 'created_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>((urlParams.get('sortOrder') as 'asc' | 'desc') || 'desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(urlParams.get('sortOrder') as 'asc' | 'desc' || 'desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
   const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set(['email']));
@@ -188,7 +184,10 @@ const TableView: React.FC<TableViewProps> = ({
   const [tempVisibleColumns, setTempVisibleColumns] = useState<Set<string>>(new Set());
   const [tempColumnOrder, setTempColumnOrder] = useState<string[]>([]);
   // Inline editing states
-  const [editingCell, setEditingCell] = useState<{ rowId: string; columnName: string } | null>(null);
+  const [editingCell, setEditingCell] = useState<{
+    rowId: string;
+    columnName: string;
+  } | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const [originalValue, setOriginalValue] = useState<string>(''); // Nouvelle variable pour stocker la valeur originale
   const [isSaving, setIsSaving] = useState(false);
@@ -202,7 +201,11 @@ const TableView: React.FC<TableViewProps> = ({
   const editInputRef = useRef<HTMLInputElement>(null);
   // Email warning dialog state
   const [emailWarningOpen, setEmailWarningOpen] = useState(false);
-  const [pendingEmailEdit, setPendingEmailEdit] = useState<{ rowId: string; columnName: string; value: string } | null>(null);
+  const [pendingEmailEdit, setPendingEmailEdit] = useState<{
+    rowId: string;
+    columnName: string;
+    value: string;
+  } | null>(null);
 
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -238,39 +241,27 @@ const TableView: React.FC<TableViewProps> = ({
 
   // Real-time updates setup
   useEffect(() => {
-    const channel = supabase
-      .channel('table-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: tableName
-        },
-        (payload) => {
-          // Update local data with real-time changes from other users
-          const updatedRecord = payload.new;
-          if (updatedRecord) {
-            const updateKey = `${updatedRecord.id}`;
-            
-            // If we have a pending update for this record, ignore this realtime update to avoid conflicts
-            if (pendingUpdates.has(updateKey)) {
-              console.log('Ignoring realtime update for pending record:', updateKey);
-              return;
-            }
-            
-            setLocalData(prev => 
-              prev.map(row => 
-                row.id === updatedRecord.id 
-                  ? { ...row, ...updatedRecord }
-                  : row
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
+    const channel = supabase.channel('table-changes').on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: tableName
+    }, payload => {
+      // Update local data with real-time changes from other users
+      const updatedRecord = payload.new;
+      if (updatedRecord) {
+        const updateKey = `${updatedRecord.id}`;
 
+        // If we have a pending update for this record, ignore this realtime update to avoid conflicts
+        if (pendingUpdates.has(updateKey)) {
+          console.log('Ignoring realtime update for pending record:', updateKey);
+          return;
+        }
+        setLocalData(prev => prev.map(row => row.id === updatedRecord.id ? {
+          ...row,
+          ...updatedRecord
+        } : row));
+      }
+    }).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
@@ -300,7 +291,6 @@ const TableView: React.FC<TableViewProps> = ({
         setIsScrolled(scrollLeft > 0);
       }
     };
-
     const tableContainer = tableContainerRef.current;
     if (tableContainer) {
       tableContainer.addEventListener('scroll', handleScroll);
@@ -838,13 +828,11 @@ const TableView: React.FC<TableViewProps> = ({
   useEffect(() => {
     // Default columns based on user requirements: email, data_section, name, phone, company
     let defaultColumns: string[] = [];
-    
     if (tableName === 'crm_contacts') {
       defaultColumns = ['email', 'data_section', 'name', 'tel_pro', 'company'];
     } else if (tableName === 'apollo_contacts') {
       defaultColumns = ['email', 'data_section', 'last_name', 'work_direct_phone', 'company'];
     }
-    
     const toggleableColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').map(col => col.name);
     const initialVisible = toggleableColumns.filter(col => defaultColumns.includes(col));
     setVisibleColumns(new Set(initialVisible));
@@ -854,38 +842,33 @@ const TableView: React.FC<TableViewProps> = ({
 
   // Get columns that should be displayed - pinned columns first, then ordered visible columns
   const pinnedDisplayColumns = allColumns.filter(col => pinnedColumns.has(col.name) && (col.name === 'email' || col.name === 'id' || visibleColumns.has(col.name)));
-  
+
   // Order the regular columns based on tempColumnOrder if in dialog, otherwise use current visible columns
   const getOrderedVisibleColumns = () => {
     const visibleColumnNames = Array.from(visibleColumns);
     const orderedColumns: string[] = [];
-    
+
     // Add columns in the order specified by tempColumnOrder (if they're visible)
     tempColumnOrder.forEach(colName => {
       if (visibleColumnNames.includes(colName)) {
         orderedColumns.push(colName);
       }
     });
-    
+
     // Add any remaining visible columns that weren't in the order
     visibleColumnNames.forEach(colName => {
       if (!orderedColumns.includes(colName)) {
         orderedColumns.push(colName);
       }
     });
-    
     return orderedColumns;
   };
-  
   const orderedVisibleColumns = getOrderedVisibleColumns();
-  const regularDisplayColumns = allColumns.filter(col => !pinnedColumns.has(col.name) && orderedVisibleColumns.includes(col.name))
-    .sort((a, b) => orderedVisibleColumns.indexOf(a.name) - orderedVisibleColumns.indexOf(b.name));
-  
+  const regularDisplayColumns = allColumns.filter(col => !pinnedColumns.has(col.name) && orderedVisibleColumns.includes(col.name)).sort((a, b) => orderedVisibleColumns.indexOf(a.name) - orderedVisibleColumns.indexOf(b.name));
   const displayColumns = [...pinnedDisplayColumns, ...regularDisplayColumns];
 
   // Filter columns for search
   const filteredColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').filter(col => col.name.toLowerCase().includes(columnSearchTerm.toLowerCase()));
-  
   const toggleColumnVisibility = (columnName: string) => {
     const newVisible = new Set(tempVisibleColumns);
     if (newVisible.has(columnName)) {
@@ -899,29 +882,24 @@ const TableView: React.FC<TableViewProps> = ({
     }
     setTempVisibleColumns(newVisible);
   };
-
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
-
     const items = Array.from(tempColumnOrder.filter(col => tempVisibleColumns.has(col)));
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
     // Update the order with all columns (visible and hidden)
-    const newOrder = [
-      ...items, // reordered visible columns
-      ...tempColumnOrder.filter(col => !tempVisibleColumns.has(col)) // hidden columns at the end
+    const newOrder = [...items,
+    // reordered visible columns
+    ...tempColumnOrder.filter(col => !tempVisibleColumns.has(col)) // hidden columns at the end
     ];
-    
     setTempColumnOrder(newOrder);
   };
-
   const openColumnDialog = () => {
     setTempVisibleColumns(new Set(visibleColumns));
     setTempColumnOrder(getOrderedVisibleColumns());
     setColumnDialogOpen(true);
   };
-
   const applyColumnChanges = () => {
     setVisibleColumns(new Set(tempVisibleColumns));
     // Update the actual column order for future use
@@ -929,16 +907,14 @@ const TableView: React.FC<TableViewProps> = ({
     setTempColumnOrder(newOrder);
     setColumnDialogOpen(false);
   };
-
   const cancelColumnChanges = () => {
     setTempVisibleColumns(new Set(visibleColumns));
     setTempColumnOrder(getOrderedVisibleColumns());
     setColumnDialogOpen(false);
   };
-
   const toggleColumnPin = (columnName: string) => {
     const newPinned = new Set<string>();
-    
+
     // If the column is already pinned, unpin it
     if (pinnedColumns.has(columnName)) {
       // Unpin the column (no columns will be pinned)
@@ -956,50 +932,53 @@ const TableView: React.FC<TableViewProps> = ({
     if (columnName === 'id' || columnName === 'created_at' || columnName === 'updated_at') {
       return;
     }
-    
     const valueStr = currentValue?.toString() || '';
-    setEditingCell({ rowId, columnName });
+    setEditingCell({
+      rowId,
+      columnName
+    });
     setEditingValue(valueStr);
     setOriginalValue(valueStr); // Stocker la valeur originale au moment de l'édition
   };
-
   const cancelEditing = () => {
     setEditingCell(null);
     setEditingValue('');
     setOriginalValue(''); // Reset la valeur originale
   };
-
   const saveEdit = async () => {
     if (!editingCell) return;
-    
-    const { rowId, columnName } = editingCell;
-    
+    const {
+      rowId,
+      columnName
+    } = editingCell;
+
     // Vérifier si la valeur a vraiment changé en comparant avec la valeur originale
     if (editingValue === originalValue) {
       // Aucun changement, annuler l'édition sans faire de requête
       cancelEditing();
       return;
     }
-    
+
     // Vérifier si c'est une modification d'email
     const isEmailField = columnName === 'email' || columnName.toLowerCase().includes('email');
-    
     if (isEmailField) {
       // Stocker les détails de l'édition en attente
-      setPendingEmailEdit({ rowId, columnName, value: editingValue });
+      setPendingEmailEdit({
+        rowId,
+        columnName,
+        value: editingValue
+      });
       setEmailWarningOpen(true);
       return;
     }
-    
+
     // Continuer avec la sauvegarde normale
     await proceedWithSave(rowId, columnName, editingValue);
   };
-
   const proceedWithSave = async (rowId: string, columnName: string, value: string) => {
     // Convert value based on column type
     let processedValue: any = value;
     const column = allColumns.find(col => col.name === columnName);
-    
     if (column?.type === 'number') {
       processedValue = value === '' ? null : Number(value);
       if (isNaN(processedValue)) {
@@ -1015,49 +994,41 @@ const TableView: React.FC<TableViewProps> = ({
     }
 
     // Optimistic update - update local data immediately
-    const optimisticData = localData.map(row => 
-      row.id === rowId 
-        ? { ...row, [columnName]: processedValue }
-        : row
-    );
+    const optimisticData = localData.map(row => row.id === rowId ? {
+      ...row,
+      [columnName]: processedValue
+    } : row);
     setLocalData(optimisticData);
-    
+
     // Mark this record as having a pending update to ignore realtime conflicts
     const updateKey = `${rowId}`;
     setPendingUpdates(prev => new Set([...prev, updateKey]));
-    
+
     // Clear editing state immediately for fluid UX
     cancelEditing();
-    
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from(tableName)
-        .update({ [columnName]: processedValue })
-        .eq('id', rowId);
-
+      const {
+        error
+      } = await supabase.from(tableName).update({
+        [columnName]: processedValue
+      }).eq('id', rowId);
       if (error) throw error;
 
       // Récupérer la ligne mise à jour depuis la base pour s'assurer d'avoir les vraies données
-      const { data: updatedRow, error: fetchError } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('id', rowId)
-        .single();
-
+      const {
+        data: updatedRow,
+        error: fetchError
+      } = await supabase.from(tableName).select('*').eq('id', rowId).single();
       if (fetchError) throw fetchError;
 
       // Mettre à jour seulement cette ligne dans localData
       if (updatedRow) {
-        setLocalData(prev => 
-          prev.map(row => 
-            row.id === rowId 
-              ? { ...row, ...updatedRow }
-              : row
-          )
-        );
+        setLocalData(prev => prev.map(row => row.id === rowId ? {
+          ...row,
+          ...updatedRow
+        } : row));
       }
-
       toast({
         title: "Modification sauvegardée",
         description: `${translateColumnName(columnName)} mis à jour avec succès.`
@@ -1066,7 +1037,7 @@ const TableView: React.FC<TableViewProps> = ({
       // Add visual feedback for successful update
       const cellKey = `${rowId}-${columnName}`;
       setRecentlyUpdated(prev => new Set([...prev, cellKey]));
-      
+
       // Remove visual feedback after 2 seconds
       setTimeout(() => {
         setRecentlyUpdated(prev => {
@@ -1075,27 +1046,20 @@ const TableView: React.FC<TableViewProps> = ({
           return updated;
         });
       }, 2000);
-
     } catch (error) {
       console.error('Error saving edit:', error);
-      
-      // Revert optimistic update on error - fetch fresh data
-      const { data: freshData, error: fetchError } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('id', rowId)
-        .single();
 
+      // Revert optimistic update on error - fetch fresh data
+      const {
+        data: freshData,
+        error: fetchError
+      } = await supabase.from(tableName).select('*').eq('id', rowId).single();
       if (!fetchError && freshData) {
-        setLocalData(prev => 
-          prev.map(row => 
-            row.id === rowId 
-              ? { ...row, ...freshData }
-              : row
-          )
-        );
+        setLocalData(prev => prev.map(row => row.id === rowId ? {
+          ...row,
+          ...freshData
+        } : row));
       }
-      
       toast({
         variant: "destructive",
         title: "Erreur",
@@ -1113,19 +1077,20 @@ const TableView: React.FC<TableViewProps> = ({
       }, 1000);
     }
   };
-
   const handleEmailWarningConfirm = async () => {
     if (pendingEmailEdit) {
       setEmailWarningOpen(false);
-      
+
       // Utiliser proceedWithSave qui gère déjà la mise à jour optimiste et le real-time
-      setEditingCell({ rowId: pendingEmailEdit.rowId, columnName: pendingEmailEdit.columnName });
+      setEditingCell({
+        rowId: pendingEmailEdit.rowId,
+        columnName: pendingEmailEdit.columnName
+      });
       setEditingValue(pendingEmailEdit.value);
       await proceedWithSave(pendingEmailEdit.rowId, pendingEmailEdit.columnName, pendingEmailEdit.value);
       setPendingEmailEdit(null);
     }
   };
-
   const handleEmailWarningCancel = () => {
     if (pendingEmailEdit) {
       // Remettre la valeur originale
@@ -1143,7 +1108,6 @@ const TableView: React.FC<TableViewProps> = ({
       editInputRef.current.select();
     }
   }, [editingCell]);
-
   const handleColumnFilter = (columnName: string, value: string) => {
     setColumnFilters(prev => ({
       ...prev,
@@ -1151,10 +1115,11 @@ const TableView: React.FC<TableViewProps> = ({
     }));
     setCurrentPage(1);
   };
-
   const clearColumnFilter = (columnName: string) => {
     setColumnFilters(prev => {
-      const newFilters = { ...prev };
+      const newFilters = {
+        ...prev
+      };
       delete newFilters[columnName];
       return newFilters;
     });
@@ -1171,12 +1136,10 @@ const TableView: React.FC<TableViewProps> = ({
     setSearchTerm(value);
     setCurrentPage(1);
   };
-
   const handleAdvancedFiltersChange = (filters: FilterValues) => {
     setAdvancedFilters(filters);
     setCurrentPage(1);
   };
-
   const handleResetFilters = () => {
     setAdvancedFilters({});
     setCurrentPage(1);
@@ -1188,22 +1151,25 @@ const TableView: React.FC<TableViewProps> = ({
   const handleSort = (columnName: string) => {
     let newSortBy = columnName;
     let newSortOrder: 'asc' | 'desc';
-    
     if (sortBy === columnName) {
       newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
       newSortOrder = 'asc';
     }
-    
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
     setCurrentPage(1);
-    
+
     // Update URL parameters to persist sorting
     const params = new URLSearchParams(location.search);
     params.set('sortBy', newSortBy);
     params.set('sortOrder', newSortOrder);
-    navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+    navigate({
+      pathname: location.pathname,
+      search: params.toString()
+    }, {
+      replace: true
+    });
   };
   const getSortIcon = (columnName: string) => {
     if (sortBy !== columnName) {
@@ -1273,8 +1239,7 @@ const TableView: React.FC<TableViewProps> = ({
     return <span className="text-sm">{value}</span>;
   };
   const tableTitle = tableName === 'apollo_contacts' ? 'Contacts Apollo' : 'Contacts CRM';
-  return (
-    <div className="h-screen flex flex-col p-6">
+  return <div className="h-screen flex flex-col p-6">
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-4">
           <Button variant="outline" onClick={onBack}>
@@ -1296,13 +1261,7 @@ const TableView: React.FC<TableViewProps> = ({
             </div>
             
             {/* Bouton de rafraîchissement manuel */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch && refetch()}
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
+            <Button variant="outline" size="sm" onClick={() => refetch && refetch()} disabled={loading} className="flex items-center gap-2">
               <Loader2 className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Actualiser
             </Button>
@@ -1312,61 +1271,35 @@ const TableView: React.FC<TableViewProps> = ({
 
       {/* Filter Panel */}
       <AnimatePresence mode="wait">
-        {filtersOpen && (
-          <div className="mb-3">
-            <TableFilters
-              tableName={tableName}
-              filters={advancedFilters}
-              onFiltersChange={handleAdvancedFiltersChange}
-              onReset={handleResetFilters}
-              showOnlyButton={false}
-              onToggle={() => setFiltersOpen(!filtersOpen)}
-            />
-          </div>
-        )}
+        {filtersOpen && <div className="mb-3">
+            <TableFilters tableName={tableName} filters={advancedFilters} onFiltersChange={handleAdvancedFiltersChange} onReset={handleResetFilters} showOnlyButton={false} onToggle={() => setFiltersOpen(!filtersOpen)} />
+          </div>}
       </AnimatePresence>
 
       {/* All Controls - Above Table */}
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-center justify-between gap-2 mb-3 my-[16px]">
         {/* Section Filters - Left Side */}
-        {tableName === 'crm_contacts' && sections.length > 0 && (
-          <TooltipProvider>
+        {tableName === 'crm_contacts' && sections.length > 0 && <TooltipProvider>
             <div className="flex items-center space-x-2">
               {sections.map(section => {
-                const isSelected = selectedSections.includes(section.value);
-                return (
-                  <Tooltip key={section.value}>
+            const isSelected = selectedSections.includes(section.value);
+            return <Tooltip key={section.value}>
                     <TooltipTrigger asChild>
-                      <span 
-                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-80 border ${
-                          isSelected ? generateSectionColor(section.value) : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
-                        }`} 
-                        onClick={() => toggleSection(section.value)}
-                      >
+                      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all hover:opacity-80 border ${isSelected ? generateSectionColor(section.value) : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'}`} onClick={() => toggleSection(section.value)}>
                         {section.value}
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>{isSelected ? `Filtrer par ${section.value} (cliquer pour désactiver)` : `Filtrer par ${section.value} (cliquer pour activer)`}</p>
                     </TooltipContent>
-                  </Tooltip>
-                );
-              })}
+                  </Tooltip>;
+          })}
             </div>
-          </TooltipProvider>
-        )}
+          </TooltipProvider>}
         
         {/* Action Buttons - Right Side */}
         <div className="flex items-center gap-2">
-          <TableFilters
-            tableName={tableName}
-            filters={advancedFilters}
-            onFiltersChange={handleAdvancedFiltersChange}
-            onReset={handleResetFilters}
-            isOpen={filtersOpen}
-            onToggle={() => setFiltersOpen(!filtersOpen)}
-            showOnlyButton={true}
-          />
+          <TableFilters tableName={tableName} filters={advancedFilters} onFiltersChange={handleAdvancedFiltersChange} onReset={handleResetFilters} isOpen={filtersOpen} onToggle={() => setFiltersOpen(!filtersOpen)} showOnlyButton={true} />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -1431,97 +1364,77 @@ const TableView: React.FC<TableViewProps> = ({
                         <Checkbox checked={selectedRows.size === localData.length && localData.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
                       {displayColumns.map(column => {
-                        const isPinned = pinnedColumns.has(column.name);
-                        const isDropdownOpen = openColumnDropdown === column.name;
-                        // Since only one column can be pinned, it's always at position 48px (after checkbox)
-                         const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
-                        return (
-                           <th 
-                             key={column.name} 
-                             className={`
+                    const isPinned = pinnedColumns.has(column.name);
+                    const isDropdownOpen = openColumnDropdown === column.name;
+                    // Since only one column can be pinned, it's always at position 48px (after checkbox)
+                    const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
+                    return <th key={column.name} className={`
                                px-4 py-4 text-left min-w-[120px]
                                sticky top-0 
                                ${isPinned ? `left-0 z-30 bg-primary/5 backdrop-blur-sm font-semibold text-primary ${borderStyle}` : 'z-20 bg-table-header font-semibold text-muted-foreground'}
-                             `}
-                             style={isPinned ? { left: '48px' } : {}}
-                          >
+                             `} style={isPinned ? {
+                      left: '48px'
+                    } : {}}>
                             <div className="flex items-center justify-between space-x-1">
                               <div className="flex items-center space-x-1 cursor-pointer" onClick={() => handleSort(column.name)}>
                                 <span className="uppercase text-xs tracking-wider">{translateColumnName(column.name)}</span>
                                 {getSortIcon(column.name)}
                               </div>
-                              <DropdownMenu open={isDropdownOpen} onOpenChange={(open) => setOpenColumnDropdown(open ? column.name : null)}>
+                              <DropdownMenu open={isDropdownOpen} onOpenChange={open => setOpenColumnDropdown(open ? column.name : null)}>
                                 <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-6 w-6 p-0 hover:bg-muted/80"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-muted/80" onClick={e => e.stopPropagation()}>
                                     <MoreHorizontal className="h-3 w-3" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent 
-                                  align="end" 
-                                  className="w-56 bg-background border shadow-lg z-50"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
+                                <DropdownMenuContent align="end" className="w-56 bg-background border shadow-lg z-50" onClick={e => e.stopPropagation()}>
                                   <DropdownMenuLabel className="text-xs font-medium">{translateColumnName(column.name)}</DropdownMenuLabel>
                                   <DropdownMenuSeparator />
                                   
                                   {/* Recherche dans la colonne */}
                                   <div className="p-2">
-                                    <Input
-                                      placeholder={`Filtrer ${translateColumnName(column.name)}...`}
-                                      value={columnFilters[column.name] || ''}
-                                      onChange={(e) => handleColumnFilter(column.name, e.target.value)}
-                                      className="h-8 text-xs"
-                                    />
-                                    {columnFilters[column.name] && (
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="mt-1 h-6 w-full text-xs"
-                                        onClick={() => clearColumnFilter(column.name)}
-                                      >
+                                    <Input placeholder={`Filtrer ${translateColumnName(column.name)}...`} value={columnFilters[column.name] || ''} onChange={e => handleColumnFilter(column.name, e.target.value)} className="h-8 text-xs" />
+                                    {columnFilters[column.name] && <Button variant="ghost" size="sm" className="mt-1 h-6 w-full text-xs" onClick={() => clearColumnFilter(column.name)}>
                                         <X className="h-3 w-3 mr-1" />
                                         Effacer
-                                      </Button>
-                                    )}
+                                      </Button>}
                                   </div>
                                   <DropdownMenuSeparator />
                                   
                                   {/* Tri */}
-                                   <DropdownMenuCheckboxItem
-                                     checked={sortBy === column.name && sortOrder === 'asc'}
-                                     onCheckedChange={() => {
-                                       setSortBy(column.name);
-                                       setSortOrder('asc');
-                                       setCurrentPage(1);
-                                       // Update URL parameters
-                                       const params = new URLSearchParams(location.search);
-                                       params.set('sortBy', column.name);
-                                       params.set('sortOrder', 'asc');
-                                       navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-                                     }}
-                                  >
+                                   <DropdownMenuCheckboxItem checked={sortBy === column.name && sortOrder === 'asc'} onCheckedChange={() => {
+                              setSortBy(column.name);
+                              setSortOrder('asc');
+                              setCurrentPage(1);
+                              // Update URL parameters
+                              const params = new URLSearchParams(location.search);
+                              params.set('sortBy', column.name);
+                              params.set('sortOrder', 'asc');
+                              navigate({
+                                pathname: location.pathname,
+                                search: params.toString()
+                              }, {
+                                replace: true
+                              });
+                            }}>
                                     <ArrowUp className="h-3 w-3 mr-2" />
                                     Trier croissant
                                   </DropdownMenuCheckboxItem>
                                   
-                                   <DropdownMenuCheckboxItem
-                                     checked={sortBy === column.name && sortOrder === 'desc'}
-                                     onCheckedChange={() => {
-                                       setSortBy(column.name);
-                                       setSortOrder('desc');
-                                       setCurrentPage(1);
-                                       // Update URL parameters
-                                       const params = new URLSearchParams(location.search);
-                                       params.set('sortBy', column.name);
-                                       params.set('sortOrder', 'desc');
-                                       navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
-                                     }}
-                                  >
+                                   <DropdownMenuCheckboxItem checked={sortBy === column.name && sortOrder === 'desc'} onCheckedChange={() => {
+                              setSortBy(column.name);
+                              setSortOrder('desc');
+                              setCurrentPage(1);
+                              // Update URL parameters
+                              const params = new URLSearchParams(location.search);
+                              params.set('sortBy', column.name);
+                              params.set('sortOrder', 'desc');
+                              navigate({
+                                pathname: location.pathname,
+                                search: params.toString()
+                              }, {
+                                replace: true
+                              });
+                            }}>
                                     <ArrowDown className="h-3 w-3 mr-2" />
                                     Trier décroissant
                                   </DropdownMenuCheckboxItem>
@@ -1529,35 +1442,26 @@ const TableView: React.FC<TableViewProps> = ({
                                   <DropdownMenuSeparator />
                                   
                                   {/* Épingler */}
-                                  <DropdownMenuCheckboxItem
-                                    checked={pinnedColumns.has(column.name)}
-                                    onCheckedChange={() => toggleColumnPin(column.name)}
-                                  >
+                                  <DropdownMenuCheckboxItem checked={pinnedColumns.has(column.name)} onCheckedChange={() => toggleColumnPin(column.name)}>
                                     {isPinned ? '📌 Désépingler' : '📍 Épingler à gauche'}
                                   </DropdownMenuCheckboxItem>
                                   
                                   {/* Masquer la colonne (sauf id et email) */}
-                                  {column.name !== 'id' && column.name !== 'email' && (
-                                    <>
+                                  {column.name !== 'id' && column.name !== 'email' && <>
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuCheckboxItem
-                                        checked={false}
-                                        onCheckedChange={() => {
-                                          const newVisible = new Set(visibleColumns);
-                                          newVisible.delete(column.name);
-                                          setVisibleColumns(newVisible);
-                                        }}
-                                      >
+                                      <DropdownMenuCheckboxItem checked={false} onCheckedChange={() => {
+                                const newVisible = new Set(visibleColumns);
+                                newVisible.delete(column.name);
+                                setVisibleColumns(newVisible);
+                              }}>
                                         👁️‍🗨️ Masquer la colonne
                                       </DropdownMenuCheckboxItem>
-                                    </>
-                                  )}
+                                    </>}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
-                          </th>
-                        );
-                      })}
+                          </th>;
+                  })}
                       <th className="w-20 px-4 py-4 text-center sticky top-0 bg-table-header z-20">
                         <span className="uppercase text-xs tracking-wider font-semibold text-muted-foreground">Actions</span>
                       </th>
@@ -1574,33 +1478,22 @@ const TableView: React.FC<TableViewProps> = ({
                             <Checkbox checked={isSelected} onCheckedChange={checked => handleSelectRow(rowId, !!checked)} aria-label={`Sélectionner ligne ${index + 1}`} />
                           </td>
                           {displayColumns.map(column => {
-                            const isPinned = pinnedColumns.has(column.name);
-                            // Since only one column can be pinned, it's always at position 48px (after checkbox)
-                             const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
-                             const isEditing = editingCell?.rowId === rowId && editingCell?.columnName === column.name;
-                             const canEdit = column.name !== 'id' && column.name !== 'created_at' && column.name !== 'updated_at';
-                             const cellKey = `${rowId}-${column.name}`;
-                             const wasRecentlyUpdated = recentlyUpdated.has(cellKey);
-                             
-                             return (
-                                <td 
-                                  key={column.name} 
-                                  className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''} ${canEdit ? 'cursor-pointer hover:bg-muted/30' : ''} ${wasRecentlyUpdated ? 'bg-green-50 border-green-200 transition-all duration-1000' : ''}`}
-                                  style={isPinned ? { left: '48px' } : {}}
-                                  onDoubleClick={() => canEdit && startEditing(rowId, column.name, row[column.name])}
-                               >
-                                  {isEditing ? (
-                                    <div className="flex items-center gap-2">
-                                      {column.name === 'data_section' ? (
-                                        <Select
-                                          value={editingValue}
-                                          onValueChange={(value) => setEditingValue(value)}
-                                          onOpenChange={(open) => {
-                                            if (!open) {
-                                              saveEdit();
-                                            }
-                                          }}
-                                        >
+                      const isPinned = pinnedColumns.has(column.name);
+                      // Since only one column can be pinned, it's always at position 48px (after checkbox)
+                      const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
+                      const isEditing = editingCell?.rowId === rowId && editingCell?.columnName === column.name;
+                      const canEdit = column.name !== 'id' && column.name !== 'created_at' && column.name !== 'updated_at';
+                      const cellKey = `${rowId}-${column.name}`;
+                      const wasRecentlyUpdated = recentlyUpdated.has(cellKey);
+                      return <td key={column.name} className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''} ${canEdit ? 'cursor-pointer hover:bg-muted/30' : ''} ${wasRecentlyUpdated ? 'bg-green-50 border-green-200 transition-all duration-1000' : ''}`} style={isPinned ? {
+                        left: '48px'
+                      } : {}} onDoubleClick={() => canEdit && startEditing(rowId, column.name, row[column.name])}>
+                                  {isEditing ? <div className="flex items-center gap-2">
+                                      {column.name === 'data_section' ? <Select value={editingValue} onValueChange={value => setEditingValue(value)} onOpenChange={open => {
+                            if (!open) {
+                              saveEdit();
+                            }
+                          }}>
                                           <SelectTrigger className="h-8 text-sm">
                                             <SelectValue />
                                           </SelectTrigger>
@@ -1608,53 +1501,31 @@ const TableView: React.FC<TableViewProps> = ({
                                             <SelectItem value="Arlynk">Arlynk</SelectItem>
                                             <SelectItem value="Aicademia">Aicademia</SelectItem>
                                           </SelectContent>
-                                        </Select>
-                                      ) : (
-                                        <Input
-                                          ref={editInputRef}
-                                          value={editingValue}
-                                          onChange={(e) => setEditingValue(e.target.value)}
-                                          onKeyDown={async (e) => {
-                                            if (e.key === 'Enter') {
-                                              e.preventDefault();
-                                              await saveEdit();
-                                            } else if (e.key === 'Escape') {
-                                              cancelEditing();
-                                            }
-                                          }}
-                                          onBlur={saveEdit}
-                                          className="h-8 text-sm"
-                                          disabled={isSaving}
-                                        />
-                                      )}
+                                        </Select> : <Input ref={editInputRef} value={editingValue} onChange={e => setEditingValue(e.target.value)} onKeyDown={async e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              await saveEdit();
+                            } else if (e.key === 'Escape') {
+                              cancelEditing();
+                            }
+                          }} onBlur={saveEdit} className="h-8 text-sm" disabled={isSaving} />}
                                       {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-                                    </div>
-                                 ) : (
-                                   <div className="flex items-center justify-between group">
+                                    </div> : <div className="flex items-center justify-between group">
                                      <span>{formatCellValue(row[column.name], column.name)}</span>
-                                     {canEdit && (
-                                       <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity ml-2" />
-                                     )}
-                                   </div>
-                                 )}
-                               </td>
-                             );
-                          })}
+                                     {canEdit && <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity ml-2" />}
+                                   </div>}
+                               </td>;
+                    })}
                           <td className="w-20 px-4 py-4">
                             <div className="flex items-center justify-center space-x-1">
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
                                 <Edit2 className="h-4 w-4 text-muted-foreground" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 hover:bg-muted"
-                                onClick={() => {
-                                  // Preserve current sort parameters when navigating to details
-                                  const currentParams = new URLSearchParams(location.search);
-                                  navigate(`/contact/${tableName}/${rowId}?${currentParams.toString()}`);
-                                }}
-                              >
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted" onClick={() => {
+                          // Preserve current sort parameters when navigating to details
+                          const currentParams = new URLSearchParams(location.search);
+                          navigate(`/contact/${tableName}/${rowId}?${currentParams.toString()}`);
+                        }}>
                                 <ExternalLink className="h-4 w-4 text-muted-foreground" />
                               </Button>
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive">
@@ -1693,63 +1564,30 @@ const TableView: React.FC<TableViewProps> = ({
               <div className="border rounded-lg p-3 bg-green-50/50 flex-1 overflow-y-auto">
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="visible-columns">
-                    {(provided, snapshot) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className={`space-y-2 min-h-[100px] transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-green-100/70 rounded-lg' : ''}`}
-                      >
-                        {tempColumnOrder
-                          .filter(colName => tempVisibleColumns.has(colName))
-                          .map((colName, index) => {
-                            const column = allColumns.find(col => col.name === colName);
-                            if (!column) return null;
-                            return (
-                              <Draggable key={column.name} draggableId={column.name} index={index}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${
-                                      snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'
-                                    }`}
-                                    style={{
-                                      ...provided.draggableProps.style,
-                                      transform: snapshot.isDragging 
-                                        ? `${provided.draggableProps.style?.transform} rotate(1deg)` 
-                                        : provided.draggableProps.style?.transform
-                                    }}
-                                  >
-                                    <div 
-                                      {...provided.dragHandleProps}
-                                      className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded transition-colors duration-150"
-                                      title="Glisser pour réorganiser"
-                                    >
+                    {(provided, snapshot) => <div {...provided.droppableProps} ref={provided.innerRef} className={`space-y-2 min-h-[100px] transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-green-100/70 rounded-lg' : ''}`}>
+                        {tempColumnOrder.filter(colName => tempVisibleColumns.has(colName)).map((colName, index) => {
+                      const column = allColumns.find(col => col.name === colName);
+                      if (!column) return null;
+                      return <Draggable key={column.name} draggableId={column.name} index={index}>
+                                {(provided, snapshot) => <div ref={provided.innerRef} {...provided.draggableProps} className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'}`} style={{
+                          ...provided.draggableProps.style,
+                          transform: snapshot.isDragging ? `${provided.draggableProps.style?.transform} rotate(1deg)` : provided.draggableProps.style?.transform
+                        }}>
+                                    <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded transition-colors duration-150" title="Glisser pour réorganiser">
                                       <GripVertical className="h-4 w-4 text-gray-400" />
                                     </div>
                                     <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => toggleColumnVisibility(column.name)}
-                                      className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200"
-                                      title="Masquer"
-                                    >
+                                    <Button variant="ghost" size="sm" onClick={() => toggleColumnVisibility(column.name)} className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200" title="Masquer">
                                       <ArrowRight className="h-4 w-4 text-red-600" />
                                     </Button>
-                                  </div>
-                                )}
-                              </Draggable>
-                            );
-                          })}
+                                  </div>}
+                              </Draggable>;
+                    })}
                         {provided.placeholder}
-                        {tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length === 0 && (
-                          <div className="text-center text-muted-foreground text-sm py-8">
+                        {tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length === 0 && <div className="text-center text-muted-foreground text-sm py-8">
                             Aucune colonne affichée
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          </div>}
+                      </div>}
                   </Droppable>
                 </DragDropContext>
               </div>
@@ -1760,27 +1598,15 @@ const TableView: React.FC<TableViewProps> = ({
               <h3 className="text-sm font-medium mb-3 text-gray-600 flex-shrink-0">Colonnes masquées ({allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).length})</h3>
               <div className="border rounded-lg p-3 bg-gray-50/50 flex-1 overflow-y-auto">
                 <div className="space-y-2">
-                  {allColumns
-                    .filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name))
-                    .map(column => (
-                      <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors duration-200 hover:shadow-sm">
+                  {allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).map(column => <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors duration-200 hover:shadow-sm">
                         <span className="text-sm flex-1 mr-2">{translateColumnName(column.name)}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleColumnVisibility(column.name)}
-                          className="h-8 w-8 p-0 hover:bg-green-100 transition-colors duration-200"
-                          title="Afficher"
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => toggleColumnVisibility(column.name)} className="h-8 w-8 p-0 hover:bg-green-100 transition-colors duration-200" title="Afficher">
                           <ArrowLeftRight className="h-4 w-4 text-green-600" />
                         </Button>
-                      </div>
-                    ))}
-                  {allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).length === 0 && (
-                    <div className="text-center text-muted-foreground text-sm py-8">
+                      </div>)}
+                  {allColumns.filter(col => col.name !== 'email' && col.name !== 'id' && !tempVisibleColumns.has(col.name)).length === 0 && <div className="text-center text-muted-foreground text-sm py-8">
                       Toutes les colonnes sont affichées
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </div>
             </div>
@@ -1818,16 +1644,12 @@ const TableView: React.FC<TableViewProps> = ({
             <AlertDialogCancel onClick={handleEmailWarningCancel}>
               Annuler
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleEmailWarningConfirm}
-              className="bg-orange-600 hover:bg-orange-700"
-            >
+            <AlertDialogAction onClick={handleEmailWarningConfirm} className="bg-orange-600 hover:bg-orange-700">
               Continuer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>;
 };
 export default TableView;
