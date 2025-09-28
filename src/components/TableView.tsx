@@ -1669,9 +1669,20 @@ const TableView: React.FC<TableViewProps> = ({
         
         {/* Action Buttons - Right Side */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setFiltersOpen(!filtersOpen)} className="h-9 px-3">
+          <Button variant="outline" size="sm" onClick={() => setFiltersOpen(!filtersOpen)} className="h-9 px-3 relative">
             <Settings className="h-4 w-4 mr-2" />
             Filtres
+            {(() => {
+              const activeFiltersCount = Object.values(advancedFilters).filter(value => 
+                value !== undefined && value !== null && value !== '' && 
+                (Array.isArray(value) ? value.length > 0 : true)
+              ).length;
+              return activeFiltersCount > 0 && (
+                <Badge variant="secondary" className="ml-2 h-5 min-w-5 text-xs flex items-center justify-center">
+                  {activeFiltersCount}
+                </Badge>
+              );
+            })()}
           </Button>
           <TooltipProvider>
             <Tooltip>
