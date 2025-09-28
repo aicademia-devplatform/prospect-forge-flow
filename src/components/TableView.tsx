@@ -1319,9 +1319,8 @@ const TableView: React.FC<TableViewProps> = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 px-3">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exporter
+                <Button variant="outline" size="sm" className="h-9 w-9 p-0">
+                  <Download className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
