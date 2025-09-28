@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { AssignLeadsDialog } from '@/components/AssignLeadsDialog';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon, Columns, UserPlus } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -222,6 +224,9 @@ const TableView: React.FC<TableViewProps> = ({
   
   // Assign leads dialog state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+
+  // Selection scope state
+  const [selectAllData, setSelectAllData] = useState(false);
 
   // Search columns suggestion state
   const [searchColumnsOpen, setSearchColumnsOpen] = useState(false);
@@ -1735,9 +1740,21 @@ const TableView: React.FC<TableViewProps> = ({
             {/* Table Header with selection controls */}
             {selectedRows.size > 0 && <div className="px-6 py-4 bg-primary/5 border-b border-border flex-shrink-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-primary">
-                    {selectedRows.size} élément(s) sélectionné(s)
-                  </span>
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <Switch
+                        id="select-all-data"
+                        checked={selectAllData}
+                        onCheckedChange={setSelectAllData}
+                      />
+                      <Label htmlFor="select-all-data" className="text-sm text-muted-foreground">
+                        Sélectionner toutes les données {selectAllData ? `(${totalCount} au total)` : `(${pageSize} de cette page)`}
+                      </Label>
+                    </div>
+                    <span className="text-sm font-medium text-primary">
+                      {selectedRows.size} élément(s) sélectionné(s)
+                    </span>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Button 
                       variant="outline" 
