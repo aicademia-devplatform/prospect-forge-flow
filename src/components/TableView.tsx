@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1365,18 +1366,20 @@ const TableView: React.FC<TableViewProps> = ({
       </div>
 
       {/* Filter Panel */}
-      {filtersOpen && (
-        <div className="mb-3 animate-accordion-down overflow-hidden">
-          <TableFilters
-            tableName={tableName}
-            filters={advancedFilters}
-            onFiltersChange={handleAdvancedFiltersChange}
-            onReset={handleResetFilters}
-            showOnlyButton={false}
-            onToggle={() => setFiltersOpen(!filtersOpen)}
-          />
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {filtersOpen && (
+          <div className="mb-3">
+            <TableFilters
+              tableName={tableName}
+              filters={advancedFilters}
+              onFiltersChange={handleAdvancedFiltersChange}
+              onReset={handleResetFilters}
+              showOnlyButton={false}
+              onToggle={() => setFiltersOpen(!filtersOpen)}
+            />
+          </div>
+        )}
+      </AnimatePresence>
 
       <div className="bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-3">
         {loading ? <div className="flex items-center justify-center flex-1">

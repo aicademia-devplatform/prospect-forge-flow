@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,7 +130,17 @@ const TableFilters: React.FC<TableFiltersProps> = ({
   }
 
   return (
-    <div className="mb-2 animate-accordion-down">
+    <motion.div 
+      className="mb-2"
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ 
+        duration: 0.3, 
+        ease: [0.04, 0.62, 0.23, 0.98] 
+      }}
+      style={{ overflow: "hidden" }}
+    >
       <Card className="border-l-4 border-l-primary/20">
         <CardContent className="pt-6 space-y-6">
           {/* Header with chevron button */}
@@ -309,7 +320,7 @@ const TableFilters: React.FC<TableFiltersProps> = ({
           )}
         </CardContent>
       </Card>
-     </div>
+    </motion.div>
    );
  };
 
