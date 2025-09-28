@@ -108,7 +108,8 @@ Deno.serve(async (req) => {
         query = query.eq('contact_active', advancedFilters.contactActive)
       }
       if (advancedFilters.industrie) {
-        query = query.eq('industrie', advancedFilters.industrie)
+        // Utiliser ILIKE pour une recherche flexible dans l'industrie
+        query = query.ilike('industrie', `%${advancedFilters.industrie}%`)
       }
       if (advancedFilters.company) {
         query = query.ilike('company', `%${advancedFilters.company}%`)
