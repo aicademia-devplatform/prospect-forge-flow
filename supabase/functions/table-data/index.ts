@@ -15,8 +15,10 @@ interface QueryParams {
   sortOrder?: 'asc' | 'desc'
   visibleColumns?: string[]
   advancedFilters?: {
-    dateCreatedFrom?: string
-    dateCreatedTo?: string
+    dateRange?: {
+      from?: string
+      to?: string
+    }
     dataSection?: string
     zohoStatus?: string
     apolloStatus?: string
@@ -81,13 +83,13 @@ Deno.serve(async (req) => {
 
     // Apply advanced filters (only for crm_contacts)
     if (tableName === 'crm_contacts' && Object.keys(advancedFilters).length > 0) {
-      // Date filters
-      if (advancedFilters.dateCreatedFrom) {
-        query = query.gte('created_at', advancedFilters.dateCreatedFrom)
+      // Date range filter
+      if (advancedFilters.dateRange?.from) {
+        query = query.gte('created_at', advancedFilters.dateRange.from)
       }
-      if (advancedFilters.dateCreatedTo) {
+      if (advancedFilters.dateRange?.to) {
         // Add one day to include the end date
-        const endDate = new Date(advancedFilters.dateCreatedTo)
+        const endDate = new Date(advancedFilters.dateRange.to)
         endDate.setDate(endDate.getDate() + 1)
         query = query.lt('created_at', endDate.toISOString())
       }

@@ -4,16 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Filter, X, RotateCcw } from 'lucide-react';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Filter, X, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { DateRange } from 'react-day-picker';
 
 export interface FilterValues {
-  dateCreatedFrom?: Date;
-  dateCreatedTo?: Date;
+  dateRange?: DateRange;
   dataSection?: string;
   zohoStatus?: string;
   apolloStatus?: string;
@@ -144,67 +142,14 @@ const TableFilters: React.FC<TableFiltersProps> = ({
 
       {!isCollapsed && (
         <CardContent className="space-y-4">
-          {/* Date filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date de création (de)</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !localFilters.dateCreatedFrom && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.dateCreatedFrom 
-                      ? format(localFilters.dateCreatedFrom, "dd MMM yyyy", { locale: fr })
-                      : "Sélectionner une date"
-                    }
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={localFilters.dateCreatedFrom}
-                    onSelect={(date) => updateFilter('dateCreatedFrom', date)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date de création (à)</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !localFilters.dateCreatedTo && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {localFilters.dateCreatedTo 
-                      ? format(localFilters.dateCreatedTo, "dd MMM yyyy", { locale: fr })
-                      : "Sélectionner une date"
-                    }
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={localFilters.dateCreatedTo}
-                    onSelect={(date) => updateFilter('dateCreatedTo', date)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+          {/* Date range filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Période de création</label>
+            <DateRangePicker
+              dateRange={localFilters.dateRange}
+              onDateRangeChange={(range) => updateFilter('dateRange', range)}
+              placeholder="Sélectionner une période de création"
+            />
           </div>
 
           {/* Select filters */}
@@ -298,16 +243,11 @@ const TableFilters: React.FC<TableFiltersProps> = ({
             <div className="space-y-2">
               <label className="text-sm font-medium">Filtres actifs</label>
               <div className="flex flex-wrap gap-2">
-                {localFilters.dateCreatedFrom && (
+                {localFilters.dateRange?.from && (
                   <Badge variant="secondary" className="flex items-center gap-1">
-                    Date de: {format(localFilters.dateCreatedFrom, "dd/MM/yyyy", { locale: fr })}
-                    <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter('dateCreatedFrom')} />
-                  </Badge>
-                )}
-                {localFilters.dateCreatedTo && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    Date à: {format(localFilters.dateCreatedTo, "dd/MM/yyyy", { locale: fr })}
-                    <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter('dateCreatedTo')} />
+                    Période: {format(localFilters.dateRange.from, "dd/MM/yyyy", { locale: fr })}
+                    {localFilters.dateRange.to && ` - ${format(localFilters.dateRange.to, "dd/MM/yyyy", { locale: fr })}`}
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => removeFilter('dateRange')} />
                   </Badge>
                 )}
                 {localFilters.dataSection && (

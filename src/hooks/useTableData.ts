@@ -12,8 +12,10 @@ interface UseTableDataParams {
   sortOrder?: 'asc' | 'desc';
   visibleColumns?: string[];
   advancedFilters?: {
-    dateCreatedFrom?: Date;
-    dateCreatedTo?: Date;
+    dateRange?: {
+      from?: Date;
+      to?: Date;
+    };
     dataSection?: string;
     zohoStatus?: string;
     apolloStatus?: string;
