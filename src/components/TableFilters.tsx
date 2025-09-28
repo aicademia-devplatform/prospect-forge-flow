@@ -129,7 +129,7 @@ const TableFilters: React.FC<TableFiltersProps> = ({
   }
 
   return (
-    <div className="mb-4 animate-fade-in">
+    <div className="mb-2 animate-fade-in">
       <Card className="border-l-4 border-l-primary/20">
         <CardContent className="pt-6 space-y-6">
           {/* Reset button inside the content */}

@@ -1366,7 +1366,7 @@ const TableView: React.FC<TableViewProps> = ({
 
       {/* Filter Panel */}
       {filtersOpen && (
-        <div className="mb-6">
+        <div className="mb-3">
           <TableFilters
             tableName={tableName}
             filters={advancedFilters}
@@ -1377,7 +1377,7 @@ const TableView: React.FC<TableViewProps> = ({
         </div>
       )}
 
-      <div className="bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-6">
+      <div className="bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-3">
         {loading ? <div className="flex items-center justify-center flex-1">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-muted-foreground">Chargement des données...</span>
