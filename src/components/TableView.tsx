@@ -1106,7 +1106,7 @@ const TableView: React.FC<TableViewProps> = ({
         sectionFilter: selectedSections.length > 0 ? selectedSections.join(',') : 'all',
         sortBy,
         sortOrder,
-        visibleColumns: visibleColumnsArray,
+        visibleColumns: [], // Récupérer toutes les colonnes pour l'export
         advancedFilters
       };
 
@@ -1129,25 +1129,22 @@ const TableView: React.FC<TableViewProps> = ({
       // Créer le workbook Excel
       const workbook = XLSX.utils.book_new();
       
-      // Préparer les données avec les colonnes traduites
-      const headers = Object.keys(contacts[0])
-        .filter(key => visibleColumns.has(key) || visibleColumns.size === 0)
-        .map(key => translateColumnName(key));
+      // Préparer les données avec toutes les colonnes de la base de données
+      const allKeys = Object.keys(contacts[0]); // Toutes les colonnes disponibles
+      const headers = allKeys.map(key => translateColumnName(key));
       
       const exportRows = contacts.map(contact => 
-        Object.keys(contact)
-          .filter(key => visibleColumns.has(key) || visibleColumns.size === 0)
-          .map(key => {
-            const value = contact[key];
-            // Formater les valeurs pour Excel
-            if (value === null || value === undefined) return '';
-            if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
-            if (Array.isArray(value)) return value.join(', ');
-            if (typeof value === 'object' && value instanceof Date) {
-              return value.toLocaleDateString('fr-FR');
-            }
-            return String(value);
-          })
+        allKeys.map(key => {
+          const value = contact[key];
+          // Formater les valeurs pour Excel
+          if (value === null || value === undefined) return '';
+          if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
+          if (Array.isArray(value)) return value.join(', ');
+          if (typeof value === 'object' && value instanceof Date) {
+            return value.toLocaleDateString('fr-FR');
+          }
+          return String(value);
+        })
       );
 
       // Ajouter les en-têtes
