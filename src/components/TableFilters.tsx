@@ -132,7 +132,20 @@ const TableFilters: React.FC<TableFiltersProps> = ({
     <div className="mb-2 animate-fade-in">
       <Card className="border-l-4 border-l-primary/20">
         <CardContent className="pt-6 space-y-6">
-          {/* Reset button inside the content */}
+          {/* Header with close button */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-foreground">Filtres avancés</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggle}
+              className="h-8 w-8 p-0 hover:bg-accent/50"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Reset button */}
           {hasActiveFilters && (
             <div className="flex justify-end animate-fade-in">
               <Button
