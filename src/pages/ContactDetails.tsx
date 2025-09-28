@@ -174,12 +174,11 @@ const ContactDetails: React.FC = () => {
     const sortBy = urlParams.get('sortBy');
     const sortOrder = urlParams.get('sortOrder');
     
+    // Always navigate back to the data source table, with sorting parameters if they exist
     if (sortBy && sortOrder) {
-      // Navigate back to the data source table with sorting parameters
       navigate(`/datasources/${tableName}?sortBy=${sortBy}&sortOrder=${sortOrder}`);
     } else {
-      // Default navigation back
-      navigate(-1);
+      navigate(`/datasources/${tableName}`);
     }
   };
 
