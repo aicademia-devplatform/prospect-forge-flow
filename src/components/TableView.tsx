@@ -1268,14 +1268,6 @@ const TableView: React.FC<TableViewProps> = ({
         </div>
       </div>
 
-
-      {/* Filter Panel */}
-      <AnimatePresence mode="wait">
-        {filtersOpen && <div className="mb-3">
-            <TableFilters tableName={tableName} filters={advancedFilters} onFiltersChange={handleAdvancedFiltersChange} onReset={handleResetFilters} showOnlyButton={false} onToggle={() => setFiltersOpen(!filtersOpen)} />
-          </div>}
-      </AnimatePresence>
-
       {/* All Controls - Above Table */}
       <div className="flex items-center justify-between gap-2 mt-5 -mb-0.5 ">
         {/* Section Filters - Left Side */}
