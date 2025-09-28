@@ -1381,7 +1381,7 @@ const TableView: React.FC<TableViewProps> = ({
         )}
       </AnimatePresence>
 
-      <div className="bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-3">
+      <div className={`bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-3 ${filtersOpen ? 'min-h-[600px]' : ''}`}>
         {loading ? <div className="flex items-center justify-center flex-1">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-muted-foreground">Chargement des données...</span>
