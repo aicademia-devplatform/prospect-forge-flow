@@ -1392,8 +1392,11 @@ const TableView: React.FC<TableViewProps> = ({
 
   // Synchronisation initiale des filtres avec les badges de section
   useEffect(() => {
-    if (advancedFilters.dataSection && !selectedSections.includes(advancedFilters.dataSection)) {
-      setSelectedSections([advancedFilters.dataSection]);
+    if (advancedFilters.dataSection) {
+      const sections = Array.isArray(advancedFilters.dataSection) 
+        ? advancedFilters.dataSection 
+        : [advancedFilters.dataSection];
+      setSelectedSections(sections);
     } else if (!advancedFilters.dataSection && selectedSections.length > 0) {
       setSelectedSections([]);
     }
@@ -1408,7 +1411,10 @@ const TableView: React.FC<TableViewProps> = ({
     
     // Synchroniser avec les badges de section
     if (filters.dataSection) {
-      setSelectedSections([filters.dataSection]);
+      const sections = Array.isArray(filters.dataSection) 
+        ? filters.dataSection 
+        : [filters.dataSection];
+      setSelectedSections(sections);
     } else {
       setSelectedSections([]);
     }

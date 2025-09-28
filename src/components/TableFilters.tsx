@@ -13,7 +13,7 @@ import { DateRange } from 'react-day-picker';
 
 export interface FilterValues {
   dateRange?: DateRange;
-  dataSection?: string;
+  dataSection?: string | string[];
   zohoStatus?: string;
   apolloStatus?: string;
   contactActive?: string;
@@ -184,16 +184,53 @@ const TableFilters: React.FC<TableFiltersProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground/80">Section de données</label>
-              <Select value={localFilters.dataSection || "all"} onValueChange={(value) => updateFilter('dataSection', value === "all" ? undefined : value)}>
-                <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                  <SelectValue placeholder="Toutes les sections" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les sections</SelectItem>
-                  <SelectItem value="Arlynk">Arlynk</SelectItem>
-                  <SelectItem value="Aicademia">Aicademia</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {['Arlynk', 'Aicademia'].map((section) => {
+                    const isSelected = Array.isArray(localFilters.dataSection) 
+                      ? localFilters.dataSection.includes(section)
+                      : localFilters.dataSection === section;
+                    
+                    return (
+                      <Badge
+                        key={section}
+                        variant={isSelected ? "default" : "outline"}
+                        className={`cursor-pointer transition-all hover:scale-105 ${
+                          isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-primary/10'
+                        }`}
+                        onClick={() => {
+                          const currentSections = Array.isArray(localFilters.dataSection) 
+                            ? localFilters.dataSection 
+                            : localFilters.dataSection ? [localFilters.dataSection] : [];
+                          
+                          let newSections;
+                          if (isSelected) {
+                            newSections = currentSections.filter(s => s !== section);
+                          } else {
+                            newSections = [...currentSections, section];
+                          }
+                          
+                          updateFilter('dataSection', newSections.length > 0 ? newSections : undefined);
+                        }}
+                      >
+                        {section}
+                        {isSelected && <X className="h-3 w-3 ml-1" />}
+                      </Badge>
+                    );
+                  })}
+                </div>
+                {(Array.isArray(localFilters.dataSection) ? localFilters.dataSection.length > 0 : localFilters.dataSection) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateFilter('dataSection', undefined)}
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Effacer tout
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

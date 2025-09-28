@@ -17,7 +17,7 @@ interface UseTableDataParams {
       from?: Date;
       to?: Date;
     };
-    dataSection?: string;
+    dataSection?: string | string[];
     zohoStatus?: string;
     apolloStatus?: string;
     contactActive?: string;

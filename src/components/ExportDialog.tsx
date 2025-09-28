@@ -22,7 +22,7 @@ interface ExportDialogProps {
     searchTerm?: string;
     sectionFilter?: string;
     dateRange?: { from?: Date; to?: Date };
-    dataSection?: string;
+    dataSection?: string | string[];
     zohoStatus?: string;
     apolloStatus?: string;
     contactActive?: string;
