@@ -46,16 +46,26 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
 
   const loadSalesUsers = async () => {
     try {
+      // D'abord, récupérer les IDs des utilisateurs avec le rôle 'sales'
+      const { data: salesRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'sales');
+
+      if (rolesError) throw rolesError;
+
+      if (!salesRoles || salesRoles.length === 0) {
+        setSalesUsers([]);
+        return;
+      }
+
+      const salesUserIds = salesRoles.map(role => role.user_id);
+
+      // Ensuite, récupérer les profils de ces utilisateurs
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          first_name,
-          last_name,
-          email,
-          user_roles!inner(role)
-        `)
-        .eq('user_roles.role', 'sales');
+        .select('id, first_name, last_name, email')
+        .in('id', salesUserIds);
 
       if (error) throw error;
       setSalesUsers(data || []);
