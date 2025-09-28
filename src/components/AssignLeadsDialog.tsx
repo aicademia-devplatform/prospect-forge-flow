@@ -54,6 +54,9 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
   React.useEffect(() => {
     if (selectedSalesId) {
       loadExistingTables(selectedSalesId);
+      // Par défaut, commencer avec "nouvelle table"
+      setUseExistingTable(false);
+      setSelectedExistingTable('');
     } else {
       setExistingTables([]);
       setUseExistingTable(false);
@@ -267,54 +270,58 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
             </Select>
           </div>
 
-          {/* Options de table si un utilisateur est sélectionné et a des tables existantes */}
-          {selectedSalesId && existingTables.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <Switch
-                  id="use-existing-table"
-                  checked={useExistingTable}
-                  onCheckedChange={(checked) => {
-                    setUseExistingTable(checked);
-                    if (!checked) {
-                      setSelectedExistingTable('');
-                    }
-                  }}
-                />
-                <Label htmlFor="use-existing-table" className="text-sm">
-                  Utiliser une table existante
-                </Label>
-              </div>
-
-              {useExistingTable && (
-                <div>
-                  <Label htmlFor="existing-table">Tables existantes</Label>
-                  <Select value={selectedExistingTable} onValueChange={setSelectedExistingTable}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner une table existante" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {existingTables.map((tableName) => (
-                        <SelectItem key={tableName} value={tableName}>
-                          {tableName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+          {/* Sélection de table - tables existantes + option créer nouvelle */}
+          {selectedSalesId && (
+            <div>
+              <Label htmlFor="table-selection">Table de destination</Label>
+              <Select 
+                value={useExistingTable ? selectedExistingTable : 'new-table'} 
+                onValueChange={(value) => {
+                  if (value === 'new-table') {
+                    setUseExistingTable(false);
+                    setSelectedExistingTable('');
+                  } else {
+                    setUseExistingTable(true);
+                    setSelectedExistingTable(value);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une table de destination" />
+                </SelectTrigger>
+                <SelectContent>
+                  {/* Tables existantes */}
+                  {existingTables.map((tableName) => (
+                    <SelectItem key={tableName} value={tableName}>
+                      📋 {tableName}
+                    </SelectItem>
+                  ))}
+                  
+                  {/* Séparateur si il y a des tables existantes */}
+                  {existingTables.length > 0 && (
+                    <div className="px-2 py-1">
+                      <div className="border-t border-border"></div>
+                    </div>
+                  )}
+                  
+                  {/* Option pour créer une nouvelle table */}
+                  <SelectItem value="new-table" className="font-medium text-primary">
+                    ➕ Ajouter une table
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
-          {/* Champ pour nouvelle table (seulement si on n'utilise pas de table existante) */}
-          {!useExistingTable && (
+          {/* Champ pour nouvelle table (seulement si "Ajouter une table" est sélectionné) */}
+          {selectedSalesId && !useExistingTable && (
             <div>
-              <Label htmlFor="table-name">Nom de table personnalisée (optionnel)</Label>
+              <Label htmlFor="table-name">Nom de la nouvelle table</Label>
               <Input
                 id="table-name"
                 value={customTableName}
                 onChange={(e) => setCustomTableName(e.target.value)}
-                placeholder="Laissez vide pour utiliser le nom par défaut"
+                placeholder="Nom de la nouvelle table"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Par défaut: {selectedSalesId ? `${selectedSalesId}_leads` : 'user_leads'}
@@ -328,7 +335,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
             </Button>
             <Button 
               onClick={handleAssignLeads} 
-              disabled={isLoading || !selectedSalesId || (useExistingTable && !selectedExistingTable)}
+              disabled={isLoading || !selectedSalesId}
             >
               {isLoading ? 'Attribution...' : 'Assigner'}
             </Button>
