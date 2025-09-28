@@ -99,13 +99,49 @@ Deno.serve(async (req) => {
         query = query.ilike('data_section', `%${advancedFilters.dataSection}%`)
       }
       if (advancedFilters.zohoStatus) {
-        query = query.eq('zoho_status', advancedFilters.zohoStatus)
+        // Mapping des statuts Zoho anglais-français
+        const zohoStatusTranslations: Record<string, string[]> = {
+          'Lead': ['Lead', 'Prospect', 'Piste'],
+          'Prospect': ['Prospect', 'Lead', 'Piste', 'Potentiel'],
+          'Customer': ['Customer', 'Client', 'Clientèle'],
+          'Partner': ['Partner', 'Partenaire', 'Associé'],
+          'Inactive': ['Inactive', 'Inactif', 'Désactivé'],
+          'Cold Lead': ['Cold Lead', 'Lead Froid', 'Piste Froide'],
+          'Warm Lead': ['Warm Lead', 'Lead Tiède', 'Piste Tiède'],
+          'Hot Lead': ['Hot Lead', 'Lead Chaud', 'Piste Chaude']
+        }
+        
+        const searchTerms = zohoStatusTranslations[advancedFilters.zohoStatus] || [advancedFilters.zohoStatus]
+        const zohoConditions = searchTerms.map(term => `zoho_status.ilike.%${term}%`)
+        query = query.or(zohoConditions.join(','))
       }
       if (advancedFilters.apolloStatus) {
-        query = query.eq('apollo_status', advancedFilters.apolloStatus)
+        // Mapping des statuts Apollo anglais-français
+        const apolloStatusTranslations: Record<string, string[]> = {
+          'Active': ['Active', 'Actif', 'En cours'],
+          'Inactive': ['Inactive', 'Inactif', 'Désactivé'],
+          'Engaged': ['Engaged', 'Engagé', 'Impliqué', 'Actif'],
+          'Not Contacted': ['Not Contacted', 'Non Contacté', 'Pas Contacté'],
+          'Replied': ['Replied', 'Répondu', 'A Répondu'],
+          'Bounced': ['Bounced', 'Rejeté', 'Bounce', 'Echec'],
+          'Unsubscribed': ['Unsubscribed', 'Désabonné', 'Désinscrit']
+        }
+        
+        const searchTerms = apolloStatusTranslations[advancedFilters.apolloStatus] || [advancedFilters.apolloStatus]
+        const apolloConditions = searchTerms.map(term => `apollo_status.ilike.%${term}%`)
+        query = query.or(apolloConditions.join(','))
       }
       if (advancedFilters.contactActive) {
-        query = query.eq('contact_active', advancedFilters.contactActive)
+        // Mapping des statuts de contact actif français-français et variantes
+        const contactActiveTranslations: Record<string, string[]> = {
+          'Oui': ['Oui', 'Yes', 'True', 'Actif', 'Active', '1'],
+          'Non': ['Non', 'No', 'False', 'Inactif', 'Inactive', '0'],
+          'En cours': ['En cours', 'In Progress', 'Pending', 'En attente', 'Processing']
+        }
+        
+        const searchTerms = contactActiveTranslations[advancedFilters.contactActive] || [advancedFilters.contactActive]
+        const contactConditions = searchTerms.map(term => `contact_active.ilike.%${term}%`)
+        query = query.or(contactConditions.join(','))
       }
       if (advancedFilters.industrie) {
         // Mapping des industries anglais-français pour une recherche plus flexible
