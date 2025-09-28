@@ -142,7 +142,7 @@ const TableFilters: React.FC<TableFiltersProps> = ({
       style={{ overflow: "hidden" }}
     >
       <Card className="border-l-4 border-l-primary/20">
-        <CardContent className="pt-6 space-y-6">
+        <CardContent className="pt-4 pb-4 space-y-4">
           {/* Header with chevron button */}
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">Filtres avancés</h3>
