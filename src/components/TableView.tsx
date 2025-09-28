@@ -1319,7 +1319,7 @@ const TableView: React.FC<TableViewProps> = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 w-9 p-0">
+                <Button variant="outline" size="sm" className="h-9 w-9 p-0 bg-blue-500 text-white hover:bg-blue-600 ">
                   <Download className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -1332,19 +1332,9 @@ const TableView: React.FC<TableViewProps> = ({
       </div>
 
       {/* Advanced Filters Section */}
-      {filtersOpen && (
-        <div className="mt-3">
-          <TableFilters 
-            tableName={tableName} 
-            filters={advancedFilters} 
-            onFiltersChange={handleAdvancedFiltersChange} 
-            onReset={handleResetFilters} 
-            isOpen={filtersOpen} 
-            onToggle={() => setFiltersOpen(!filtersOpen)} 
-            showOnlyButton={false} 
-          />
-        </div>
-      )}
+      {filtersOpen && <div className="mt-3">
+          <TableFilters tableName={tableName} filters={advancedFilters} onFiltersChange={handleAdvancedFiltersChange} onReset={handleResetFilters} isOpen={filtersOpen} onToggle={() => setFiltersOpen(!filtersOpen)} showOnlyButton={false} />
+        </div>}
 
       <div className={`bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-3 ${filtersOpen ? 'min-h-[600px]' : ''}`}>
         {loading ? <div className="flex items-center justify-center flex-1">
