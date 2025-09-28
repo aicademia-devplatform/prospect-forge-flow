@@ -2087,141 +2087,69 @@ export type Database = {
       }
     }
     Views: {
-      v_apollo_contacts_only: {
-        Row: {
-          account_owner: string | null
-          activity: string | null
-          annual_revenue: number | null
-          apollo_account_id: string | null
-          apollo_contact_id: string | null
-          apollo_status: string | null
-          arlynk_status: string | null
-          categorie_fonction: string | null
-          city: string | null
-          company: string | null
-          company_address: string | null
-          company_city: string | null
-          company_country: string | null
-          company_linkedin_url: string | null
-          company_name_for_emails: string | null
-          company_phone: string | null
-          company_state: string | null
-          contact_active: string | null
-          contact_owner: string | null
-          corporate_phone: string | null
-          country: string | null
-          created_at: string | null
-          crm_firstname: string | null
-          crm_name: string | null
-          demoed: boolean | null
-          departments: string | null
-          email: string | null
-          email_bounced: boolean | null
-          email_confidence: string | null
-          email_open: boolean | null
-          email_sent: boolean | null
-          email_status: string | null
-          facebook_url: string | null
-          first_name: string | null
-          home_phone: string | null
-          id: string | null
-          industry: string | null
-          keywords: string | null
-          last_contacted: string | null
-          last_name: string | null
-          last_raised_at: string | null
-          last_sync_at: string | null
-          latest_funding: number | null
-          latest_funding_amount: number | null
-          lifecycle_stage: string | null
-          lists: string | null
-          mobile_phone: string | null
-          nb_employees: number | null
-          number_of_retail_locations: number | null
-          other_phone: string | null
-          person_linkedin_url: string | null
-          primary_email_catch_all_status: string | null
-          primary_email_last_verified_at: string | null
-          primary_email_source: string | null
-          region: string | null
-          replied: boolean | null
-          secondary_email: string | null
-          secondary_email_source: string | null
-          secondary_email_status: string | null
-          secteur_activite: string | null
-          seniority: string | null
-          stage: string | null
-          state: string | null
-          statut: string | null
-          subsidiary_of: string | null
-          technologies: string | null
-          tertiary_email: string | null
-          tertiary_email_source: string | null
-          tertiary_email_status: string | null
-          title: string | null
-          total_funding: number | null
-          total_score: number | null
-          twitter_url: string | null
-          updated_at: string | null
-          website: string | null
-          work_direct_phone: string | null
-          zoho_status: string | null
-        }
-        Relationships: []
-      }
-      v_contacts_crm_apollo: {
-        Row: {
-          aicademia_high_status: string | null
-          aicademia_low_status: string | null
-          apollo_account_id: string | null
-          apollo_account_owner: string | null
-          apollo_company: string | null
-          apollo_company_linkedin: string | null
-          apollo_contact_id: string | null
-          apollo_contact_owner: string | null
-          apollo_created_at: string | null
-          apollo_departments: string | null
-          apollo_email_open: boolean | null
-          apollo_email_sent: boolean | null
-          apollo_email_status: string | null
-          apollo_firstname: string | null
-          apollo_id: string | null
-          apollo_industry: string | null
-          apollo_last_contacted: string | null
-          apollo_last_sync: string | null
-          apollo_lastname: string | null
-          apollo_linkedin_url: string | null
-          apollo_lists: string | null
-          apollo_mobile: string | null
-          apollo_nb_employees: number | null
-          apollo_phone: string | null
-          apollo_replied: boolean | null
-          apollo_seniority: string | null
-          apollo_stage: string | null
-          apollo_status: string | null
-          apollo_title: string | null
-          apollo_updated_at: string | null
-          apollo_website: string | null
-          arlynk_status: string | null
-          contact_active: string | null
-          crm_city: string | null
-          crm_company: string | null
-          crm_country: string | null
-          crm_created_at: string | null
-          crm_firstname: string | null
-          crm_id: number | null
-          crm_linkedin_url: string | null
-          crm_mobile: string | null
-          crm_name: string | null
-          crm_updated_at: string | null
-          email: string | null
-          total_score: number | null
-          zoho_status: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_apollo_contacts_only: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          email: string
+          id: string
+          nb_employees: number
+          primary_email_last_verified_at: string
+        }[]
+      }
+      get_contacts_crm_apollo: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          aicademia_high_status: string
+          aicademia_low_status: string
+          apollo_account_id: string
+          apollo_account_owner: string
+          apollo_company: string
+          apollo_company_linkedin: string
+          apollo_contact_id: string
+          apollo_contact_owner: string
+          apollo_created_at: string
+          apollo_departments: string
+          apollo_email_open: boolean
+          apollo_email_sent: boolean
+          apollo_email_status: string
+          apollo_firstname: string
+          apollo_id: string
+          apollo_industry: string
+          apollo_last_contacted: string
+          apollo_last_sync: string
+          apollo_lastname: string
+          apollo_linkedin_url: string
+          apollo_lists: string
+          apollo_mobile: string
+          apollo_nb_employees: number
+          apollo_phone: string
+          apollo_replied: boolean
+          apollo_seniority: string
+          apollo_stage: string
+          apollo_status: string
+          apollo_title: string
+          apollo_updated_at: string
+          apollo_website: string
+          arlynk_status: string
+          contact_active: string
+          crm_city: string
+          crm_company: string
+          crm_country: string
+          crm_created_at: string
+          crm_firstname: string
+          crm_id: number
+          crm_linkedin_url: string
+          crm_mobile: string
+          crm_name: string
+          crm_updated_at: string
+          email: string
+          total_score: number
+          zoho_status: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
