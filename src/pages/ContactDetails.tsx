@@ -11,6 +11,7 @@ import { ArrowLeft, Mail, Phone, Building, Globe, Linkedin, User, Calendar, Tag,
 import { useContact } from '@/hooks/useContact';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { AssignLeadsDialog } from '@/components/AssignLeadsDialog';
 
 // Fonction de traduction des noms de colonnes (importée depuis TableView)
 const translateColumnName = (columnName: string): string => {
@@ -138,6 +139,7 @@ const ContactDetails: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
   // Récupérer les données du contact spécifique avec gestion des deux formats
   const { data: rawContactsData, loading } = useContact({
@@ -182,23 +184,16 @@ const ContactDetails: React.FC = () => {
     }
   };
 
-  const handleAssignContact = async (salesEmail: string) => {
-    setIsAssigning(true);
-    try {
-      // TODO: Implémenter la logique d'assignation
-      toast({
-        title: "Contact assigné",
-        description: `Contact assigné à ${salesEmail} avec succès.`
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible d'assigner le contact."
-      });
-    } finally {
-      setIsAssigning(false);
-    }
+  const handleAssignContact = () => {
+    setAssignDialogOpen(true);
+  };
+
+  const handleAssignmentComplete = () => {
+    // Refraîchir les données après assignation
+    toast({
+      title: "Contact assigné",
+      description: "Le contact a été assigné avec succès."
+    });
   };
 
   const handleEdit = () => {
@@ -617,49 +612,14 @@ const ContactDetails: React.FC = () => {
                     <Edit className="h-4 w-4 mr-2" />
                     Modifier
                   </Button>
-                  <Select onValueChange={handleAssignContact} disabled={isAssigning}>
-                    <SelectTrigger className="w-[240px] h-10 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200 font-medium">
-                      <div className="flex items-center gap-2">
-                        <UserPlus className="h-4 w-4" />
-                        <span>Assigner à un commercial</span>
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="w-[240px]">
-                      <SelectItem value="sales1@company.com" className="flex items-center gap-3 p-3 hover:bg-blue-50 cursor-pointer">
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">John Doe</div>
-                            <div className="text-sm text-gray-500">Commercial Senior</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="sales2@company.com" className="flex items-center gap-3 p-3 hover:bg-green-50 cursor-pointer">
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                            <User className="h-4 w-4 text-green-600" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">Jane Smith</div>
-                            <div className="text-sm text-gray-500">Responsable Ventes</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="sales3@company.com" className="flex items-center gap-3 p-3 hover:bg-purple-50 cursor-pointer">
-                        <div className="flex items-center gap-3 w-full">
-                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                            <User className="h-4 w-4 text-purple-600" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">Mike Johnson</div>
-                            <div className="text-sm text-gray-500">Commercial Junior</div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleAssignContact}
+                    className="w-[240px] h-10 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200 font-medium"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Assigner à un commercial
+                  </Button>
                 </>
               ) : (
                 <>
@@ -830,6 +790,15 @@ const ContactDetails: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialogue d'assignation */}
+      <AssignLeadsDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        selectedRows={contact?.id ? [contact.id.toString()] : []}
+        tableName={tableName!}
+        onAssignmentComplete={handleAssignmentComplete}
+      />
     </div>
   );
 };
