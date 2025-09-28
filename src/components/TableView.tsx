@@ -1334,6 +1334,7 @@ const TableView: React.FC<TableViewProps> = ({
           onReset={handleResetFilters}
           isOpen={filtersOpen}
           onToggle={() => setFiltersOpen(!filtersOpen)}
+          showOnlyButton={true}
         />
         <TooltipProvider>
           <Tooltip>
@@ -1371,8 +1372,7 @@ const TableView: React.FC<TableViewProps> = ({
             filters={advancedFilters}
             onFiltersChange={handleAdvancedFiltersChange}
             onReset={handleResetFilters}
-            isOpen={filtersOpen}
-            onToggle={() => setFiltersOpen(!filtersOpen)}
+            showOnlyButton={false}
           />
         </div>
       )}

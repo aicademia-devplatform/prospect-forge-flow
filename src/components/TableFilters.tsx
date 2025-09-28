@@ -25,8 +25,9 @@ interface TableFiltersProps {
   filters: FilterValues;
   onFiltersChange: (filters: FilterValues) => void;
   onReset: () => void;
-  isOpen: boolean;
-  onToggle: () => void;
+  isOpen?: boolean;
+  onToggle?: () => void;
+  showOnlyButton?: boolean;
 }
 
 const ZOHO_STATUS_OPTIONS = [
@@ -74,8 +75,9 @@ const TableFilters: React.FC<TableFiltersProps> = ({
   filters,
   onFiltersChange,
   onReset,
-  isOpen,
-  onToggle
+  isOpen = false,
+  onToggle,
+  showOnlyButton = false
 }) => {
   const [localFilters, setLocalFilters] = useState<FilterValues>(filters);
 
@@ -106,9 +108,9 @@ const TableFilters: React.FC<TableFiltersProps> = ({
 
   const activeFilterCount = Object.keys(filters).length;
 
-  return (
-    <>
-      {/* Filter Toggle Button */}
+  // Si on veut seulement le bouton, on retourne juste le bouton
+  if (showOnlyButton) {
+    return (
       <Button
         variant="outline"
         size="sm"
@@ -123,180 +125,179 @@ const TableFilters: React.FC<TableFiltersProps> = ({
           </Badge>
         )}
       </Button>
+    );
+  }
 
-      {/* Filter Panel */}
-      {isOpen && (
-        <div className="mb-4 animate-fade-in">
-          <Card className="border-l-4 border-l-primary/20">
-            <CardContent className="pt-6 space-y-6">
-              {/* Reset button inside the content */}
-              {hasActiveFilters && (
-                <div className="flex justify-end animate-fade-in">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onReset}
-                    className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive transition-colors"
-                  >
-                    <RotateCcw className="h-3 w-3 mr-1" />
-                    Réinitialiser
-                  </Button>
-                </div>
-              )}
-              {/* Date range filter */}
-              <div className="space-y-2 animate-fade-in" style={{ animationDelay: '100ms' }}>
-                <label className="text-sm font-medium text-foreground/80">Période de création</label>
-                <DateRangePicker
-                  dateRange={localFilters.dateRange}
-                  onDateRangeChange={(range) => updateFilter('dateRange', range)}
-                  placeholder="Sélectionner une période de création"
-                />
+  return (
+    <div className="mb-4 animate-fade-in">
+      <Card className="border-l-4 border-l-primary/20">
+        <CardContent className="pt-6 space-y-6">
+          {/* Reset button inside the content */}
+          {hasActiveFilters && (
+            <div className="flex justify-end animate-fade-in">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onReset}
+                className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive transition-colors"
+              >
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Réinitialiser
+              </Button>
+            </div>
+          )}
+          {/* Date range filter */}
+          <div className="space-y-2 animate-fade-in" style={{ animationDelay: '100ms' }}>
+            <label className="text-sm font-medium text-foreground/80">Période de création</label>
+            <DateRangePicker
+              dateRange={localFilters.dateRange}
+              onDateRangeChange={(range) => updateFilter('dateRange', range)}
+              placeholder="Sélectionner une période de création"
+            />
+          </div>
+
+          {/* Select filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground/80">Section de données</label>
+              <Select value={localFilters.dataSection || "all"} onValueChange={(value) => updateFilter('dataSection', value === "all" ? undefined : value)}>
+                <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                  <SelectValue placeholder="Toutes les sections" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les sections</SelectItem>
+                  <SelectItem value="Arlynk">Arlynk</SelectItem>
+                  <SelectItem value="Aicademia">Aicademia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground/80">Statut Zoho</label>
+              <Select value={localFilters.zohoStatus || "all"} onValueChange={(value) => updateFilter('zohoStatus', value === "all" ? undefined : value)}>
+                <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                  <SelectValue placeholder="Tous les statuts" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  {ZOHO_STATUS_OPTIONS.map(status => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground/80">Statut Apollo</label>
+              <Select value={localFilters.apolloStatus || "all"} onValueChange={(value) => updateFilter('apolloStatus', value === "all" ? undefined : value)}>
+                <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                  <SelectValue placeholder="Tous les statuts" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  {APOLLO_STATUS_OPTIONS.map(status => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground/80">Contact actif</label>
+              <Select value={localFilters.contactActive || "all"} onValueChange={(value) => updateFilter('contactActive', value === "all" ? undefined : value)}>
+                <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                  <SelectValue placeholder="Tous les contacts" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les contacts</SelectItem>
+                  {CONTACT_ACTIVE_OPTIONS.map(status => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground/80">Industrie</label>
+              <Select value={localFilters.industrie || "all"} onValueChange={(value) => updateFilter('industrie', value === "all" ? undefined : value)}>
+                <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                  <SelectValue placeholder="Toutes les industries" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les industries</SelectItem>
+                  {INDUSTRIE_OPTIONS.map(industry => (
+                    <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground/80">Entreprise</label>
+              <Input
+                placeholder="Nom de l'entreprise"
+                value={localFilters.company || ""}
+                onChange={(e) => updateFilter('company', e.target.value || undefined)}
+                className="transition-all duration-200 hover:border-primary/50 focus:border-primary"
+              />
+            </div>
+          </div>
+
+          {/* Active filters display */}
+          {hasActiveFilters && (
+            <div className="space-y-3 animate-fade-in" style={{ animationDelay: '300ms' }}>
+              <label className="text-sm font-medium text-foreground/80">Filtres actifs</label>
+              <div className="flex flex-wrap gap-2">
+                {localFilters.dateRange?.from && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Période: {format(localFilters.dateRange.from, "dd/MM/yyyy", { locale: fr })}
+                    {localFilters.dateRange.to && ` - ${format(localFilters.dateRange.to, "dd/MM/yyyy", { locale: fr })}`}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('dateRange')} />
+                  </Badge>
+                )}
+                {localFilters.dataSection && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Section: {localFilters.dataSection}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('dataSection')} />
+                  </Badge>
+                )}
+                {localFilters.zohoStatus && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Zoho: {localFilters.zohoStatus}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('zohoStatus')} />
+                  </Badge>
+                )}
+                {localFilters.apolloStatus && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Apollo: {localFilters.apolloStatus}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('apolloStatus')} />
+                  </Badge>
+                )}
+                {localFilters.contactActive && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Actif: {localFilters.contactActive}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('contactActive')} />
+                  </Badge>
+                )}
+                {localFilters.industrie && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Industrie: {localFilters.industrie}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('industrie')} />
+                  </Badge>
+                )}
+                {localFilters.company && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Entreprise: {localFilters.company}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('company')} />
+                  </Badge>
+                )}
               </div>
-
-              {/* Select filters */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground/80">Section de données</label>
-                  <Select value={localFilters.dataSection || "all"} onValueChange={(value) => updateFilter('dataSection', value === "all" ? undefined : value)}>
-                    <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                      <SelectValue placeholder="Toutes les sections" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Toutes les sections</SelectItem>
-                      <SelectItem value="Arlynk">Arlynk</SelectItem>
-                      <SelectItem value="Aicademia">Aicademia</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground/80">Statut Zoho</label>
-                  <Select value={localFilters.zohoStatus || "all"} onValueChange={(value) => updateFilter('zohoStatus', value === "all" ? undefined : value)}>
-                    <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                      <SelectValue placeholder="Tous les statuts" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les statuts</SelectItem>
-                      {ZOHO_STATUS_OPTIONS.map(status => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground/80">Statut Apollo</label>
-                  <Select value={localFilters.apolloStatus || "all"} onValueChange={(value) => updateFilter('apolloStatus', value === "all" ? undefined : value)}>
-                    <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                      <SelectValue placeholder="Tous les statuts" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les statuts</SelectItem>
-                      {APOLLO_STATUS_OPTIONS.map(status => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground/80">Contact actif</label>
-                  <Select value={localFilters.contactActive || "all"} onValueChange={(value) => updateFilter('contactActive', value === "all" ? undefined : value)}>
-                    <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                      <SelectValue placeholder="Tous les contacts" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les contacts</SelectItem>
-                      {CONTACT_ACTIVE_OPTIONS.map(status => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground/80">Industrie</label>
-                  <Select value={localFilters.industrie || "all"} onValueChange={(value) => updateFilter('industrie', value === "all" ? undefined : value)}>
-                    <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                      <SelectValue placeholder="Toutes les industries" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Toutes les industries</SelectItem>
-                      {INDUSTRIE_OPTIONS.map(industry => (
-                        <SelectItem key={industry} value={industry}>{industry}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground/80">Entreprise</label>
-                  <Input
-                    placeholder="Nom de l'entreprise"
-                    value={localFilters.company || ""}
-                    onChange={(e) => updateFilter('company', e.target.value || undefined)}
-                    className="transition-all duration-200 hover:border-primary/50 focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              {/* Active filters display */}
-              {hasActiveFilters && (
-                <div className="space-y-3 animate-fade-in" style={{ animationDelay: '300ms' }}>
-                  <label className="text-sm font-medium text-foreground/80">Filtres actifs</label>
-                  <div className="flex flex-wrap gap-2">
-                    {localFilters.dateRange?.from && (
-                      <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
-                        Période: {format(localFilters.dateRange.from, "dd/MM/yyyy", { locale: fr })}
-                        {localFilters.dateRange.to && ` - ${format(localFilters.dateRange.to, "dd/MM/yyyy", { locale: fr })}`}
-                        <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('dateRange')} />
-                      </Badge>
-                    )}
-                    {localFilters.dataSection && (
-                      <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
-                        Section: {localFilters.dataSection}
-                        <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('dataSection')} />
-                      </Badge>
-                    )}
-                    {localFilters.zohoStatus && (
-                      <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
-                        Zoho: {localFilters.zohoStatus}
-                        <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('zohoStatus')} />
-                      </Badge>
-                    )}
-                    {localFilters.apolloStatus && (
-                      <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
-                        Apollo: {localFilters.apolloStatus}
-                        <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('apolloStatus')} />
-                      </Badge>
-                    )}
-                    {localFilters.contactActive && (
-                      <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
-                        Actif: {localFilters.contactActive}
-                        <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('contactActive')} />
-                      </Badge>
-                    )}
-                    {localFilters.industrie && (
-                      <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
-                        Industrie: {localFilters.industrie}
-                        <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('industrie')} />
-                      </Badge>
-                    )}
-                    {localFilters.company && (
-                      <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
-                        Entreprise: {localFilters.company}
-                        <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('company')} />
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </>
-  );
-};
+            </div>
+          )}
+        </CardContent>
+      </Card>
+     </div>
+   );
+ };
 
 export default TableFilters;
