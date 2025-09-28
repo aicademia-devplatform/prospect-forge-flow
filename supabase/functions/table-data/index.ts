@@ -108,8 +108,25 @@ Deno.serve(async (req) => {
         query = query.eq('contact_active', advancedFilters.contactActive)
       }
       if (advancedFilters.industrie) {
-        // Utiliser ILIKE pour une recherche flexible dans l'industrie
-        query = query.ilike('industrie', `%${advancedFilters.industrie}%`)
+        // Mapping des industries anglais-français pour une recherche plus flexible
+        const industryTranslations: Record<string, string[]> = {
+          'Technology': ['Technology', 'Technologie', 'Tech', 'IT', 'Informatique'],
+          'Healthcare': ['Healthcare', 'Santé', 'Médical', 'Pharmaceutique', 'Pharma'],
+          'Finance': ['Finance', 'Financier', 'Banque', 'Banking', 'Assurance', 'Insurance'],
+          'Education': ['Education', 'Éducation', 'Enseignement', 'Formation', 'Academic'],
+          'Manufacturing': ['Manufacturing', 'Industrie', 'Production', 'Fabrication', 'Manufacturier'],
+          'Retail': ['Retail', 'Commerce', 'Vente', 'Distribution', 'Magasin'],
+          'Real Estate': ['Real Estate', 'Immobilier', 'Property', 'Propriété', 'Foncier'],
+          'Consulting': ['Consulting', 'Conseil', 'Advisory', 'Consultancy', 'Expertise'],
+          'Other': ['Other', 'Autre', 'Divers', 'Various', 'Misc']
+        }
+        
+        // Chercher les termes correspondants ou utiliser le terme direct
+        const searchTerms = industryTranslations[advancedFilters.industrie] || [advancedFilters.industrie]
+        
+        // Créer une condition OR pour tous les termes possibles
+        const industryConditions = searchTerms.map(term => `industrie.ilike.%${term}%`)
+        query = query.or(industryConditions.join(','))
       }
       if (advancedFilters.company) {
         query = query.ilike('company', `%${advancedFilters.company}%`)
