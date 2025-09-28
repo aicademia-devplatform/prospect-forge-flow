@@ -1366,13 +1366,14 @@ const TableView: React.FC<TableViewProps> = ({
 
       {/* Filter Panel */}
       {filtersOpen && (
-        <div className="mb-3">
+        <div className="mb-3 animate-accordion-down overflow-hidden">
           <TableFilters
             tableName={tableName}
             filters={advancedFilters}
             onFiltersChange={handleAdvancedFiltersChange}
             onReset={handleResetFilters}
             showOnlyButton={false}
+            onToggle={() => setFiltersOpen(!filtersOpen)}
           />
         </div>
       )}

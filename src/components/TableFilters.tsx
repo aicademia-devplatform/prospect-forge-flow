@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { Filter, X, RotateCcw } from 'lucide-react';
+import { Filter, X, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
@@ -129,19 +129,19 @@ const TableFilters: React.FC<TableFiltersProps> = ({
   }
 
   return (
-    <div className="mb-2 animate-fade-in">
+    <div className="mb-2 animate-accordion-down">
       <Card className="border-l-4 border-l-primary/20">
         <CardContent className="pt-6 space-y-6">
-          {/* Header with close button */}
+          {/* Header with chevron button */}
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-foreground">Filtres avancés</h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={onToggle}
-              className="h-8 w-8 p-0 hover:bg-accent/50"
+              className="h-8 w-8 p-0 hover:bg-accent/50 transition-all duration-200"
             >
-              <X className="h-4 w-4" />
+              <ChevronUp className="h-4 w-4 transition-transform duration-200" />
             </Button>
           </div>
           
