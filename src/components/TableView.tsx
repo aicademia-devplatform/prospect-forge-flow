@@ -19,6 +19,7 @@ import { useTableData } from '@/hooks/useTableData';
 import { useTableSections } from '@/hooks/useTableSections';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ExportDialog, { ExportOptions } from './ExportDialog';
@@ -161,6 +162,7 @@ const TableView: React.FC<TableViewProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasPermission } = useAuth();
   const {
     toast
   } = useToast();
@@ -211,6 +213,11 @@ const TableView: React.FC<TableViewProps> = ({
 
   // Export dialog state
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<{id: string, email: string, name: string} | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -1219,6 +1226,75 @@ const TableView: React.FC<TableViewProps> = ({
     setPendingEmailEdit(null);
   };
 
+  // Delete functions
+  const handleDeleteClick = (contact: any) => {
+    // Check permissions first
+    if (!hasPermission('delete_prospects')) {
+      toast({
+        variant: "destructive",
+        title: "Permission refusée",
+        description: "Vous n'avez pas les droits pour supprimer des contacts."
+      });
+      return;
+    }
+
+    // Prepare contact info for confirmation
+    const contactName = tableName === 'apollo_contacts' 
+      ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Contact sans nom'
+      : `${contact.firstname || ''} ${contact.name || ''}`.trim() || 'Contact sans nom';
+    
+    setContactToDelete({
+      id: contact.id,
+      email: contact.email || 'Email non défini',
+      name: contactName
+    });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!contactToDelete || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', contactToDelete.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Remove from local data immediately for better UX
+      setLocalData(prev => prev.filter(row => row.id !== contactToDelete.id));
+      
+      // Refresh data to get updated total count and pagination
+      refetch();
+
+      toast({
+        title: "Contact supprimé",
+        description: `Le contact ${contactToDelete.name} (${contactToDelete.email}) a été supprimé avec succès.`
+      });
+
+      setDeleteDialogOpen(false);
+      setContactToDelete(null);
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur de suppression",
+        description: "Impossible de supprimer le contact. Veuillez réessayer."
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setContactToDelete(null);
+  };
+
   // Focus input when editing starts
   useEffect(() => {
     if (editingCell && editInputRef.current) {
@@ -1651,7 +1727,7 @@ const TableView: React.FC<TableViewProps> = ({
                         }}>
                                 <ExternalLink className="h-4 w-4 text-muted-foreground" />
                               </Button>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive" onClick={() => handleDeleteClick(row)} disabled={!hasPermission('delete_prospects')}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -1769,6 +1845,52 @@ const TableView: React.FC<TableViewProps> = ({
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleEmailWarningConfirm} className="bg-orange-600 hover:bg-orange-700">
               Continuer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">⚠️ Confirmation de suppression</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                <strong>Vous êtes sur le point de supprimer définitivement ce contact :</strong>
+              </p>
+              {contactToDelete && (
+                <div className="bg-muted p-3 rounded-lg border-l-4 border-destructive">
+                  <p><strong>Nom :</strong> {contactToDelete.name}</p>
+                  <p><strong>Email :</strong> {contactToDelete.email}</p>
+                  <p><strong>ID :</strong> {contactToDelete.id}</p>
+                </div>
+              )}
+              <p className="text-destructive font-medium">
+                ⚠️ Cette action est <u>irréversible</u>. Toutes les données liées à ce contact seront perdues définitivement.
+              </p>
+              <p>
+                Êtes-vous absolument certain(e) de vouloir continuer ?
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeleteCancel} disabled={isDeleting}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm} 
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                'Supprimer définitivement'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
