@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +37,9 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
   const [customTableName, setCustomTableName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
+  const [existingTables, setExistingTables] = useState<string[]>([]);
+  const [useExistingTable, setUseExistingTable] = useState<boolean>(false);
+  const [selectedExistingTable, setSelectedExistingTable] = useState<string>('');
   const { toast } = useToast();
   const { user, userRole } = useAuth();
 
@@ -45,6 +49,17 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
       loadSalesUsers();
     }
   }, [open]);
+
+  // Charger les tables existantes quand un utilisateur est sélectionné
+  React.useEffect(() => {
+    if (selectedSalesId) {
+      loadExistingTables(selectedSalesId);
+    } else {
+      setExistingTables([]);
+      setUseExistingTable(false);
+      setSelectedExistingTable('');
+    }
+  }, [selectedSalesId]);
 
   const loadSalesUsers = async () => {
     try {
@@ -86,12 +101,41 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
     }
   };
 
+  const loadExistingTables = async (salesUserId: string) => {
+    try {
+      // Récupérer les tables personnalisées existantes de cet utilisateur
+      const { data, error } = await supabase
+        .from('sales_table_config')
+        .select('table_name')
+        .eq('sales_user_id', salesUserId);
+
+      if (error) throw error;
+      
+      // Extraire les noms de tables uniques
+      const tableNames = data ? Array.from(new Set(data.map(item => item.table_name))) : [];
+      setExistingTables(tableNames);
+    } catch (error) {
+      console.error('Error loading existing tables:', error);
+      setExistingTables([]);
+    }
+  };
+
   const handleAssignLeads = async () => {
     if (!selectedSalesId) {
       toast({
         variant: "destructive",
         title: "Erreur",
         description: "Veuillez sélectionner un sales"
+      });
+      return;
+    }
+
+    // Validation pour table existante
+    if (useExistingTable && !selectedExistingTable) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner une table existante"
       });
       return;
     }
@@ -120,7 +164,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
         lead_email: lead.email,
         source_table: tableName,
         source_id: String(lead.id),
-        custom_table_name: customTableName || `${selectedSalesId}_leads`,
+        custom_table_name: useExistingTable ? selectedExistingTable : (customTableName || `${selectedSalesId}_leads`),
         assigned_by: currentUserId || null
       })) || [];
 
@@ -139,6 +183,9 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
       onOpenChange(false);
       setSelectedSalesId('');
       setCustomTableName('');
+      setUseExistingTable(false);
+      setSelectedExistingTable('');
+      setExistingTables([]);
 
     } catch (error) {
       console.error('Error assigning leads:', error);
@@ -220,18 +267,60 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="table-name">Nom de table personnalisée (optionnel)</Label>
-            <Input
-              id="table-name"
-              value={customTableName}
-              onChange={(e) => setCustomTableName(e.target.value)}
-              placeholder="Laissez vide pour utiliser le nom par défaut"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Par défaut: {selectedSalesId ? `${selectedSalesId}_leads` : 'user_leads'}
-            </p>
-          </div>
+          {/* Options de table si un utilisateur est sélectionné et a des tables existantes */}
+          {selectedSalesId && existingTables.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <Switch
+                  id="use-existing-table"
+                  checked={useExistingTable}
+                  onCheckedChange={(checked) => {
+                    setUseExistingTable(checked);
+                    if (!checked) {
+                      setSelectedExistingTable('');
+                    }
+                  }}
+                />
+                <Label htmlFor="use-existing-table" className="text-sm">
+                  Utiliser une table existante
+                </Label>
+              </div>
+
+              {useExistingTable && (
+                <div>
+                  <Label htmlFor="existing-table">Tables existantes</Label>
+                  <Select value={selectedExistingTable} onValueChange={setSelectedExistingTable}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une table existante" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {existingTables.map((tableName) => (
+                        <SelectItem key={tableName} value={tableName}>
+                          {tableName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Champ pour nouvelle table (seulement si on n'utilise pas de table existante) */}
+          {!useExistingTable && (
+            <div>
+              <Label htmlFor="table-name">Nom de table personnalisée (optionnel)</Label>
+              <Input
+                id="table-name"
+                value={customTableName}
+                onChange={(e) => setCustomTableName(e.target.value)}
+                placeholder="Laissez vide pour utiliser le nom par défaut"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Par défaut: {selectedSalesId ? `${selectedSalesId}_leads` : 'user_leads'}
+              </p>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -239,7 +328,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
             </Button>
             <Button 
               onClick={handleAssignLeads} 
-              disabled={isLoading || !selectedSalesId}
+              disabled={isLoading || !selectedSalesId || (useExistingTable && !selectedExistingTable)}
             >
               {isLoading ? 'Attribution...' : 'Assigner'}
             </Button>
