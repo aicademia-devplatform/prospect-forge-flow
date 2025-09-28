@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Filter, X, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, X, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { DateRange } from 'react-day-picker';
@@ -26,6 +25,8 @@ interface TableFiltersProps {
   filters: FilterValues;
   onFiltersChange: (filters: FilterValues) => void;
   onReset: () => void;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
 const ZOHO_STATUS_OPTIONS = [
@@ -72,10 +73,11 @@ const TableFilters: React.FC<TableFiltersProps> = ({
   tableName,
   filters,
   onFiltersChange,
-  onReset
+  onReset,
+  isOpen,
+  onToggle
 }) => {
   const [localFilters, setLocalFilters] = useState<FilterValues>(filters);
-  const [isOpen, setIsOpen] = useState(false);
 
   // Update local filters when prop filters change
   useEffect(() => {
@@ -105,31 +107,27 @@ const TableFilters: React.FC<TableFiltersProps> = ({
   const activeFilterCount = Object.keys(filters).length;
 
   return (
-    <div className="mb-4">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 px-3 justify-start gap-2 transition-all duration-200 hover:bg-accent/50"
-          >
-            <Filter className="h-4 w-4" />
-            <span className="font-medium">Filtres</span>
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs animate-scale-in">
-                {activeFilterCount}
-              </Badge>
-            )}
-            {isOpen ? (
-              <ChevronUp className="h-4 w-4 ml-auto transition-transform duration-200" />
-            ) : (
-              <ChevronDown className="h-4 w-4 ml-auto transition-transform duration-200" />
-            )}
-          </Button>
-        </CollapsibleTrigger>
+    <>
+      {/* Filter Toggle Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onToggle}
+        className="h-9 px-3 justify-start gap-2 transition-all duration-200 hover:bg-accent/50"
+      >
+        <Filter className="h-4 w-4" />
+        <span className="font-medium">Filtres</span>
+        {activeFilterCount > 0 && (
+          <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs animate-scale-in">
+            {activeFilterCount}
+          </Badge>
+        )}
+      </Button>
 
-        <CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
-          <Card className="mt-2 border-l-4 border-l-primary/20">
+      {/* Filter Panel */}
+      {isOpen && (
+        <div className="mb-4 animate-fade-in">
+          <Card className="border-l-4 border-l-primary/20">
             <CardContent className="pt-6 space-y-6">
               {/* Reset button inside the content */}
               {hasActiveFilters && (
@@ -295,9 +293,9 @@ const TableFilters: React.FC<TableFiltersProps> = ({
               )}
             </CardContent>
           </Card>
-        </CollapsibleContent>
-      </Collapsible>
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 

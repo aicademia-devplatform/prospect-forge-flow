@@ -195,6 +195,7 @@ const TableView: React.FC<TableViewProps> = ({
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
   const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set()); // Track pending updates to ignore realtime
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -1331,6 +1332,8 @@ const TableView: React.FC<TableViewProps> = ({
           filters={advancedFilters}
           onFiltersChange={handleAdvancedFiltersChange}
           onReset={handleResetFilters}
+          isOpen={filtersOpen}
+          onToggle={() => setFiltersOpen(!filtersOpen)}
         />
         <TooltipProvider>
           <Tooltip>
@@ -1359,6 +1362,20 @@ const TableView: React.FC<TableViewProps> = ({
           </Tooltip>
         </TooltipProvider>
       </div>
+
+      {/* Filter Panel */}
+      {filtersOpen && (
+        <div className="mb-6">
+          <TableFilters
+            tableName={tableName}
+            filters={advancedFilters}
+            onFiltersChange={handleAdvancedFiltersChange}
+            onReset={handleResetFilters}
+            isOpen={filtersOpen}
+            onToggle={() => setFiltersOpen(!filtersOpen)}
+          />
+        </div>
+      )}
 
       <div className="bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-6">
         {loading ? <div className="flex items-center justify-center flex-1">
