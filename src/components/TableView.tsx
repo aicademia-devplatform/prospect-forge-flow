@@ -1309,44 +1309,6 @@ const TableView: React.FC<TableViewProps> = ({
         </div>
       </div>
 
-      {/* Filters and Controls */}
-      <div className="flex items-center gap-2 mb-4 ml-auto">
-        <TableFilters
-          tableName={tableName}
-          filters={advancedFilters}
-          onFiltersChange={handleAdvancedFiltersChange}
-          onReset={handleResetFilters}
-          isOpen={filtersOpen}
-          onToggle={() => setFiltersOpen(!filtersOpen)}
-          showOnlyButton={true}
-        />
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={openColumnDialog} className="h-9 px-3">
-                <Columns className="h-4 w-4 mr-2" />
-                Colonnes
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Gérer l'affichage et l'ordre des colonnes du tableau</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 px-3">
-                <Download className="h-4 w-4 mr-2" />
-                Exporter
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Exporter les données du tableau</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
 
       {/* Filter Panel */}
       <AnimatePresence mode="wait">
@@ -1364,9 +1326,10 @@ const TableView: React.FC<TableViewProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Section Filters - Above Table */}
-      {tableName === 'crm_contacts' && sections.length > 0 && (
-        <div className="mb-3">
+      {/* All Controls - Above Table */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        {/* Section Filters - Left Side */}
+        {tableName === 'crm_contacts' && sections.length > 0 && (
           <TooltipProvider>
             <div className="flex items-center space-x-2">
               {sections.map(section => {
@@ -1391,8 +1354,47 @@ const TableView: React.FC<TableViewProps> = ({
               })}
             </div>
           </TooltipProvider>
+        )}
+        
+        {/* Action Buttons - Right Side */}
+        <div className="flex items-center gap-2">
+          <TableFilters
+            tableName={tableName}
+            filters={advancedFilters}
+            onFiltersChange={handleAdvancedFiltersChange}
+            onReset={handleResetFilters}
+            isOpen={filtersOpen}
+            onToggle={() => setFiltersOpen(!filtersOpen)}
+            showOnlyButton={true}
+          />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={openColumnDialog} className="h-9 px-3">
+                  <Columns className="h-4 w-4 mr-2" />
+                  Colonnes
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Gérer l'affichage et l'ordre des colonnes du tableau</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 px-3">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exporter
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Exporter les données du tableau</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-      )}
+      </div>
 
       <div className={`bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col min-h-0 mt-3 ${filtersOpen ? 'min-h-[600px]' : ''}`}>
         {loading ? <div className="flex items-center justify-center flex-1">
