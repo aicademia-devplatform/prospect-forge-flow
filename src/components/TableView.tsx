@@ -1413,6 +1413,26 @@ const TableView: React.FC<TableViewProps> = ({
       setSelectedSections([]);
     }
     
+    // Afficher automatiquement les colonnes correspondantes aux filtres actifs
+    const newVisibleColumns = new Set(visibleColumns);
+    
+    // Mapping des filtres vers les colonnes correspondantes
+    const filterColumnMapping: Record<string, string> = {
+      'zohoStatus': 'zoho_status',
+      'apolloStatus': 'apollo_status', 
+      'contactActive': 'contact_active',
+      'industrie': 'industrie',
+      'company': 'company'
+    };
+    
+    // Ajouter les colonnes des filtres actifs
+    Object.entries(filters).forEach(([filterKey, filterValue]) => {
+      if (filterValue && filterColumnMapping[filterKey]) {
+        newVisibleColumns.add(filterColumnMapping[filterKey]);
+      }
+    });
+    
+    setVisibleColumns(newVisibleColumns);
     setCurrentPage(1);
   };
   const handleResetFilters = () => {
