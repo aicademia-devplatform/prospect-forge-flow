@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { AssignLeadsDialog } from '@/components/AssignLeadsDialog';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon, Columns } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon, Columns, UserPlus } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -218,6 +219,9 @@ const TableView: React.FC<TableViewProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<{id: string, email: string, name: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Assign leads dialog state
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
   // Search columns suggestion state
   const [searchColumnsOpen, setSearchColumnsOpen] = useState(false);
@@ -1735,6 +1739,15 @@ const TableView: React.FC<TableViewProps> = ({
                     {selectedRows.size} élément(s) sélectionné(s)
                   </span>
                   <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setAssignDialogOpen(true)}
+                      className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assigner à un sales ({selectedRows.size})
+                    </Button>
                     <Button variant="outline" size="sm">
                       <Download className="h-4 w-4 mr-2" />
                       Exporter sélection
@@ -2095,6 +2108,18 @@ const TableView: React.FC<TableViewProps> = ({
       sectionFilter: sectionFilter !== 'all' ? sectionFilter : undefined,
       ...advancedFilters
     }} onExport={handleExport} />
+
+      {/* Assign Leads Dialog */}
+      <AssignLeadsDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        selectedRows={Array.from(selectedRows)}
+        tableName={tableName}
+        onAssignmentComplete={() => {
+          setSelectedRows(new Set());
+          // Refresh data if needed
+        }}
+      />
     </div>;
 };
 export default TableView;

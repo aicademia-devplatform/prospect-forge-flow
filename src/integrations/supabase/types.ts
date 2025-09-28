@@ -1995,6 +1995,81 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          custom_data: Json | null
+          custom_table_name: string | null
+          id: string
+          lead_email: string
+          sales_user_id: string
+          source_id: string
+          source_table: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          custom_data?: Json | null
+          custom_table_name?: string | null
+          id?: string
+          lead_email: string
+          sales_user_id: string
+          source_id: string
+          source_table: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          custom_data?: Json | null
+          custom_table_name?: string | null
+          id?: string
+          lead_email?: string
+          sales_user_id?: string
+          source_id?: string
+          source_table?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sales_table_config: {
+        Row: {
+          column_config: Json
+          created_at: string
+          id: string
+          sales_user_id: string
+          table_name: string
+          table_settings: Json | null
+          updated_at: string
+        }
+        Insert: {
+          column_config?: Json
+          created_at?: string
+          id?: string
+          sales_user_id: string
+          table_name: string
+          table_settings?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          column_config?: Json
+          created_at?: string
+          id?: string
+          sales_user_id?: string
+          table_name?: string
+          table_settings?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       test: {
         Row: {
           created_at: string

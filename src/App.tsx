@@ -15,6 +15,7 @@ import DataSourceTable from "./pages/DataSourceTable";
 import ContactDetails from "./pages/ContactDetails";
 import AdminPanel from "./pages/AdminPanel";
 import Settings from "./pages/Settings";
+import MySalesLeads from "./pages/MySalesLeads";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -115,6 +116,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <Settings />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/my-sales-leads" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <MySalesLeads />
                   </Layout>
                 </ProtectedRoute>
               } 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, Users, Upload, FileText, Database, Settings, ShieldCheck } from 'lucide-react';
+import { BarChart3, Users, Upload, FileText, Database, Settings, ShieldCheck, UserCheck } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 const navigation = [
   { name: 'Dashboard', icon: BarChart3, key: 'dashboard', path: '/', permission: 'view_prospects' },
   { name: 'Prospects', icon: Users, key: 'prospects', path: '/prospects', permission: 'view_prospects' },
+  { name: 'My Sales Leads', icon: UserCheck, key: 'my-sales-leads', path: '/my-sales-leads', permission: 'view_prospects', salesOnly: true },
   { name: 'Import Data', icon: Upload, key: 'import', path: '/import', permission: 'create_prospects' },
   { name: 'Reports', icon: FileText, key: 'reports', path: '/reports', permission: 'view_prospects' },
 ];
@@ -19,9 +20,15 @@ const adminNavigation = [
 ];
 
 export const Sidebar = ({ activeSection = 'dashboard' }: { activeSection?: string }) => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
 
-  const filteredNavigation = navigation.filter(item => hasPermission(item.permission));
+  const filteredNavigation = navigation.filter(item => {
+    // Si l'item est réservé aux sales, vérifier le rôle
+    if (item.salesOnly && !hasRole('sales')) {
+      return false;
+    }
+    return hasPermission(item.permission);
+  });
   const filteredAdminNavigation = adminNavigation.filter(item => hasPermission(item.permission));
 
   return (

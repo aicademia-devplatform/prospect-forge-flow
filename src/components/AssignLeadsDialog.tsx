@@ -1,0 +1,195 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+
+interface AssignLeadsDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  selectedRows: string[];
+  tableName: 'apollo_contacts' | 'crm_contacts';
+  onAssignmentComplete: () => void;
+}
+
+interface SalesUser {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
+export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
+  open,
+  onOpenChange,
+  selectedRows,
+  tableName,
+  onAssignmentComplete
+}) => {
+  const [selectedSalesId, setSelectedSalesId] = useState<string>('');
+  const [customTableName, setCustomTableName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
+  const { toast } = useToast();
+  const { userRole } = useAuth();
+
+  // Charger les utilisateurs sales
+  React.useEffect(() => {
+    if (open) {
+      loadSalesUsers();
+    }
+  }, [open]);
+
+  const loadSalesUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          email,
+          user_roles!inner(role)
+        `)
+        .eq('user_roles.role', 'sales');
+
+      if (error) throw error;
+      setSalesUsers(data || []);
+    } catch (error) {
+      console.error('Error loading sales users:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger la liste des sales"
+      });
+    }
+  };
+
+  const handleAssignLeads = async () => {
+    if (!selectedSalesId) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez sélectionner un sales"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Récupérer les emails des leads sélectionnés selon la table
+      const idColumn = tableName === 'apollo_contacts' ? 'id' : 'id';
+      const selectFields = tableName === 'apollo_contacts' ? 'id, email' : 'id, email';
+      
+      const { data: leadData, error: leadError } = await supabase
+        .from(tableName)
+        .select(selectFields)
+        .in(idColumn, selectedRows);
+
+      if (leadError) throw leadError;
+
+      // Obtenir l'ID de l'utilisateur actuel
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentUserId = user?.id;
+
+      // Créer les assignations
+      const assignments = leadData?.map(lead => ({
+        sales_user_id: selectedSalesId,
+        lead_email: lead.email,
+        source_table: tableName,
+        source_id: String(lead.id),
+        custom_table_name: customTableName || `${selectedSalesId}_leads`,
+        assigned_by: currentUserId || null
+      })) || [];
+
+      const { error: assignError } = await supabase
+        .from('sales_assignments')
+        .insert(assignments);
+
+      if (assignError) throw assignError;
+
+      toast({
+        title: "Succès",
+        description: `${selectedRows.length} leads assignés avec succès`
+      });
+
+      onAssignmentComplete();
+      onOpenChange(false);
+      setSelectedSalesId('');
+      setCustomTableName('');
+
+    } catch (error) {
+      console.error('Error assigning leads:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'assigner les leads"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Assigner les leads</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div>
+            <Label>Nombre de leads sélectionnés</Label>
+            <p className="text-sm text-muted-foreground">{selectedRows.length} leads</p>
+          </div>
+
+          <div>
+            <Label htmlFor="sales-select">Assigner à</Label>
+            <Select value={selectedSalesId} onValueChange={setSelectedSalesId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un sales" />
+              </SelectTrigger>
+              <SelectContent>
+                {salesUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.first_name} {user.last_name} ({user.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="table-name">Nom de table personnalisée (optionnel)</Label>
+            <Input
+              id="table-name"
+              value={customTableName}
+              onChange={(e) => setCustomTableName(e.target.value)}
+              placeholder="Laissez vide pour utiliser le nom par défaut"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Par défaut: {selectedSalesId ? `${selectedSalesId}_leads` : 'user_leads'}
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleAssignLeads} 
+              disabled={isLoading || !selectedSalesId}
+            >
+              {isLoading ? 'Attribution...' : 'Assigner'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
