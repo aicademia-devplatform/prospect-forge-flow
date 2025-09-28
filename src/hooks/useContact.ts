@@ -8,7 +8,7 @@ interface UseContactParams {
 }
 
 export const useContact = (params: UseContactParams) => {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -29,14 +29,15 @@ export const useContact = (params: UseContactParams) => {
       console.log('Received contact data:', response);
 
       if (response.success && response.data) {
+        // Gérer les deux formats de données pour la compatibilité
         setData(response.data);
       } else {
-        setData([]);
+        setData(null);
       }
       
     } catch (error) {
       console.error('Error fetching contact:', error);
-      setData([]);
+      setData(null);
       toast({
         variant: "destructive",
         title: "Erreur",

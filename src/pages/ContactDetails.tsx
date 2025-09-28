@@ -139,11 +139,27 @@ const ContactDetails: React.FC = () => {
   const [editedData, setEditedData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // Récupérer les données du contact spécifique avec sources multiples
-  const { data: contactsData, loading } = useContact({
+  // Récupérer les données du contact spécifique avec gestion des deux formats
+  const { data: rawContactsData, loading } = useContact({
     tableName: tableName!,
     contactId: contactId!
   });
+
+  // Normaliser les données pour gérer les deux formats (ancien et nouveau)
+  const contactsData = React.useMemo(() => {
+    if (!rawContactsData) return [];
+    
+    // Si c'est déjà un tableau, c'est le nouveau format
+    if (Array.isArray(rawContactsData)) {
+      return rawContactsData;
+    }
+    
+    // Si c'est un objet unique, c'est l'ancien format - le convertir
+    return [{
+      source_table: tableName!,
+      data: rawContactsData
+    }];
+  }, [rawContactsData, tableName]);
 
   // Contact principal (celui de la table demandée)
   const contact = contactsData?.find((c: any) => c.source_table === tableName)?.data;
