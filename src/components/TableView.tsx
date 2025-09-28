@@ -208,7 +208,7 @@ const TableView: React.FC<TableViewProps> = ({
     columnName: string;
     value: string;
   } | null>(null);
-  
+
   // Export dialog state
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
@@ -1106,67 +1106,81 @@ const TableView: React.FC<TableViewProps> = ({
         sectionFilter: selectedSections.length > 0 ? selectedSections.join(',') : 'all',
         sortBy,
         sortOrder,
-        visibleColumns: [], // Récupérer toutes les colonnes pour l'export
+        visibleColumns: [],
+        // Récupérer toutes les colonnes pour l'export
         advancedFilters
       };
-
-      const { data: exportData, error } = await supabase.functions.invoke('table-data', {
+      const {
+        data: exportData,
+        error
+      } = await supabase.functions.invoke('table-data', {
         body: exportParams
       });
-
       if (error) throw error;
-
       const contacts = exportData.data || [];
       if (contacts.length === 0) {
         toast({
           title: "Aucune donnée",
           description: "Aucun contact à exporter avec les filtres appliqués",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
 
       // Créer le workbook Excel
       const workbook = XLSX.utils.book_new();
-      
+
       // Préparer les données avec toutes les colonnes de la base de données
       const allKeys = Object.keys(contacts[0]); // Toutes les colonnes disponibles
       const headers = allKeys.map(key => translateColumnName(key));
-      
-      const exportRows = contacts.map(contact => 
-        allKeys.map(key => {
-          const value = contact[key];
-          // Formater les valeurs pour Excel
-          if (value === null || value === undefined) return '';
-          if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
-          if (Array.isArray(value)) return value.join(', ');
-          if (typeof value === 'object' && value instanceof Date) {
-            return value.toLocaleDateString('fr-FR');
-          }
-          return String(value);
-        })
-      );
+      const exportRows = contacts.map(contact => allKeys.map(key => {
+        const value = contact[key];
+        // Formater les valeurs pour Excel
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
+        if (Array.isArray(value)) return value.join(', ');
+        if (typeof value === 'object' && value instanceof Date) {
+          return value.toLocaleDateString('fr-FR');
+        }
+        return String(value);
+      }));
 
       // Ajouter les en-têtes
       const worksheetData = [headers, ...exportRows];
-      
+
       // Créer la feuille
       const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-      
+
       // Styliser les en-têtes (couleur de fond)
       const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
       for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+        const cellRef = XLSX.utils.encode_cell({
+          r: 0,
+          c: col
+        });
         if (!worksheet[cellRef]) continue;
         worksheet[cellRef].s = {
-          fill: { fgColor: { rgb: "3B82F6" } },
-          font: { color: { rgb: "FFFFFF" }, bold: true },
-          alignment: { horizontal: "center" }
+          fill: {
+            fgColor: {
+              rgb: "3B82F6"
+            }
+          },
+          font: {
+            color: {
+              rgb: "FFFFFF"
+            },
+            bold: true
+          },
+          alignment: {
+            horizontal: "center"
+          }
         };
       }
 
       // Ajuster les largeurs de colonnes
-      const colWidths = headers.map(() => ({ wch: 20 }));
+      const colWidths = headers.map(() => ({
+        wch: 20
+      }));
       worksheet['!cols'] = colWidths;
 
       // Ajouter la feuille au workbook
@@ -1176,29 +1190,25 @@ const TableView: React.FC<TableViewProps> = ({
       // Générer et télécharger le fichier
       const fileName = `${options.filename}.xlsx`;
       XLSX.writeFile(workbook, fileName);
-
       toast({
         title: "Export réussi",
-        description: `${contacts.length} contacts exportés dans ${fileName}`,
+        description: `${contacts.length} contacts exportés dans ${fileName}`
       });
-
       if (options.includeGoogleSheets) {
         toast({
           title: "Google Sheets",
-          description: "La synchronisation Google Sheets sera disponible prochainement",
+          description: "La synchronisation Google Sheets sera disponible prochainement"
         });
       }
-
     } catch (error) {
       console.error('Export error:', error);
       toast({
         title: "Erreur d'export",
         description: "Impossible d'exporter les données",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const handleEmailWarningCancel = () => {
     if (pendingEmailEdit) {
       // Remettre la valeur originale
@@ -1633,9 +1643,7 @@ const TableView: React.FC<TableViewProps> = ({
                     })}
                           <td className="w-20 px-4 py-4">
                             <div className="flex items-center justify-center space-x-1">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
-                                <Edit2 className="h-4 w-4 text-muted-foreground" />
-                              </Button>
+                              
                               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted" onClick={() => {
                           // Preserve current sort parameters when navigating to details
                           const currentParams = new URLSearchParams(location.search);
@@ -1767,19 +1775,11 @@ const TableView: React.FC<TableViewProps> = ({
       </AlertDialog>
 
       {/* Export Dialog */}
-      <ExportDialog
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
-        tableName={tableName}
-        totalCount={totalCount}
-        currentPageCount={localData.length}
-        appliedFilters={{
-          searchTerm: debouncedSearchTerm,
-          sectionFilter: sectionFilter !== 'all' ? sectionFilter : undefined,
-          ...advancedFilters
-        }}
-        onExport={handleExport}
-      />
+      <ExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} tableName={tableName} totalCount={totalCount} currentPageCount={localData.length} appliedFilters={{
+      searchTerm: debouncedSearchTerm,
+      sectionFilter: sectionFilter !== 'all' ? sectionFilter : undefined,
+      ...advancedFilters
+    }} onExport={handleExport} />
     </div>;
 };
 export default TableView;
