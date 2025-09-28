@@ -1325,7 +1325,7 @@ const TableView: React.FC<TableViewProps> = ({
       </div>
 
       {/* Filters and Controls */}
-      <div className="flex items-center justify-center gap-2 mb-4 ml-auto w-fit">
+      <div className="flex items-center gap-2 mb-4 ml-auto">
         <TableFilters
           tableName={tableName}
           filters={advancedFilters}
