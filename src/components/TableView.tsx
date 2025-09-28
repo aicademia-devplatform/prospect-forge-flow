@@ -1261,10 +1261,18 @@ const TableView: React.FC<TableViewProps> = ({
             </div>
             
             {/* Bouton de rafraîchissement manuel */}
-            <Button variant="outline" size="sm" onClick={() => refetch && refetch()} disabled={loading} className="flex items-center gap-2">
-              <Loader2 className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Actualiser
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={() => refetch && refetch()} disabled={loading} className="h-9 w-9 p-0">
+                    <Loader2 className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Actualiser les données</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
         </div>
       </div>
 
