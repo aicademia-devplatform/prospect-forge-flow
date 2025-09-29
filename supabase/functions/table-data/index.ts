@@ -26,6 +26,14 @@ interface QueryParams {
     contactActive?: string
     industrie?: string
     company?: string
+    // Apollo specific filters
+    emailStatus?: string
+    seniority?: string
+    stage?: string
+    nbEmployees?: string
+    departments?: string
+    contactOwner?: string
+    lists?: string
   }
 }
 
@@ -83,40 +91,110 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Apply advanced filters (only for crm_contacts)
-    if (tableName === 'crm_contacts' && Object.keys(advancedFilters).length > 0) {
-      // Date range filter
-      if (advancedFilters.dateRange?.from) {
-        query = query.gte('created_at', advancedFilters.dateRange.from)
-      }
-      if (advancedFilters.dateRange?.to) {
-        // Add one day to include the end date
-        const endDate = new Date(advancedFilters.dateRange.to)
-        endDate.setDate(endDate.getDate() + 1)
-        query = query.lt('created_at', endDate.toISOString())
-      }
-      
-      // String filters - exact matches
-      if (advancedFilters.dataSection) {
-        query = query.ilike('data_section', `%${advancedFilters.dataSection}%`)
-      }
-      if (advancedFilters.zohoStatus) {
-        // Mapping des statuts Zoho anglais-français
-        const zohoStatusTranslations: Record<string, string[]> = {
-          'Lead': ['Lead', 'Prospect', 'Piste'],
-          'Prospect': ['Prospect', 'Lead', 'Piste', 'Potentiel'],
-          'Customer': ['Customer', 'Client', 'Clientèle'],
-          'Partner': ['Partner', 'Partenaire', 'Associé'],
-          'Inactive': ['Inactive', 'Inactif', 'Désactivé'],
-          'Cold Lead': ['Cold Lead', 'Lead Froid', 'Piste Froide'],
-          'Warm Lead': ['Warm Lead', 'Lead Tiède', 'Piste Tiède'],
-          'Hot Lead': ['Hot Lead', 'Lead Chaud', 'Piste Chaude']
+    // Apply advanced filters
+    if (Object.keys(advancedFilters).length > 0) {
+      // CRM Contacts specific filters
+      if (tableName === 'crm_contacts') {
+        // Date range filter
+        if (advancedFilters.dateRange?.from) {
+          query = query.gte('created_at', advancedFilters.dateRange.from)
+        }
+        if (advancedFilters.dateRange?.to) {
+          // Add one day to include the end date
+          const endDate = new Date(advancedFilters.dateRange.to)
+          endDate.setDate(endDate.getDate() + 1)
+          query = query.lt('created_at', endDate.toISOString())
         }
         
-        const searchTerms = zohoStatusTranslations[advancedFilters.zohoStatus] || [advancedFilters.zohoStatus]
-        const zohoConditions = searchTerms.map(term => `zoho_status.ilike.%${term}%`)
-        query = query.or(zohoConditions.join(','))
+        // String filters - exact matches
+        if (advancedFilters.dataSection) {
+          query = query.ilike('data_section', `%${advancedFilters.dataSection}%`)
+        }
+        if (advancedFilters.zohoStatus) {
+          // Mapping des statuts Zoho anglais-français
+          const zohoStatusTranslations: Record<string, string[]> = {
+            'Lead': ['Lead', 'Prospect', 'Piste'],
+            'Prospect': ['Prospect', 'Lead', 'Piste', 'Potentiel'],
+            'Customer': ['Customer', 'Client', 'Clientèle'],
+            'Partner': ['Partner', 'Partenaire', 'Associé'],
+            'Inactive': ['Inactive', 'Inactif', 'Désactivé'],
+            'Cold Lead': ['Cold Lead', 'Lead Froid', 'Piste Froide'],
+            'Warm Lead': ['Warm Lead', 'Lead Tiède', 'Piste Tiède'],
+            'Hot Lead': ['Hot Lead', 'Lead Chaud', 'Piste Chaude']
+          }
+          
+          const searchTerms = zohoStatusTranslations[advancedFilters.zohoStatus] || [advancedFilters.zohoStatus]
+          const zohoConditions = searchTerms.map(term => `zoho_status.ilike.%${term}%`)
+          query = query.or(zohoConditions.join(','))
+        }
+        if (advancedFilters.contactActive) {
+          // Mapping des statuts de contact actif français-français et variantes
+          const contactActiveTranslations: Record<string, string[]> = {
+            'Oui': ['Oui', 'Yes', 'True', 'Actif', 'Active', '1'],
+            'Non': ['Non', 'No', 'False', 'Inactif', 'Inactive', '0'],
+            'En cours': ['En cours', 'In Progress', 'Pending', 'En attente', 'Processing']
+          }
+          
+          const searchTerms = contactActiveTranslations[advancedFilters.contactActive] || [advancedFilters.contactActive]
+          const contactConditions = searchTerms.map(term => `contact_active.ilike.%${term}%`)
+          query = query.or(contactConditions.join(','))
+        }
       }
+
+      // Apollo Contacts specific filters
+      if (tableName === 'apollo_contacts') {
+        // Date range filter
+        if (advancedFilters.dateRange?.from) {
+          query = query.gte('created_at', advancedFilters.dateRange.from)
+        }
+        if (advancedFilters.dateRange?.to) {
+          // Add one day to include the end date
+          const endDate = new Date(advancedFilters.dateRange.to)
+          endDate.setDate(endDate.getDate() + 1)
+          query = query.lt('created_at', endDate.toISOString())
+        }
+
+        // Apollo specific filters
+        if (advancedFilters.emailStatus) {
+          query = query.eq('email_status', advancedFilters.emailStatus)
+        }
+        if (advancedFilters.seniority) {
+          query = query.ilike('seniority', `%${advancedFilters.seniority}%`)
+        }
+        if (advancedFilters.stage) {
+          query = query.ilike('stage', `%${advancedFilters.stage}%`)
+        }
+        if (advancedFilters.nbEmployees) {
+          // Handle employee count ranges
+          const range = advancedFilters.nbEmployees
+          if (range === '1-10') {
+            query = query.gte('nb_employees', 1).lte('nb_employees', 10)
+          } else if (range === '11-50') {
+            query = query.gte('nb_employees', 11).lte('nb_employees', 50)
+          } else if (range === '51-200') {
+            query = query.gte('nb_employees', 51).lte('nb_employees', 200)
+          } else if (range === '201-500') {
+            query = query.gte('nb_employees', 201).lte('nb_employees', 500)
+          } else if (range === '501-1000') {
+            query = query.gte('nb_employees', 501).lte('nb_employees', 1000)
+          } else if (range === '1001-5000') {
+            query = query.gte('nb_employees', 1001).lte('nb_employees', 5000)
+          } else if (range === '5000+') {
+            query = query.gte('nb_employees', 5000)
+          }
+        }
+        if (advancedFilters.departments) {
+          query = query.ilike('departments', `%${advancedFilters.departments}%`)
+        }
+        if (advancedFilters.contactOwner) {
+          query = query.ilike('contact_owner', `%${advancedFilters.contactOwner}%`)
+        }
+        if (advancedFilters.lists) {
+          query = query.ilike('lists', `%${advancedFilters.lists}%`)
+        }
+      }
+
+      // Common filters for both tables
       if (advancedFilters.apolloStatus) {
         // Mapping des statuts Apollo anglais-français
         const apolloStatusTranslations: Record<string, string[]> = {
@@ -132,18 +210,6 @@ Deno.serve(async (req) => {
         const searchTerms = apolloStatusTranslations[advancedFilters.apolloStatus] || [advancedFilters.apolloStatus]
         const apolloConditions = searchTerms.map(term => `apollo_status.ilike.%${term}%`)
         query = query.or(apolloConditions.join(','))
-      }
-      if (advancedFilters.contactActive) {
-        // Mapping des statuts de contact actif français-français et variantes
-        const contactActiveTranslations: Record<string, string[]> = {
-          'Oui': ['Oui', 'Yes', 'True', 'Actif', 'Active', '1'],
-          'Non': ['Non', 'No', 'False', 'Inactif', 'Inactive', '0'],
-          'En cours': ['En cours', 'In Progress', 'Pending', 'En attente', 'Processing']
-        }
-        
-        const searchTerms = contactActiveTranslations[advancedFilters.contactActive] || [advancedFilters.contactActive]
-        const contactConditions = searchTerms.map(term => `contact_active.ilike.%${term}%`)
-        query = query.or(contactConditions.join(','))
       }
       if (advancedFilters.industrie) {
         // Mapping des industries anglais-français pour une recherche plus flexible
@@ -163,7 +229,7 @@ Deno.serve(async (req) => {
         const searchTerms = industryTranslations[advancedFilters.industrie] || [advancedFilters.industrie]
         
         // Créer une condition OR pour tous les termes possibles
-        const industryConditions = searchTerms.map(term => `industrie.ilike.%${term}%`)
+        const industryConditions = searchTerms.map(term => `industry.ilike.%${term}%`)
         query = query.or(industryConditions.join(','))
       }
       if (advancedFilters.company) {

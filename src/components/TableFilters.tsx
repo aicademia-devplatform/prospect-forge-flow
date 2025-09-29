@@ -19,6 +19,14 @@ export interface FilterValues {
   contactActive?: string;
   industrie?: string;
   company?: string;
+  // Apollo specific filters
+  emailStatus?: string;
+  seniority?: string;
+  stage?: string;
+  nbEmployees?: string;
+  departments?: string;
+  contactOwner?: string;
+  lists?: string;
 }
 
 interface TableFiltersProps {
@@ -71,6 +79,58 @@ const INDUSTRIE_OPTIONS = [
   'Other'
 ];
 
+// Apollo specific options
+const EMAIL_STATUS_OPTIONS = [
+  'verified',
+  'unverified',
+  'catchall',
+  'bounced',
+  'invalid',
+  'risky'
+];
+
+const SENIORITY_OPTIONS = [
+  'C-Level',
+  'VP',
+  'Director',
+  'Manager',
+  'Senior',
+  'Entry Level',
+  'Intern'
+];
+
+const STAGE_OPTIONS = [
+  'Lead',
+  'Prospect',
+  'Opportunity',
+  'Customer',
+  'Closed Won',
+  'Closed Lost'
+];
+
+const NB_EMPLOYEES_OPTIONS = [
+  '1-10',
+  '11-50',
+  '51-200',
+  '201-500',
+  '501-1000',
+  '1001-5000',
+  '5000+'
+];
+
+const DEPARTMENTS_OPTIONS = [
+  'Sales',
+  'Marketing',
+  'Engineering',
+  'Finance',
+  'HR',
+  'Operations',
+  'IT',
+  'Customer Success',
+  'Product',
+  'Legal'
+];
+
 const TableFilters: React.FC<TableFiltersProps> = ({
   tableName,
   filters,
@@ -102,8 +162,8 @@ const TableFilters: React.FC<TableFiltersProps> = ({
 
   const hasActiveFilters = Object.keys(filters).length > 0;
 
-  // Only show filters for crm_contacts table
-  if (tableName !== 'crm_contacts') {
+  // Show filters for both tables
+  if (tableName !== 'crm_contacts' && tableName !== 'apollo_contacts') {
     return null;
   }
 
@@ -182,71 +242,126 @@ const TableFilters: React.FC<TableFiltersProps> = ({
 
           {/* Select filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground/80">Section de données</label>
+            {tableName === 'crm_contacts' && (
               <div className="space-y-2">
-                <div className="flex flex-wrap gap-2">
-                  {['Arlynk', 'Aicademia'].map((section) => {
-                    const isSelected = Array.isArray(localFilters.dataSection) 
-                      ? localFilters.dataSection.includes(section)
-                      : localFilters.dataSection === section;
-                    
-                    return (
-                      <Badge
-                        key={section}
-                        variant={isSelected ? "default" : "outline"}
-                        className={`cursor-pointer transition-all hover:scale-105 ${
-                          isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-primary/10'
-                        }`}
-                        onClick={() => {
-                          const currentSections = Array.isArray(localFilters.dataSection) 
-                            ? localFilters.dataSection 
-                            : localFilters.dataSection ? [localFilters.dataSection] : [];
-                          
-                          let newSections;
-                          if (isSelected) {
-                            newSections = currentSections.filter(s => s !== section);
-                          } else {
-                            newSections = [...currentSections, section];
-                          }
-                          
-                          updateFilter('dataSection', newSections.length > 0 ? newSections : undefined);
-                        }}
-                      >
-                        {section}
-                        {isSelected && <X className="h-3 w-3 ml-1" />}
-                      </Badge>
-                    );
-                  })}
+                <label className="text-sm font-medium text-foreground/80">Section de données</label>
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {['Arlynk', 'Aicademia'].map((section) => {
+                      const isSelected = Array.isArray(localFilters.dataSection) 
+                        ? localFilters.dataSection.includes(section)
+                        : localFilters.dataSection === section;
+                      
+                      return (
+                        <Badge
+                          key={section}
+                          variant={isSelected ? "default" : "outline"}
+                          className={`cursor-pointer transition-all hover:scale-105 ${
+                            isSelected ? 'bg-primary text-primary-foreground' : 'hover:bg-primary/10'
+                          }`}
+                          onClick={() => {
+                            const currentSections = Array.isArray(localFilters.dataSection) 
+                              ? localFilters.dataSection 
+                              : localFilters.dataSection ? [localFilters.dataSection] : [];
+                            
+                            let newSections;
+                            if (isSelected) {
+                              newSections = currentSections.filter(s => s !== section);
+                            } else {
+                              newSections = [...currentSections, section];
+                            }
+                            
+                            updateFilter('dataSection', newSections.length > 0 ? newSections : undefined);
+                          }}
+                        >
+                          {section}
+                          {isSelected && <X className="h-3 w-3 ml-1" />}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                  {(Array.isArray(localFilters.dataSection) ? localFilters.dataSection.length > 0 : localFilters.dataSection) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => updateFilter('dataSection', undefined)}
+                      className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Effacer tout
+                    </Button>
+                  )}
                 </div>
-                {(Array.isArray(localFilters.dataSection) ? localFilters.dataSection.length > 0 : localFilters.dataSection) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => updateFilter('dataSection', undefined)}
-                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Effacer tout
-                  </Button>
-                )}
               </div>
-            </div>
+            )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground/80">Statut Zoho</label>
-              <Select value={localFilters.zohoStatus || "all"} onValueChange={(value) => updateFilter('zohoStatus', value === "all" ? undefined : value)}>
-                <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                  <SelectValue placeholder="Tous les statuts" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  {ZOHO_STATUS_OPTIONS.map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {tableName === 'crm_contacts' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">Statut Zoho</label>
+                <Select value={localFilters.zohoStatus || "all"} onValueChange={(value) => updateFilter('zohoStatus', value === "all" ? undefined : value)}>
+                  <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                    <SelectValue placeholder="Tous les statuts" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
+                    {ZOHO_STATUS_OPTIONS.map(status => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {tableName === 'apollo_contacts' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">Statut Email</label>
+                <Select value={localFilters.emailStatus || "all"} onValueChange={(value) => updateFilter('emailStatus', value === "all" ? undefined : value)}>
+                  <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                    <SelectValue placeholder="Tous les statuts" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
+                    {EMAIL_STATUS_OPTIONS.map(status => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {tableName === 'apollo_contacts' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">Séniorité</label>
+                <Select value={localFilters.seniority || "all"} onValueChange={(value) => updateFilter('seniority', value === "all" ? undefined : value)}>
+                  <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                    <SelectValue placeholder="Toutes les séniorités" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les séniorités</SelectItem>
+                    {SENIORITY_OPTIONS.map(seniority => (
+                      <SelectItem key={seniority} value={seniority}>{seniority}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {tableName === 'apollo_contacts' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">Étape</label>
+                <Select value={localFilters.stage || "all"} onValueChange={(value) => updateFilter('stage', value === "all" ? undefined : value)}>
+                  <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                    <SelectValue placeholder="Toutes les étapes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les étapes</SelectItem>
+                    {STAGE_OPTIONS.map(stage => (
+                      <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground/80">Statut Apollo</label>
@@ -263,20 +378,56 @@ const TableFilters: React.FC<TableFiltersProps> = ({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground/80">Contact actif</label>
-              <Select value={localFilters.contactActive || "all"} onValueChange={(value) => updateFilter('contactActive', value === "all" ? undefined : value)}>
-                <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                  <SelectValue placeholder="Tous les contacts" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les contacts</SelectItem>
-                  {CONTACT_ACTIVE_OPTIONS.map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {tableName === 'apollo_contacts' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">Nombre d'employés</label>
+                <Select value={localFilters.nbEmployees || "all"} onValueChange={(value) => updateFilter('nbEmployees', value === "all" ? undefined : value)}>
+                  <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                    <SelectValue placeholder="Toutes les tailles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les tailles</SelectItem>
+                    {NB_EMPLOYEES_OPTIONS.map(range => (
+                      <SelectItem key={range} value={range}>{range}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {tableName === 'apollo_contacts' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">Département</label>
+                <Select value={localFilters.departments || "all"} onValueChange={(value) => updateFilter('departments', value === "all" ? undefined : value)}>
+                  <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                    <SelectValue placeholder="Tous les départements" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les départements</SelectItem>
+                    {DEPARTMENTS_OPTIONS.map(dept => (
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {tableName === 'crm_contacts' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">Contact actif</label>
+                <Select value={localFilters.contactActive || "all"} onValueChange={(value) => updateFilter('contactActive', value === "all" ? undefined : value)}>
+                  <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
+                    <SelectValue placeholder="Tous les contacts" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les contacts</SelectItem>
+                    {CONTACT_ACTIVE_OPTIONS.map(status => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground/80">Industrie</label>
@@ -302,6 +453,30 @@ const TableFilters: React.FC<TableFiltersProps> = ({
                 className="transition-all duration-200 hover:border-primary/50 focus:border-primary"
               />
             </div>
+
+            {tableName === 'apollo_contacts' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">Propriétaire Contact</label>
+                <Input
+                  placeholder="Propriétaire du contact"
+                  value={localFilters.contactOwner || ""}
+                  onChange={(e) => updateFilter('contactOwner', e.target.value || undefined)}
+                  className="transition-all duration-200 hover:border-primary/50 focus:border-primary"
+                />
+              </div>
+            )}
+
+            {tableName === 'apollo_contacts' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">Listes Apollo</label>
+                <Input
+                  placeholder="Nom des listes"
+                  value={localFilters.lists || ""}
+                  onChange={(e) => updateFilter('lists', e.target.value || undefined)}
+                  className="transition-all duration-200 hover:border-primary/50 focus:border-primary"
+                />
+              </div>
+            )}
           </div>
 
           {/* Active filters display */}
@@ -350,6 +525,48 @@ const TableFilters: React.FC<TableFiltersProps> = ({
                   <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
                     Entreprise: {localFilters.company}
                     <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('company')} />
+                  </Badge>
+                )}
+                {localFilters.emailStatus && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Email: {localFilters.emailStatus}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('emailStatus')} />
+                  </Badge>
+                )}
+                {localFilters.seniority && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Séniorité: {localFilters.seniority}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('seniority')} />
+                  </Badge>
+                )}
+                {localFilters.stage && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Étape: {localFilters.stage}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('stage')} />
+                  </Badge>
+                )}
+                {localFilters.nbEmployees && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Employés: {localFilters.nbEmployees}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('nbEmployees')} />
+                  </Badge>
+                )}
+                {localFilters.departments && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Département: {localFilters.departments}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('departments')} />
+                  </Badge>
+                )}
+                {localFilters.contactOwner && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Propriétaire: {localFilters.contactOwner}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('contactOwner')} />
+                  </Badge>
+                )}
+                {localFilters.lists && (
+                  <Badge variant="secondary" className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in">
+                    Listes: {localFilters.lists}
+                    <X className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors" onClick={() => removeFilter('lists')} />
                   </Badge>
                 )}
               </div>

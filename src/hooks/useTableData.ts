@@ -23,6 +23,14 @@ interface UseTableDataParams {
     contactActive?: string;
     industrie?: string;
     company?: string;
+    // Apollo specific filters
+    emailStatus?: string;
+    seniority?: string;
+    stage?: string;
+    nbEmployees?: string;
+    departments?: string;
+    contactOwner?: string;
+    lists?: string;
   };
 }
 
