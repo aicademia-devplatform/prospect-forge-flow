@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -82,6 +83,11 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
   ]));
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
+  
+  // États pour le dialog de colonnes
+  const [columnDialogOpen, setColumnDialogOpen] = useState(false);
+  const [tempVisibleColumns, setTempVisibleColumns] = useState<Set<string>>(new Set());
+  const [tempColumnOrder, setTempColumnOrder] = useState<string[]>([]);
 
   // Configuration des colonnes personnalisées
   const [customColumns, setCustomColumns] = useState<any[]>([]);
@@ -103,6 +109,14 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
       loadTableConfig();
     }
   }, [user, columnConfigLoaded]);
+
+  // Initialiser les états temporaires du dialog
+  useEffect(() => {
+    if (visibleColumns.size > 0) {
+      setTempVisibleColumns(new Set(visibleColumns));
+      setTempColumnOrder(Array.from(visibleColumns));
+    }
+  }, [visibleColumns]);
 
   const loadTableConfig = async () => {
     if (!user) return;
@@ -269,21 +283,78 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     }
   };
 
-  const toggleColumnVisibility = (columnName: string) => {
-    setVisibleColumns(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(columnName)) {
-        newSet.delete(columnName);
-      } else {
-        newSet.add(columnName);
+  // Gestion du dialog de colonnes
+  const toggleColumnVisibilityInDialog = (columnName: string) => {
+    const newVisible = new Set(tempVisibleColumns);
+    if (newVisible.has(columnName)) {
+      newVisible.delete(columnName);
+      // Remove from order when hiding
+      setTempColumnOrder(prev => prev.filter(col => col !== columnName));
+    } else {
+      newVisible.add(columnName);
+      // Add to end of order when showing
+      setTempColumnOrder(prev => [...prev, columnName]);
+    }
+    setTempVisibleColumns(newVisible);
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const items = Array.from(tempColumnOrder.filter(col => tempVisibleColumns.has(col)));
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update the order with all columns (visible and hidden)
+    const newOrder = [
+      ...items, // reordered visible columns
+      ...tempColumnOrder.filter(col => !tempVisibleColumns.has(col)) // hidden columns at the end
+    ];
+    setTempColumnOrder(newOrder);
+  };
+
+  const getOrderedVisibleColumns = () => {
+    const visibleColumnNames = Array.from(visibleColumns);
+    const orderedColumns: string[] = [];
+
+    // Add columns in the order specified by tempColumnOrder (if they're visible)
+    tempColumnOrder.forEach(colName => {
+      if (visibleColumnNames.includes(colName)) {
+        orderedColumns.push(colName);
       }
-      return newSet;
     });
+
+    // Add any remaining visible columns that weren't in the order
+    visibleColumnNames.forEach(colName => {
+      if (!orderedColumns.includes(colName)) {
+        orderedColumns.push(colName);
+      }
+    });
+    return orderedColumns;
+  };
+
+  const openColumnDialog = () => {
+    setTempVisibleColumns(new Set(visibleColumns));
+    setTempColumnOrder(getOrderedVisibleColumns());
+    setColumnDialogOpen(true);
+  };
+
+  const applyColumnChanges = () => {
+    setVisibleColumns(new Set(tempVisibleColumns));
+    // Update the actual column order for future use
+    const newOrder = tempColumnOrder.filter(col => tempVisibleColumns.has(col));
+    setTempColumnOrder(newOrder);
+    setColumnDialogOpen(false);
     
     // Sauvegarder automatiquement la configuration
     setTimeout(() => {
       saveTableConfig();
     }, 100);
+  };
+
+  const cancelColumnChanges = () => {
+    setTempVisibleColumns(new Set(visibleColumns));
+    setTempColumnOrder(getOrderedVisibleColumns());
+    setColumnDialogOpen(false);
   };
 
   const formatValue = (value: any, type: string) => {
@@ -387,28 +458,11 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
               />
 
               {/* Column visibility */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Columns className="h-4 w-4 mr-2" />
-                    Colonnes
-                    <ChevronDown className="h-4 w-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {availableColumns.map(column => (
-                    <DropdownMenuCheckboxItem
-                      key={column.name}
-                      checked={visibleColumns.has(column.name)}
-                      onCheckedChange={() => toggleColumnVisibility(column.name)}
-                    >
-                      {translateColumnName(column.name)}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button variant="outline" size="sm" onClick={openColumnDialog}>
+                <Columns className="h-4 w-4 mr-2" />
+                Colonnes
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
             </div>
 
             {/* Selection info */}
@@ -614,6 +668,132 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
           />
         </div>
       )}
+
+      {/* Dialog de gestion des colonnes */}
+      <Dialog open={columnDialogOpen} onOpenChange={setColumnDialogOpen}>
+        <DialogContent className="max-w-5xl w-[90vw] h-[80vh] bg-background flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Gestion des colonnes</DialogTitle>
+            <DialogDescription>
+              Glissez et déposez les colonnes pour réorganiser leur ordre d'affichage. Déplacez les colonnes entre les sections pour les afficher ou les masquer.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
+            {/* Colonnes affichées */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <h3 className="text-sm font-medium mb-3 text-green-600 flex-shrink-0">
+                Colonnes affichées ({tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length})
+              </h3>
+              <div className="border rounded-lg p-3 bg-green-50/50 flex-1 overflow-y-auto">
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="visible-columns">
+                    {(provided, snapshot) => (
+                      <div 
+                        {...provided.droppableProps} 
+                        ref={provided.innerRef} 
+                        className={`space-y-2 min-h-[100px] transition-colors duration-200 ${
+                          snapshot.isDraggingOver ? 'bg-green-100/70 rounded-lg' : ''
+                        }`}
+                      >
+                        {tempColumnOrder.filter(colName => tempVisibleColumns.has(colName)).map((colName, index) => {
+                          const column = availableColumns.find(col => col.name === colName);
+                          if (!column) return null;
+                          return (
+                            <Draggable key={column.name} draggableId={column.name} index={index}>
+                              {(provided, snapshot) => (
+                                <div 
+                                  ref={provided.innerRef} 
+                                  {...provided.draggableProps} 
+                                  className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${
+                                    snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'
+                                  }`}
+                                  style={{
+                                    ...provided.draggableProps.style,
+                                    transform: snapshot.isDragging 
+                                      ? `${provided.draggableProps.style?.transform} rotate(1deg)` 
+                                      : provided.draggableProps.style?.transform
+                                  }}
+                                >
+                                  <div 
+                                    {...provided.dragHandleProps} 
+                                    className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded transition-colors duration-150" 
+                                    title="Glisser pour réorganiser"
+                                  >
+                                    <GripVertical className="h-4 w-4 text-gray-400" />
+                                  </div>
+                                  <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => toggleColumnVisibilityInDialog(column.name)} 
+                                    className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200" 
+                                    title="Masquer"
+                                  >
+                                    <ArrowRight className="h-4 w-4 text-red-600" />
+                                  </Button>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                        {tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length === 0 && (
+                          <div className="text-center text-muted-foreground text-sm py-8">
+                            Aucune colonne affichée
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              </div>
+            </div>
+
+            {/* Colonnes non affichées */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <h3 className="text-sm font-medium mb-3 text-gray-600 flex-shrink-0">
+                Colonnes masquées ({availableColumns.filter(col => !tempVisibleColumns.has(col.name)).length})
+              </h3>
+              <div className="border rounded-lg p-3 bg-gray-50/50 flex-1 overflow-y-auto">
+                <div className="space-y-2">
+                  {availableColumns.filter(col => !tempVisibleColumns.has(col.name)).map(column => (
+                    <div 
+                      key={column.name} 
+                      className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors duration-200 hover:shadow-sm"
+                    >
+                      <span className="text-sm flex-1 mr-2">{translateColumnName(column.name)}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => toggleColumnVisibilityInDialog(column.name)} 
+                        className="h-8 w-8 p-0 hover:bg-green-100 transition-colors duration-200" 
+                        title="Afficher"
+                      >
+                        <ArrowLeftRight className="h-4 w-4 text-green-600" />
+                      </Button>
+                    </div>
+                  ))}
+                  {availableColumns.filter(col => !tempVisibleColumns.has(col.name)).length === 0 && (
+                    <div className="text-center text-muted-foreground text-sm py-8">
+                      Toutes les colonnes sont affichées
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 pt-4 flex-shrink-0 border-t">
+            <Button variant="outline" onClick={cancelColumnChanges}>
+              Annuler
+            </Button>
+            <Button onClick={applyColumnChanges}>
+              Afficher ({tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length} colonnes)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
