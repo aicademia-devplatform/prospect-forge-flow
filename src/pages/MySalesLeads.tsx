@@ -70,7 +70,7 @@ const MySalesLeads: React.FC = () => {
   const [sortBy, setSortBy] = useState('assigned_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['email', 'company', 'last_name', 'first_name', 'assigned_at', 'source_table', 'actions']));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['email', 'company', 'last_name', 'first_name', 'assigned_at', 'data_source', 'actions']));
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -234,36 +234,21 @@ const MySalesLeads: React.FC = () => {
     advancedFilters
   });
 
-  // Définir les colonnes disponibles
+  // Définir les colonnes disponibles (seulement les colonnes de base)
   const getAllColumns = (): ColumnInfo[] => {
     return [
-      { name: 'id', type: 'string', nullable: false },
       { name: 'email', type: 'string', nullable: false },
-      { name: 'first_name', type: 'string', nullable: true },
-      { name: 'last_name', type: 'string', nullable: true },
       { name: 'company', type: 'string', nullable: true },
-      { name: 'title', type: 'string', nullable: true },
-      { name: 'apollo_status', type: 'string', nullable: true },
-      { name: 'zoho_status', type: 'string', nullable: true },
-      { name: 'industry', type: 'string', nullable: true },
-      { name: 'seniority', type: 'string', nullable: true },
-      { name: 'departments', type: 'string', nullable: true },
-      { name: 'stage', type: 'string', nullable: true },
-      { name: 'nb_employees', type: 'number', nullable: true },
-      { name: 'mobile_phone', type: 'string', nullable: true },
-      { name: 'work_direct_phone', type: 'string', nullable: true },
-      { name: 'person_linkedin_url', type: 'string', nullable: true },
-      { name: 'website', type: 'string', nullable: true },
-      { name: 'last_contacted', type: 'date', nullable: true },
+      { name: 'last_name', type: 'string', nullable: true },
+      { name: 'first_name', type: 'string', nullable: true },
       { name: 'assigned_at', type: 'date', nullable: false },
-      { name: 'source_table', type: 'string', nullable: false },
       { name: 'data_source', type: 'string', nullable: false },
       { name: 'actions', type: 'string', nullable: false }
     ];
   };
 
   const allColumns = getAllColumns();
-  const availableColumns = allColumns.filter(col => !['id'].includes(col.name));
+  const availableColumns = allColumns;
 
   // Handlers
   const handleRowSelect = (id: string) => {
