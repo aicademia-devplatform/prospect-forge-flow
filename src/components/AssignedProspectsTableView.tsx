@@ -1,0 +1,512 @@
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { AssignLeadsDialog } from '@/components/AssignLeadsDialog';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon, Columns, UserPlus } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import DataPagination from './DataPagination';
+import TableFilters, { FilterValues } from './TableFilters';
+import { useAssignedProspectsData } from '@/hooks/useAssignedProspectsData';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+interface AssignedProspectsTableViewProps {
+  onBack: () => void;
+}
+
+interface ColumnInfo {
+  name: string;
+  type: string;
+  nullable: boolean;
+}
+
+// Fonction de traduction des noms de colonnes (réutilisée du TableView)
+const translateColumnName = (columnName: string): string => {
+  const translations: Record<string, string> = {
+    'id': 'ID',
+    'email': 'Email',
+    'created_at': 'Date de création',
+    'updated_at': 'Date de mise à jour',
+    'assigned_at': 'Date d\'assignation',
+    'first_name': 'Prénom',
+    'last_name': 'Nom',
+    'company': 'Entreprise',
+    'title': 'Titre',
+    'seniority': 'Ancienneté',
+    'departments': 'Départements',
+    'stage': 'Étape',
+    'industry': 'Industrie',
+    'nb_employees': 'Nombre d\'employés',
+    'apollo_status': 'Statut Apollo',
+    'zoho_status': 'Statut Zoho',
+    'mobile_phone': 'Téléphone portable',
+    'work_direct_phone': 'Téléphone professionnel',
+    'person_linkedin_url': 'LinkedIn',
+    'website': 'Site web',
+    'last_contacted': 'Dernier contact',
+    'data_section': 'Section',
+    'source_table': 'Source'
+  };
+  return translations[columnName] || columnName;
+};
+
+const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({ onBack }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { hasPermission } = useAuth();
+  const { toast } = useToast();
+
+  // États similaires à TableView
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [sortBy, setSortBy] = useState('assigned_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set([
+    'email', 'first_name', 'last_name', 'company', 'title', 'apollo_status', 'assigned_at'
+  ]));
+  const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Refs
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  // Debounce search term
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+  // Memoize visible columns array
+  const visibleColumnsArray = useMemo(() => Array.from(visibleColumns), [visibleColumns]);
+
+  // Fetch data using assigned prospects hook
+  const {
+    data,
+    totalCount,
+    totalPages,
+    loading,
+    refetch
+  } = useAssignedProspectsData({
+    page: currentPage,
+    pageSize,
+    searchTerm: debouncedSearchTerm,
+    searchColumns: ['email', 'first_name', 'last_name', 'company'],
+    sortBy,
+    sortOrder,
+    visibleColumns: visibleColumnsArray,
+    advancedFilters
+  });
+
+  // Définir les colonnes disponibles pour les prospects assignés
+  const getAllColumns = (): ColumnInfo[] => {
+    return [
+      { name: 'id', type: 'string', nullable: false },
+      { name: 'email', type: 'string', nullable: false },
+      { name: 'first_name', type: 'string', nullable: true },
+      { name: 'last_name', type: 'string', nullable: true },
+      { name: 'company', type: 'string', nullable: true },
+      { name: 'title', type: 'string', nullable: true },
+      { name: 'apollo_status', type: 'string', nullable: true },
+      { name: 'zoho_status', type: 'string', nullable: true },
+      { name: 'industry', type: 'string', nullable: true },
+      { name: 'seniority', type: 'string', nullable: true },
+      { name: 'departments', type: 'string', nullable: true },
+      { name: 'stage', type: 'string', nullable: true },
+      { name: 'nb_employees', type: 'number', nullable: true },
+      { name: 'mobile_phone', type: 'string', nullable: true },
+      { name: 'work_direct_phone', type: 'string', nullable: true },
+      { name: 'person_linkedin_url', type: 'string', nullable: true },
+      { name: 'website', type: 'string', nullable: true },
+      { name: 'last_contacted', type: 'date', nullable: true },
+      { name: 'assigned_at', type: 'date', nullable: false },
+      { name: 'source_table', type: 'string', nullable: false }
+    ];
+  };
+
+  const allColumns = getAllColumns();
+  const availableColumns = allColumns.filter(col => 
+    !['id'].includes(col.name)
+  );
+
+  // Handlers
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const handleRowSelect = (id: string) => {
+    setSelectedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedRows.size === data.length) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(data.map(item => item.id)));
+    }
+  };
+
+  const toggleColumnVisibility = (columnName: string) => {
+    setVisibleColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(columnName)) {
+        newSet.delete(columnName);
+      } else {
+        newSet.add(columnName);
+      }
+      return newSet;
+    });
+  };
+
+  const formatValue = (value: any, type: string) => {
+    if (!value) return '—';
+    
+    if (type === 'date') {
+      return new Date(value).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    if (type === 'number') {
+      return value.toLocaleString('fr-FR');
+    }
+    
+    return value.toString();
+  };
+
+  const renderSortIcon = (column: string) => {
+    if (sortBy !== column) return <ArrowUpDown className="h-4 w-4" />;
+    return sortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    const statusColors: Record<string, string> = {
+      'new': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+      'contacted': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+      'qualified': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+      'closed': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
+      'active': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    };
+    return statusColors[status?.toLowerCase()] || statusColors.new;
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="h-8 w-8 p-0"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h2 className="text-xl font-semibold">Prospects Assignés</h2>
+            <p className="text-sm text-muted-foreground">
+              {totalCount} prospects assignés depuis vos différentes sources
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Exporter
+          </Button>
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center flex-1">
+              {/* Search */}
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher des prospects..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Filters */}
+              <TableFilters
+                tableName="apollo_contacts" // On utilise apollo_contacts comme base
+                filters={advancedFilters}
+                onFiltersChange={setAdvancedFilters}
+                onReset={() => setAdvancedFilters({})}
+                isOpen={filtersOpen}
+                onToggle={() => setFiltersOpen(!filtersOpen)}
+                showOnlyButton={true}
+              />
+
+              {/* Column visibility */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns className="h-4 w-4 mr-2" />
+                    Colonnes
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>Colonnes visibles</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {availableColumns.map(column => (
+                    <DropdownMenuCheckboxItem
+                      key={column.name}
+                      checked={visibleColumns.has(column.name)}
+                      onCheckedChange={() => toggleColumnVisibility(column.name)}
+                    >
+                      {translateColumnName(column.name)}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Selection info */}
+            {selectedRows.size > 0 && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{selectedRows.size} sélectionné{selectedRows.size > 1 ? 's' : ''}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedRows(new Set())}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Advanced Filters */}
+      <AnimatePresence>
+        {filtersOpen && (
+          <TableFilters
+            tableName="apollo_contacts"
+            filters={advancedFilters}
+            onFiltersChange={setAdvancedFilters}
+            onReset={() => setAdvancedFilters({})}
+            isOpen={filtersOpen}
+            onToggle={() => setFiltersOpen(!filtersOpen)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Table */}
+      <Card>
+        <div ref={tableContainerRef} className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={data.length > 0 && selectedRows.size === data.length}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Sélectionner tous"
+                  />
+                </TableHead>
+                {availableColumns.map(column => 
+                  visibleColumns.has(column.name) && (
+                    <TableHead 
+                      key={column.name}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort(column.name)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>{translateColumnName(column.name)}</span>
+                        {renderSortIcon(column.name)}
+                      </div>
+                    </TableHead>
+                  )
+                )}
+                <TableHead className="w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell 
+                    colSpan={Array.from(visibleColumns).length + 2} 
+                    className="text-center py-8"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Chargement des prospects...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : data.length === 0 ? (
+                <TableRow>
+                  <TableCell 
+                    colSpan={Array.from(visibleColumns).length + 2} 
+                    className="text-center py-8 text-muted-foreground"
+                  >
+                    Aucun prospect assigné trouvé
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.map((prospect) => (
+                  <TableRow
+                    key={prospect.id}
+                    className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedRows.has(prospect.id)}
+                        onCheckedChange={() => handleRowSelect(prospect.id)}
+                        aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`}
+                      />
+                    </TableCell>
+
+                    {availableColumns.map(column => 
+                      visibleColumns.has(column.name) && (
+                        <TableCell key={column.name}>
+                          {column.name === 'apollo_status' || column.name === 'zoho_status' ? (
+                            <Badge className={getStatusBadgeClass(prospect[column.name])}>
+                              {prospect[column.name] || 'Non défini'}
+                            </Badge>
+                          ) : column.name === 'source_table' ? (
+                            <Badge variant="outline">
+                              {prospect[column.name] === 'apollo_contacts' ? 'Apollo' : 'CRM'}
+                            </Badge>
+                          ) : column.name === 'email' ? (
+                            <a 
+                              href={`mailto:${prospect[column.name]}`}
+                              className="text-blue-600 hover:underline"
+                            >
+                              {prospect[column.name]}
+                            </a>
+                          ) : column.name === 'person_linkedin_url' && prospect[column.name] ? (
+                            <a 
+                              href={prospect[column.name]}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              LinkedIn
+                            </a>
+                          ) : column.name === 'website' && prospect[column.name] ? (
+                            <a 
+                              href={prospect[column.name]}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              Site web
+                            </a>
+                          ) : (
+                            formatValue(prospect[column.name], column.type)
+                          )}
+                        </TableCell>
+                      )
+                    )}
+
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuCheckboxItem>
+                            Voir les détails
+                          </DropdownMenuCheckboxItem>
+                          {prospect.person_linkedin_url && (
+                            <DropdownMenuCheckboxItem asChild>
+                              <a 
+                                href={prospect.person_linkedin_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center"
+                              >
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                LinkedIn
+                              </a>
+                            </DropdownMenuCheckboxItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuCheckboxItem className="text-destructive">
+                            Retirer l'assignation
+                          </DropdownMenuCheckboxItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+
+      {/* Pagination */}
+      {!loading && totalCount > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-muted-foreground">
+            Affichage de {((currentPage - 1) * pageSize) + 1} à {Math.min(currentPage * pageSize, totalCount)} sur {totalCount} prospects assignés
+            {selectedRows.size > 0 && ` • ${selectedRows.size} sélectionné${selectedRows.size > 1 ? 's' : ''}`}
+          </div>
+          
+          <DataPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalCount}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            loading={loading}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AssignedProspectsTableView;

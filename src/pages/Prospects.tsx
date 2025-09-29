@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Plus, MoreHorizontal, ArrowLeft } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import TableView from '@/components/TableView';
+import AssignedProspectsTableView from '@/components/AssignedProspectsTableView';
 
 interface CreatedTable {
   id: string;
@@ -130,7 +130,7 @@ const Prospects = () => {
           </TabsList>
           
           <TabsContent value="assigned" className="space-y-4 mt-6">
-            <ProspectTableView />
+            <AssignedProspectsTableView onBack={handleBackToMain} />
           </TabsContent>
 
           <TabsContent value="created" className="space-y-4 mt-6">
@@ -187,98 +187,6 @@ const Prospects = () => {
             )}
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
-  );
-};
-
-// Component wrapper for the assigned prospects table that uses TableView
-const ProspectTableView = () => {
-  const handleBack = () => {
-    // Not needed for this embedded view
-  };
-
-  return (
-    <AssignedProspectsTableView onBack={handleBack} />
-  );
-};
-
-// Custom component that uses the same TableView but with assigned prospects data
-const AssignedProspectsTableView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  // We'll modify the useTableData hook temporarily to use our assigned-prospects endpoint
-  const [showTableView, setShowTableView] = useState(true);
-
-  if (showTableView) {
-    // Use the existing TableView but with a special "mode" for assigned prospects
-    return (
-      <div className="space-y-4">
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-blue-900">Prospects Assignés</h3>
-              <p className="text-blue-700 text-sm mt-1">
-                Visualisez et gérez tous vos prospects assignés depuis les différentes sources de données.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                Vue Prospects
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Use a placeholder for now - we'll need to create a modified TableView */}
-        <AssignedProspectsTable />
-      </div>
-    );
-  }
-
-  return null;
-};
-
-// Simplified table component for assigned prospects - uses same interface as TableView
-const AssignedProspectsTable = () => {
-  return (
-    <div className="rounded-lg border bg-card">
-      <div className="p-6 border-b">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Tableau des Prospects Assignés</h3>
-            <p className="text-sm text-muted-foreground">
-              Interface complète avec recherche, filtres, tri et actions - identique au tableau principal
-            </p>
-          </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Actions
-          </Button>
-        </div>
-      </div>
-      
-      <div className="p-6">
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Tableau des Prospects en Préparation
-          </h3>
-          <p className="text-gray-500 max-w-md mx-auto">
-            Le tableau complet avec toutes les fonctionnalités (recherche, filtres, sections Arlynk/Aicademia, 
-            tri, pagination, édition inline, export, etc.) sera disponible sous peu.
-          </p>
-          <div className="mt-6 flex justify-center gap-3">
-            <Button variant="outline">
-              Voir un aperçu des données
-            </Button>
-            <Button>
-              Configurer les colonnes
-            </Button>
-          </div>
-        </div>
       </div>
     </div>
   );
