@@ -209,11 +209,16 @@ const MySalesLeads = () => {
     setPinnedColumns(prev => {
       const newPinned = new Set(prev);
       if (newPinned.has(columnName)) {
+        // Si la colonne est déjà épinglée, la dépingler
         newPinned.delete(columnName);
       } else {
+        // Dépingler toutes les autres colonnes sauf 'lead_email' qui reste toujours épinglée
         newPinned.clear();
-        newPinned.add('lead_email');
-        newPinned.add(columnName);
+        newPinned.add('lead_email'); // Toujours garder lead_email épinglé
+        // Épingler la nouvelle colonne seulement si ce n'est pas 'lead_email'
+        if (columnName !== 'lead_email') {
+          newPinned.add(columnName);
+        }
       }
       return newPinned;
     });

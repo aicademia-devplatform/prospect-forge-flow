@@ -414,12 +414,16 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     setPinnedColumns(prev => {
       const newPinned = new Set(prev);
       if (newPinned.has(columnName)) {
+        // Si la colonne est déjà épinglée, la dépingler
         newPinned.delete(columnName);
       } else {
-        // Ne permettre qu'une seule colonne épinglée à la fois (en plus d'email)
+        // Dépingler toutes les autres colonnes sauf 'email' qui reste toujours épinglée
         newPinned.clear();
         newPinned.add('email'); // Toujours garder email épinglé
-        newPinned.add(columnName);
+        // Épingler la nouvelle colonne seulement si ce n'est pas 'email'
+        if (columnName !== 'email') {
+          newPinned.add(columnName);
+        }
       }
       return newPinned;
     });
