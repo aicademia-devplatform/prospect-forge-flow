@@ -18,6 +18,7 @@ import DataPagination from '@/components/DataPagination';
 import TableFilters, { FilterValues } from '@/components/TableFilters';
 import TableColumnHeader from '@/components/TableColumnHeader';
 import { useAssignedProspectsData } from '@/hooks/useAssignedProspectsData';
+import { createProspectUrl } from '@/lib/emailCrypto';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -646,7 +647,7 @@ const MySalesLeads: React.FC = () => {
                                           variant="ghost" 
                                           size="sm" 
                                           className="h-8 w-8 p-0"
-                                          onClick={() => navigate(`/prospect/${encodeURIComponent(prospect.email)}`)}
+                                          onClick={() => navigate(createProspectUrl(prospect.email))}
                                         >
                                           <Eye className="h-4 w-4" />
                                         </Button>

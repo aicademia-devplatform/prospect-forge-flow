@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { extractEmailFromUrl } from '@/lib/emailCrypto';
 interface ProspectData {
   // CRM Data
   crm_id?: string;
@@ -82,9 +83,9 @@ interface ProspectData {
 }
 const ProspectDetails: React.FC = () => {
   const {
-    email
+    encryptedEmail
   } = useParams<{
-    email: string;
+    encryptedEmail: string;
   }>();
   const navigate = useNavigate();
   const {
@@ -96,12 +97,23 @@ const ProspectDetails: React.FC = () => {
   const [showModifierSidebar, setShowModifierSidebar] = useState(false);
   const [showActionSidebar, setShowActionSidebar] = useState(false);
   const [defaultActionTab, setDefaultActionTab] = useState<'modifier' | 'traiter'>('modifier');
+
+  // Décrypter l'email depuis l'URL
+  const email = React.useMemo(() => {
+    if (!encryptedEmail) return '';
+    return extractEmailFromUrl(encryptedEmail);
+  }, [encryptedEmail]);
   useEffect(() => {
     if (email) {
       fetchProspectDetails();
     }
   }, [email]);
   const fetchProspectDetails = async () => {
+    if (!email) {
+      console.error('No email found from encrypted URL');
+      navigate('/prospects');
+      return;
+    }
     try {
       setLoading(true);
       const {
@@ -109,14 +121,14 @@ const ProspectDetails: React.FC = () => {
         error
       } = await supabase.functions.invoke('get-contact', {
         body: {
-          email: decodeURIComponent(email!)
+          email: email // Utiliser l'email décrypté
         }
       });
       if (error) throw error;
       if (data && data.success && data.data) {
         // Combiner toutes les données des différentes sources
         const combinedProspect: any = {
-          email: decodeURIComponent(email!),
+          email: email, // Utiliser l'email décrypté
           sources: data.data
         };
 

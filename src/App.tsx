@@ -102,7 +102,7 @@ const App = () => (
               } 
             />
             <Route 
-              path="/prospect/:email" 
+              path="/prospect/:encryptedEmail" 
               element={
                 <ProtectedRoute>
                   <Layout>
