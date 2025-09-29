@@ -425,22 +425,32 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     return statusColors[status?.toLowerCase()] || statusColors.new;
   };
 
-  // Fonction pour épingler/dépingler une colonne
+  // Fonction pour épingler/dépingler une colonne - LOGIQUE SIMPLIFIÉE
   const toggleColumnPin = (columnName: string) => {
+    console.log('Épinglage de la colonne:', columnName);
+    console.log('Colonnes épinglées actuelles:', Array.from(pinnedColumns));
+    
     setPinnedColumns(prev => {
       const newPinned = new Set(prev);
+      
       if (newPinned.has(columnName)) {
-        // Si la colonne est déjà épinglée, la dépingler
-        newPinned.delete(columnName);
-      } else {
-        // Dépingler toutes les autres colonnes sauf 'email' qui reste toujours épinglée
-        newPinned.clear();
-        newPinned.add('email'); // Toujours garder email épinglé
-        // Épingler la nouvelle colonne seulement si ce n'est pas 'email'
+        // Dépingler la colonne (sauf email qui reste toujours épinglée)
         if (columnName !== 'email') {
-          newPinned.add(columnName);
+          newPinned.delete(columnName);
         }
+      } else {
+        // Épingler la nouvelle colonne
+        // D'abord, supprimer toutes les colonnes épinglées sauf email
+        for (const col of newPinned) {
+          if (col !== 'email') {
+            newPinned.delete(col);
+          }
+        }
+        // Puis ajouter la nouvelle colonne à épingler
+        newPinned.add(columnName);
       }
+      
+      console.log('Nouvelles colonnes épinglées:', Array.from(newPinned));
       return newPinned;
     });
   };
@@ -603,13 +613,15 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                   />
                 </TableHead>
                 {availableColumns.map(column => {
+                  if (!visibleColumns.has(column.name)) return null;
+                  
                   const isPinned = pinnedColumns.has(column.name);
                   const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
                   
-                  return visibleColumns.has(column.name) && (
+                  return (
                     <TableHead 
                       key={column.name}
-                      className={`px-4 py-4 text-left min-w-[120px] sticky top-0 ${isPinned ? `left-0 z-30 bg-primary/5 backdrop-blur-sm font-semibold text-primary ${borderStyle}` : 'z-20 bg-table-header font-semibold text-muted-foreground'}`}
+                      className={`px-4 py-4 text-left min-w-[120px] sticky top-0 ${isPinned ? `z-30 bg-primary/5 backdrop-blur-sm font-semibold text-primary ${borderStyle}` : 'z-20 bg-table-header font-semibold text-muted-foreground'}`}
                       style={isPinned ? { left: '48px' } : {}}
                     >
                       <TableColumnHeader
@@ -617,11 +629,14 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                         displayName={translateColumnName(column.name)}
                         sortBy={sortBy}
                         sortOrder={sortOrder}
-                        isPinned={pinnedColumns.has(column.name)}
+                        isPinned={isPinned}
                         canPin={column.name !== 'id'}
                         canHide={column.name !== 'id' && column.name !== 'email'}
                         onSort={handleSort}
-                        onPin={toggleColumnPin}
+                        onPin={(colName) => {
+                          console.log('TableColumnHeader onPin appelé avec:', colName);
+                          toggleColumnPin(colName);
+                        }}
                         onHide={hideColumn}
                         onFilter={handleColumnFilter}
                         onClearFilter={clearColumnFilter}
@@ -670,10 +685,12 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                     </TableCell>
 
                     {availableColumns.map(column => {
+                      if (!visibleColumns.has(column.name)) return null;
+                      
                       const isPinned = pinnedColumns.has(column.name);
                       const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
                       
-                      return visibleColumns.has(column.name) && (
+                      return (
                         <TableCell 
                           key={column.name}
                           className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''}`}
