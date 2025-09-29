@@ -605,7 +605,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                     Aucun prospect assigné trouvé
                   </TableCell>
                 </TableRow> : data.map(prospect => <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
-                    <TableCell className="w-12 px-4 py-4 sticky left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-30">
+                    <TableCell className="w-fit px-4 py-4 sticky left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-30">
                       <Checkbox checked={selectedRows.has(prospect.id)} onCheckedChange={() => handleRowSelect(prospect.id)} aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`} />
                     </TableCell>
 
