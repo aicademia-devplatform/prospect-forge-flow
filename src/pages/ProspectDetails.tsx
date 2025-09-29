@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, User, Phone, MapPin, Mail, ExternalLink, Edit } from 'lucide-react';
+import { ArrowLeft, Building2, User, Phone, MapPin, Mail, ExternalLink, Edit, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -253,7 +253,7 @@ const ProspectDetails: React.FC = () => {
             Modifier
           </Button>
           <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-            <File className="h-4 w-4 mr-2" />
+            <FileText className="h-4 w-4 mr-2" />
             Traiter
           </Button>
         </div>
