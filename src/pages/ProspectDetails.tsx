@@ -286,14 +286,14 @@ const ProspectDetails: React.FC = () => {
       {/* CRM Contacts - Contact Principal */}
       {prospect.sources?.find(s => s.source_table === 'crm_contacts') && <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <h3 className="inline-flex items-center px-4 py-2 rounded-full bg-primary/20 text-primary-foreground text-sm font-medium">CRM Contacts - Contact Principal</h3>
+            <h3 className="inline-flex items-center px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">CRM Contacts - Contact Principal</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Informations personnelles */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-sm bg-success/20 text-success-foreground px-3 py-1.5 rounded-full w-fit">
+                <CardTitle className="flex items-center gap-2 text-sm bg-success/10 text-success px-3 py-1.5 rounded-full w-fit">
                   <User className="h-4 w-4" />
                   Informations personnelles
                 </CardTitle>
@@ -319,7 +319,7 @@ const ProspectDetails: React.FC = () => {
             {/* Entreprise */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-sm bg-warning/20 text-warning-foreground px-3 py-1.5 rounded-full w-fit">
+                <CardTitle className="flex items-center gap-2 text-sm bg-warning/10 text-warning px-3 py-1.5 rounded-full w-fit">
                   <Building2 className="h-4 w-4" />
                   Entreprise
                 </CardTitle>
@@ -337,14 +337,14 @@ const ProspectDetails: React.FC = () => {
       {/* Apollo Contacts - Données Additionnelles */}
       {prospect.sources?.find(s => s.source_table === 'apollo_contacts') && <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <h3 className="inline-flex items-center px-4 py-2 rounded-full bg-secondary/20 text-secondary-foreground text-sm font-medium">Apollo Contacts - Données Additionnelles</h3>
+            <h3 className="inline-flex items-center px-4 py-2 rounded-full bg-secondary/10 text-secondary text-sm font-medium">Apollo Contacts - Données Additionnelles</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Informations personnelles Apollo */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-sm bg-accent/20 text-accent-foreground px-3 py-1.5 rounded-full w-fit">
+                <CardTitle className="flex items-center gap-2 text-sm bg-accent/10 text-accent px-3 py-1.5 rounded-full w-fit">
                   <User className="h-4 w-4" />
                   Informations personnelles
                 </CardTitle>
@@ -384,7 +384,7 @@ const ProspectDetails: React.FC = () => {
             {/* Entreprise Apollo */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-sm bg-primary/20 text-primary-foreground px-3 py-1.5 rounded-full w-fit">
+                <CardTitle className="flex items-center gap-2 text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-full w-fit">
                   <Building2 className="h-4 w-4" />
                   Entreprise
                 </CardTitle>
@@ -421,7 +421,7 @@ const ProspectDetails: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm bg-secondary/20 text-secondary-foreground px-3 py-1.5 rounded-full w-fit">
+            <CardTitle className="flex items-center gap-2 text-sm bg-secondary/10 text-secondary px-3 py-1.5 rounded-full w-fit">
               <Phone className="h-4 w-4" />
               Contact
             </CardTitle>
@@ -441,7 +441,7 @@ const ProspectDetails: React.FC = () => {
         {/* Autres informations */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm bg-accent/20 text-accent-foreground px-3 py-1.5 rounded-full w-fit">
+            <CardTitle className="flex items-center gap-2 text-sm bg-accent/10 text-accent px-3 py-1.5 rounded-full w-fit">
               <Mail className="h-4 w-4" />
               Autres informations
             </CardTitle>
@@ -460,7 +460,7 @@ const ProspectDetails: React.FC = () => {
       {/* Plateforme & Intégrations */}
       {(prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_contact_id || prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_account_id) && <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm bg-warning/20 text-warning-foreground px-3 py-1.5 rounded-full w-fit">
+            <CardTitle className="flex items-center gap-2 text-sm bg-warning/10 text-warning px-3 py-1.5 rounded-full w-fit">
               <Building2 className="h-4 w-4" />
               Plateforme & Intégrations
             </CardTitle>
@@ -481,7 +481,7 @@ const ProspectDetails: React.FC = () => {
       {(prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_sent !== undefined || prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_open !== undefined || prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.replied !== undefined) && <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-               <CardTitle className="flex items-center gap-2 text-sm bg-success/20 text-success-foreground px-3 py-1.5 rounded-full w-fit">
+               <CardTitle className="flex items-center gap-2 text-sm bg-success/10 text-success px-3 py-1.5 rounded-full w-fit">
                  <Mail className="h-4 w-4" />
                  Activité & Engagement
                </CardTitle>
@@ -517,7 +517,7 @@ const ProspectDetails: React.FC = () => {
           {/* Statut & Suivi */}
           <Card>
             <CardHeader>
-               <CardTitle className="flex items-center gap-2 text-sm bg-danger/20 text-danger-foreground px-3 py-1.5 rounded-full w-fit">
+               <CardTitle className="flex items-center gap-2 text-sm bg-danger/10 text-danger px-3 py-1.5 rounded-full w-fit">
                  <User className="h-4 w-4" />
                  Statut & Suivi
                </CardTitle>
@@ -540,7 +540,7 @@ const ProspectDetails: React.FC = () => {
       {/* Informations techniques */}
       {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.technologies && <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm bg-primary/20 text-primary-foreground px-3 py-1.5 rounded-full w-fit">
+            <CardTitle className="flex items-center gap-2 text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-full w-fit">
               <Building2 className="h-4 w-4" />
               Informations techniques
             </CardTitle>
@@ -556,7 +556,7 @@ const ProspectDetails: React.FC = () => {
       {/* Dates importantes */}
       <Card>
         <CardHeader>
-           <CardTitle className="flex items-center gap-2 text-sm bg-accent/20 text-accent-foreground px-3 py-1.5 rounded-full w-fit">
+           <CardTitle className="flex items-center gap-2 text-sm bg-accent/10 text-accent px-3 py-1.5 rounded-full w-fit">
              <User className="h-4 w-4" />
              Dates importantes
            </CardTitle>
