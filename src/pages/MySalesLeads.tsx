@@ -96,8 +96,8 @@ const MySalesLeads: React.FC = () => {
   // Memoize visible columns array
   const visibleColumnsArray = useMemo(() => Array.from(visibleColumns), [visibleColumns]);
 
-  // Colonnes épinglées fixes
-  const pinnedColumns = new Set(['email']);
+  // Colonnes épinglées fixes qui ne peuvent pas être cachées
+  const pinnedColumns = new Set(['email', 'actions']);
 
   // Charger la configuration des colonnes au montage
   useEffect(() => {
@@ -275,6 +275,11 @@ const MySalesLeads: React.FC = () => {
   };
 
   const toggleColumnVisibilityInDialog = (columnName: string) => {
+    // Empêcher de masquer les colonnes épinglées
+    if (pinnedColumns.has(columnName)) {
+      return;
+    }
+    
     const newVisible = new Set(tempVisibleColumns);
     if (newVisible.has(columnName)) {
       newVisible.delete(columnName);
@@ -740,14 +745,18 @@ const MySalesLeads: React.FC = () => {
                                     <GripVertical className="h-4 w-4 text-gray-400" />
                                   </div>
                                   <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => toggleColumnVisibilityInDialog(column.name)} 
-                                    className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200"
-                                  >
-                                    <ArrowRight className="h-4 w-4 text-red-600" />
-                                  </Button>
+                                   {!pinnedColumns.has(column.name) ? (
+                                     <Button 
+                                       variant="ghost" 
+                                       size="sm" 
+                                       onClick={() => toggleColumnVisibilityInDialog(column.name)} 
+                                       className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200"
+                                     >
+                                       <ArrowRight className="h-4 w-4 text-red-600" />
+                                     </Button>
+                                   ) : (
+                                     <span className="text-xs text-gray-500 px-2">Épinglée</span>
+                                   )}
                                 </div>
                               )}
                             </Draggable>
