@@ -27,35 +27,37 @@ interface ColumnInfo {
   nullable: boolean;
 }
 
-// Fonction de traduction des noms de colonnes
-const translateColumnName = (columnName: string): string => {
-  const translations: Record<string, string> = {
-    'id': 'ID',
-    'email': 'Email',
-    'created_at': 'Date de création',
-    'updated_at': 'Date de mise à jour',
-    'assigned_at': 'Date d\'assignation',
-    'first_name': 'Prénom',
-    'last_name': 'Nom',
-    'company': 'Entreprise',
-    'title': 'Titre',
-    'seniority': 'Ancienneté',
-    'departments': 'Départements',
-    'stage': 'Étape',
-    'industry': 'Industrie',
-    'nb_employees': 'Nombre d\'employés',
-    'apollo_status': 'Statut Apollo',
-    'zoho_status': 'Statut Zoho',
-    'mobile_phone': 'Téléphone portable',
-    'work_direct_phone': 'Téléphone professionnel',
-    'person_linkedin_url': 'LinkedIn',
-    'website': 'Site web',
-    'last_contacted': 'Dernier contact',
-    'data_section': 'Section',
-    'source_table': 'Source'
+  // Fonction de traduction des noms de colonnes
+  const translateColumnName = (columnName: string): string => {
+    const translations: Record<string, string> = {
+      'id': 'ID',
+      'email': 'Email',
+      'created_at': 'Date de création',
+      'updated_at': 'Date de mise à jour',
+      'assigned_at': 'Date d\'assignation',
+      'first_name': 'Prénom',
+      'last_name': 'Nom',
+      'company': 'Entreprise',
+      'title': 'Titre',
+      'seniority': 'Ancienneté',
+      'departments': 'Départements',
+      'stage': 'Étape',
+      'industry': 'Industrie',
+      'nb_employees': 'Nombre d\'employés',
+      'apollo_status': 'Statut Apollo',
+      'zoho_status': 'Statut Zoho',
+      'mobile_phone': 'Téléphone portable',
+      'work_direct_phone': 'Téléphone professionnel',
+      'person_linkedin_url': 'LinkedIn',
+      'website': 'Site web',
+      'last_contacted': 'Dernier contact',
+      'data_section': 'Section',
+      'source_table': 'Source',
+      'data_source': 'Source de données',
+      'actions': 'Actions'
+    };
+    return translations[columnName] || columnName;
   };
-  return translations[columnName] || columnName;
-};
 
 const MySalesLeads: React.FC = () => {
   const { user } = useAuth();
@@ -68,7 +70,7 @@ const MySalesLeads: React.FC = () => {
   const [sortBy, setSortBy] = useState('assigned_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['email', 'first_name', 'last_name', 'company', 'title', 'apollo_status', 'assigned_at']));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['email', 'company', 'last_name', 'first_name', 'assigned_at', 'source_table', 'actions']));
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -254,7 +256,9 @@ const MySalesLeads: React.FC = () => {
       { name: 'website', type: 'string', nullable: true },
       { name: 'last_contacted', type: 'date', nullable: true },
       { name: 'assigned_at', type: 'date', nullable: false },
-      { name: 'source_table', type: 'string', nullable: false }
+      { name: 'source_table', type: 'string', nullable: false },
+      { name: 'data_source', type: 'string', nullable: false },
+      { name: 'actions', type: 'string', nullable: false }
     ];
   };
 
@@ -624,11 +628,38 @@ const MySalesLeads: React.FC = () => {
                               <Badge className={getStatusBadgeClass(prospect[column.name])}>
                                 {prospect[column.name] || 'Non défini'}
                               </Badge>
-                            ) : column.name === 'source_table' ? (
-                              <Badge variant="outline">
-                                {prospect[column.name] === 'apollo_contacts' ? 'Apollo' : 'CRM'}
-                              </Badge>
-                            ) : column.name === 'person_linkedin_url' && prospect[column.name] ? (
+                             ) : column.name === 'source_table' || column.name === 'data_source' ? (
+                               <Badge variant="outline">
+                                 {prospect.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM'}
+                               </Badge>
+                             ) : column.name === 'actions' ? (
+                               <DropdownMenu>
+                                 <DropdownMenuTrigger asChild>
+                                   <Button variant="ghost" size="sm">
+                                     <MoreHorizontal className="h-4 w-4" />
+                                   </Button>
+                                 </DropdownMenuTrigger>
+                                 <DropdownMenuContent align="end">
+                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                   <DropdownMenuSeparator />
+                                   <DropdownMenuCheckboxItem>
+                                     Voir les détails
+                                   </DropdownMenuCheckboxItem>
+                                   {prospect.person_linkedin_url && (
+                                     <DropdownMenuCheckboxItem asChild>
+                                       <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                                         <ExternalLink className="h-4 w-4 mr-2" />
+                                         LinkedIn
+                                       </a>
+                                     </DropdownMenuCheckboxItem>
+                                   )}
+                                   <DropdownMenuSeparator />
+                                   <DropdownMenuCheckboxItem className="text-destructive">
+                                     Retirer l'assignation
+                                   </DropdownMenuCheckboxItem>
+                                 </DropdownMenuContent>
+                               </DropdownMenu>
+                             ) : column.name === 'person_linkedin_url' && prospect[column.name] ? (
                               <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                                 LinkedIn
                               </a>
@@ -641,36 +672,7 @@ const MySalesLeads: React.FC = () => {
                             )}
                           </TableCell>
                         );
-                      })}
-
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuCheckboxItem>
-                              Voir les détails
-                            </DropdownMenuCheckboxItem>
-                            {prospect.person_linkedin_url && (
-                              <DropdownMenuCheckboxItem asChild>
-                                <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                                  <ExternalLink className="h-4 w-4 mr-2" />
-                                  LinkedIn
-                                </a>
-                              </DropdownMenuCheckboxItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuCheckboxItem className="text-destructive">
-                              Retirer l'assignation
-                            </DropdownMenuCheckboxItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                       })}
                     </TableRow>
                   ))
                 )}
