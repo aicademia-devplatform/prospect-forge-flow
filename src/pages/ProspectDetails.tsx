@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building2, User, Phone, MapPin, Mail, ExternalLink, Edit, FileText } from 'lucide-react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TraiterProspectSidebar } from '@/components/TraiterProspectSidebar';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -239,8 +239,19 @@ const ProspectDetails: React.FC = () => {
   }
   
   return (
-    <div className="min-h-screen w-full relative">
-      <div className="flex-1 p-6 space-y-6">
+    <div className="min-h-screen w-full relative overflow-hidden">
+      <motion.div 
+        className="flex-1 p-6 space-y-6 transition-all duration-300 ease-in-out"
+        animate={{
+          marginRight: showTraiterSidebar ? '384px' : '0px', // 384px = w-96
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+          duration: 0.3
+        }}
+      >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -465,7 +476,7 @@ const ProspectDetails: React.FC = () => {
                 </Badge>
               </div>}
           </CardContent>
-        </Card>
+      </Card>
       </div>
 
       {/* Plateforme & Intégrations */}
@@ -583,20 +594,21 @@ const ProspectDetails: React.FC = () => {
             </div>}
         </CardContent>
       </Card>
-        {/* Sidebar Traiter Prospect */}
-        <AnimatePresence>
-          {showTraiterSidebar && (
-            <TraiterProspectSidebar
-              prospectEmail={prospect.email}
-              onSuccess={() => {
-                fetchProspectDetails();
-                setShowTraiterSidebar(false);
-              }}
-              onClose={() => setShowTraiterSidebar(false)}
-            />
-          )}
-        </AnimatePresence>
-      </div>
+      </motion.div>
+      
+      {/* Sidebar Traiter Prospect */}
+      <AnimatePresence>
+        {showTraiterSidebar && (
+          <TraiterProspectSidebar
+            prospectEmail={prospect.email}
+            onSuccess={() => {
+              fetchProspectDetails();
+              setShowTraiterSidebar(false);
+            }}
+            onClose={() => setShowTraiterSidebar(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
