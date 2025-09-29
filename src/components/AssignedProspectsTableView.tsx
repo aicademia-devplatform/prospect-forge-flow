@@ -573,7 +573,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-fit px-4 py-4 text-left sticky top-0 left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-40">
+                <TableHead className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-40">
                   <Checkbox checked={data.length > 0 && selectedRows.size === data.length} onCheckedChange={handleSelectAll} aria-label="Sélectionner tous" />
                 </TableHead>
                 {availableColumns.map(column => {
