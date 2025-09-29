@@ -253,8 +253,8 @@ const ProspectDetails: React.FC = () => {
             Modifier
           </Button>
           <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-            <User className="h-4 w-4 mr-2" />
-            Assigner à un commercial
+            <Edit className="h-4 w-4 mr-2" />
+            Traiter
           </Button>
         </div>
       </div>
