@@ -253,7 +253,7 @@ const ProspectDetails: React.FC = () => {
             Modifier
           </Button>
           <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-            <Edit className="h-4 w-4 mr-2" />
+            <File className="h-4 w-4 mr-2" />
             Traiter
           </Button>
         </div>
