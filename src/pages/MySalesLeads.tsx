@@ -172,6 +172,12 @@ const MySalesLeads: React.FC = () => {
 
         if (config.length > 0) {
           const visibleCols = config.filter((col: any) => col.visible !== false).map((col: any) => col.name);
+          // S'assurer que les colonnes épinglées sont toujours incluses
+          pinnedColumns.forEach(pinnedCol => {
+            if (!visibleCols.includes(pinnedCol)) {
+              visibleCols.push(pinnedCol);
+            }
+          });
           setVisibleColumns(new Set(visibleCols));
         }
       }
@@ -385,6 +391,10 @@ const MySalesLeads: React.FC = () => {
   };
 
   const hideColumn = (columnName: string) => {
+    // Empêcher de masquer les colonnes épinglées
+    if (pinnedColumns.has(columnName)) {
+      return;
+    }
     const newVisible = new Set(visibleColumns);
     newVisible.delete(columnName);
     setVisibleColumns(newVisible);
@@ -554,31 +564,33 @@ const MySalesLeads: React.FC = () => {
                     </TableHead>
                   )}
                   
-                  {/* Autres colonnes */}
-                  {availableColumns.map(column => {
-                    if (!visibleColumns.has(column.name) || column.name === 'email') return null;
-                    return (
-                      <TableHead key={column.name} className="px-4 py-3 text-left min-w-[120px] sticky top-0 bg-background z-20">
-                        <TableColumnHeader 
-                          columnName={column.name} 
-                          displayName={translateColumnName(column.name)} 
-                          sortBy={sortBy} 
-                          sortOrder={sortOrder} 
-                          isPinned={false} 
-                          canPin={false} 
-                          canHide={column.name !== 'id'} 
-                          onSort={handleSort} 
-                          onPin={() => {}} 
-                          onHide={hideColumn} 
-                          onFilter={handleColumnFilter} 
-                          onClearFilter={clearColumnFilter} 
-                          filterValue={columnFilters[column.name] || ''} 
-                        />
-                      </TableHead>
-                    );
-                  })}
-                  
-                  <TableHead className="w-12"></TableHead>
+                   {/* Autres colonnes */}
+                   {availableColumns.map(column => {
+                     if (!visibleColumns.has(column.name) || column.name === 'email') return null;
+                     return (
+                       <TableHead key={column.name} className="px-4 py-3 text-left min-w-[120px] sticky top-0 bg-background z-20">
+                         {column.name === 'actions' ? (
+                           'Actions'
+                         ) : (
+                           <TableColumnHeader 
+                             columnName={column.name} 
+                             displayName={translateColumnName(column.name)} 
+                             sortBy={sortBy} 
+                             sortOrder={sortOrder} 
+                             isPinned={false} 
+                             canPin={false} 
+                             canHide={!pinnedColumns.has(column.name)} 
+                             onSort={handleSort} 
+                             onPin={() => {}} 
+                             onHide={hideColumn} 
+                             onFilter={handleColumnFilter} 
+                             onClearFilter={clearColumnFilter} 
+                             filterValue={columnFilters[column.name] || ''} 
+                           />
+                         )}
+                       </TableHead>
+                     );
+                   })}
                 </TableRow>
               </TableHeader>
               <TableBody>
