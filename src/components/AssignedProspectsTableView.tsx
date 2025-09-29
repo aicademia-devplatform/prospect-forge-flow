@@ -569,88 +569,90 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
 
       {/* Table */}
       <Card>
-        <div ref={tableContainerRef} className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12 px-3 py-3 text-left sticky top-0 left-0 bg-background border-r z-40">
-                  <Checkbox checked={data.length > 0 && selectedRows.size === data.length} onCheckedChange={handleSelectAll} aria-label="Sélectionner tous" />
-                </TableHead>
-                {availableColumns.map(column => {
-                if (!visibleColumns.has(column.name)) return null;
-                const isPinned = pinnedColumns.has(column.name);
-                return <TableHead key={column.name} className={`px-4 py-3 text-left min-w-[120px] sticky top-0 ${isPinned ? 'left-12 z-30 bg-background border-r font-medium text-foreground' : 'z-20 bg-background font-medium text-muted-foreground'}`}>
-                      <TableColumnHeader columnName={column.name} displayName={translateColumnName(column.name)} sortBy={sortBy} sortOrder={sortOrder} isPinned={isPinned} canPin={false} canHide={column.name !== 'id' && column.name !== 'email'} onSort={handleSort} onPin={() => {}} onHide={hideColumn} onFilter={handleColumnFilter} onClearFilter={clearColumnFilter} filterValue={columnFilters[column.name] || ''} />
-                    </TableHead>;
-              })}
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? <TableRow>
-                  <TableCell colSpan={Array.from(visibleColumns).length + 2} className="text-center py-8">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Chargement des prospects...</span>
-                    </div>
-                  </TableCell>
-                </TableRow> : data.length === 0 ? <TableRow>
-                  <TableCell colSpan={Array.from(visibleColumns).length + 2} className="text-center py-8 text-muted-foreground">
-                    Aucun prospect assigné trouvé
-                  </TableCell>
-                </TableRow> : data.map(prospect => <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
-                    <TableCell className="w-12 px-3 py-3 sticky left-0 bg-background border-r z-30">
-                      <Checkbox checked={selectedRows.has(prospect.id)} onCheckedChange={() => handleRowSelect(prospect.id)} aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`} />
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="text-lg font-medium">Chargement des prospects...</span>
+            </div>
+          </div>
+        ) : (
+          <div ref={tableContainerRef} className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12 px-3 py-3 text-left sticky top-0 left-0 bg-background border-r z-40">
+                    <Checkbox checked={data.length > 0 && selectedRows.size === data.length} onCheckedChange={handleSelectAll} aria-label="Sélectionner tous" />
+                  </TableHead>
+                  {availableColumns.map(column => {
+                  if (!visibleColumns.has(column.name)) return null;
+                  const isPinned = pinnedColumns.has(column.name);
+                  return <TableHead key={column.name} className={`px-4 py-3 text-left min-w-[120px] sticky top-0 ${isPinned ? 'left-12 z-30 bg-background border-r font-medium text-foreground' : 'z-20 bg-background font-medium text-muted-foreground'}`}>
+                        <TableColumnHeader columnName={column.name} displayName={translateColumnName(column.name)} sortBy={sortBy} sortOrder={sortOrder} isPinned={isPinned} canPin={false} canHide={column.name !== 'id' && column.name !== 'email'} onSort={handleSort} onPin={() => {}} onHide={hideColumn} onFilter={handleColumnFilter} onClearFilter={clearColumnFilter} filterValue={columnFilters[column.name] || ''} />
+                      </TableHead>;
+                })}
+                  <TableHead className="w-12"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.length === 0 ? <TableRow>
+                    <TableCell colSpan={Array.from(visibleColumns).length + 2} className="text-center py-8 text-muted-foreground">
+                      Aucun prospect assigné trouvé
                     </TableCell>
+                  </TableRow> : data.map(prospect => <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
+                      <TableCell className="w-12 px-3 py-3 sticky left-0 bg-background border-r z-30">
+                        <Checkbox checked={selectedRows.has(prospect.id)} onCheckedChange={() => handleRowSelect(prospect.id)} aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`} />
+                      </TableCell>
 
-                    {availableColumns.map(column => {
-                if (!visibleColumns.has(column.name)) return null;
-                const isPinned = pinnedColumns.has(column.name);
-                return <TableCell key={column.name} className={`px-4 py-3 min-w-[120px] ${isPinned ? 'sticky left-12 z-20 bg-background border-r font-medium' : ''}`}>
-                          {column.name === 'apollo_status' || column.name === 'zoho_status' ? <Badge className={getStatusBadgeClass(prospect[column.name])}>
-                              {prospect[column.name] || 'Non défini'}
-                            </Badge> : column.name === 'source_table' ? <Badge variant="outline">
-                              {prospect[column.name] === 'apollo_contacts' ? 'Apollo' : 'CRM'}
-                            </Badge> : column.name === 'email' ? <a href={`mailto:${prospect[column.name]}`} className="text-primary hover:underline">
-                              {prospect[column.name]}
-                            </a> : column.name === 'person_linkedin_url' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                              LinkedIn
-                            </a> : column.name === 'website' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                              Site web
-                            </a> : formatValue(prospect[column.name], column.type, column.name)}
-                        </TableCell>;
-              })}
-
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuCheckboxItem>
-                            Voir les détails
-                          </DropdownMenuCheckboxItem>
-                          {prospect.person_linkedin_url && <DropdownMenuCheckboxItem asChild>
-                              <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                                <ExternalLink className="h-4 w-4 mr-2" />
+                      {availableColumns.map(column => {
+                  if (!visibleColumns.has(column.name)) return null;
+                  const isPinned = pinnedColumns.has(column.name);
+                  return <TableCell key={column.name} className={`px-4 py-3 min-w-[120px] ${isPinned ? 'sticky left-12 z-20 bg-background border-r font-medium' : ''}`}>
+                            {column.name === 'apollo_status' || column.name === 'zoho_status' ? <Badge className={getStatusBadgeClass(prospect[column.name])}>
+                                {prospect[column.name] || 'Non défini'}
+                              </Badge> : column.name === 'source_table' ? <Badge variant="outline">
+                                {prospect[column.name] === 'apollo_contacts' ? 'Apollo' : 'CRM'}
+                              </Badge> : column.name === 'email' ? <a href={`mailto:${prospect[column.name]}`} className="text-primary hover:underline">
+                                {prospect[column.name]}
+                              </a> : column.name === 'person_linkedin_url' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                                 LinkedIn
-                              </a>
-                            </DropdownMenuCheckboxItem>}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuCheckboxItem className="text-destructive">
-                            Retirer l'assignation
-                          </DropdownMenuCheckboxItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>)}
-            </TableBody>
-          </Table>
-        </div>
+                              </a> : column.name === 'website' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                Site web
+                              </a> : formatValue(prospect[column.name], column.type, column.name)}
+                          </TableCell>;
+                })}
+
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuCheckboxItem>
+                              Voir les détails
+                            </DropdownMenuCheckboxItem>
+                            {prospect.person_linkedin_url && <DropdownMenuCheckboxItem asChild>
+                                <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                                  <ExternalLink className="h-4 w-4 mr-2" />
+                                  LinkedIn
+                                </a>
+                              </DropdownMenuCheckboxItem>}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuCheckboxItem className="text-destructive">
+                              Retirer l'assignation
+                            </DropdownMenuCheckboxItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>)}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </Card>
 
       {/* Pagination */}
