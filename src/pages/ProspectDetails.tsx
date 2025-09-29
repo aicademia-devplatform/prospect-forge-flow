@@ -4,6 +4,7 @@ import { ArrowLeft, Building2, User, Phone, MapPin, Mail, ExternalLink, Edit, Fi
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TraiterProspectSidebar } from '@/components/TraiterProspectSidebar';
 import { ModifierProspectSidebar } from '@/components/ModifierProspectSidebar';
+import { ProspectActionSidebar } from '@/components/ProspectActionSidebar';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -93,6 +94,8 @@ const ProspectDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showTraiterSidebar, setShowTraiterSidebar] = useState(false);
   const [showModifierSidebar, setShowModifierSidebar] = useState(false);
+  const [showActionSidebar, setShowActionSidebar] = useState(false);
+  const [defaultActionTab, setDefaultActionTab] = useState<'modifier' | 'traiter'>('modifier');
   useEffect(() => {
     if (email) {
       fetchProspectDetails();
@@ -245,11 +248,11 @@ const ProspectDetails: React.FC = () => {
       <motion.div 
         className="flex-1 p-6 space-y-6"
         animate={{
-          marginRight: (showTraiterSidebar || showModifierSidebar) ? '384px' : '0px', // 384px = w-96
+          marginRight: showActionSidebar ? '480px' : '0px', // 480px pour le sidebar plus large
         }}
         transition={{
           duration: 0.35,
-          ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuart pour plus de fluidité
+          ease: [0.25, 0.46, 0.45, 0.94],
         }}
       >
       {/* Header */}
@@ -270,7 +273,10 @@ const ProspectDetails: React.FC = () => {
             variant="outline" 
             size="sm" 
             className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-            onClick={() => setShowModifierSidebar(true)}
+            onClick={() => {
+              setDefaultActionTab('modifier');
+              setShowActionSidebar(true);
+            }}
           >
             <Edit className="h-4 w-4 mr-2" />
             Modifier
@@ -278,7 +284,10 @@ const ProspectDetails: React.FC = () => {
           <Button 
             size="sm" 
             className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => setShowTraiterSidebar(true)}
+            onClick={() => {
+              setDefaultActionTab('traiter');
+              setShowActionSidebar(true);
+            }}
           >
             <FileText className="h-4 w-4 mr-2" />
             Traiter
@@ -601,26 +610,18 @@ const ProspectDetails: React.FC = () => {
       </Card>
       </motion.div>
       
-      {/* Sidebars */}
+      {/* Sidebar Actions Prospect */}
       <AnimatePresence>
-        {showTraiterSidebar && (
-          <TraiterProspectSidebar
-            prospectEmail={prospect.email}
-            onSuccess={() => {
-              fetchProspectDetails();
-              setShowTraiterSidebar(false);
-            }}
-            onClose={() => setShowTraiterSidebar(false)}
-          />
-        )}
-        {showModifierSidebar && (
-          <ModifierProspectSidebar
+        {showActionSidebar && (
+          <ProspectActionSidebar
             prospect={prospect}
+            prospectEmail={prospect.email}
+            defaultTab={defaultActionTab}
             onSuccess={() => {
               fetchProspectDetails();
-              setShowModifierSidebar(false);
+              setShowActionSidebar(false);
             }}
-            onClose={() => setShowModifierSidebar(false)}
+            onClose={() => setShowActionSidebar(false)}
           />
         )}
       </AnimatePresence>
