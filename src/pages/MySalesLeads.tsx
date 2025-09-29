@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, MoreHorizontal, X, ChevronDown, Columns, UserPlus, ExternalLink, GripVertical, ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, Eye, Trash2, X, ChevronDown, Columns, UserPlus, ExternalLink, GripVertical, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DataPagination from '@/components/DataPagination';
 import TableFilters, { FilterValues } from '@/components/TableFilters';
@@ -618,36 +619,33 @@ const MySalesLeads: React.FC = () => {
                                  {prospect.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM'}
                                </Badge>
                              ) : column.name === 'actions' ? (
-                               <DropdownMenu>
-                                 <DropdownMenuTrigger asChild>
-                                   <Button variant="ghost" size="sm">
-                                     <MoreHorizontal className="h-4 w-4" />
-                                   </Button>
-                                 </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuCheckboxItem>
-                                      Voir les détails
-                                    </DropdownMenuCheckboxItem>
-                                    {prospect.person_linkedin_url && (
-                                      <DropdownMenuCheckboxItem asChild>
-                                        <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                                          <ExternalLink className="h-4 w-4 mr-2" />
-                                          LinkedIn
-                                        </a>
-                                      </DropdownMenuCheckboxItem>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuCheckboxItem>
-                                      Traiter
-                                    </DropdownMenuCheckboxItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuCheckboxItem className="text-destructive">
-                                      Retirer l'assignation
-                                    </DropdownMenuCheckboxItem>
-                                  </DropdownMenuContent>
-                               </DropdownMenu>
+                                <div className="flex items-center gap-2">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                          <Eye className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Voir les détails</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                  
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Supprimer l'assignation</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
                              ) : column.name === 'person_linkedin_url' && prospect[column.name] ? (
                               <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                                 LinkedIn
