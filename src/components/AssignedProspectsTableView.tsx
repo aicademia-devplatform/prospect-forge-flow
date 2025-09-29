@@ -27,11 +27,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
 interface AssignedProspectsTableViewProps {
   onBack: () => void;
 }
-
 interface ColumnInfo {
   name: string;
   type: string;
@@ -67,12 +65,18 @@ const translateColumnName = (columnName: string): string => {
   };
   return translations[columnName] || columnName;
 };
-
-const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({ onBack }) => {
+const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
+  onBack
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermission, user } = useAuth();
-  const { toast } = useToast();
+  const {
+    hasPermission,
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
 
   // États similaires à TableView
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,9 +85,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
   const [sortBy, setSortBy] = useState('assigned_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set([
-    'email', 'first_name', 'last_name', 'company', 'title', 'apollo_status', 'assigned_at'
-  ]));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['email', 'first_name', 'last_name', 'company', 'title', 'apollo_status', 'assigned_at']));
   // Colonnes épinglées fixes - seulement email et checkbox
   const pinnedColumns = new Set(['email']);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
@@ -91,7 +93,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
+
   // États pour le dialog de colonnes
   const [columnDialogOpen, setColumnDialogOpen] = useState(false);
   const [tempVisibleColumns, setTempVisibleColumns] = useState<Set<string>>(new Set());
@@ -140,29 +142,21 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
       return () => tableContainer.removeEventListener('scroll', handleScroll);
     }
   }, []);
-
   const loadTableConfig = async () => {
     if (!user) return;
-
     try {
-      const { data, error } = await supabase
-        .from('sales_table_config')
-        .select('column_config, table_settings')
-        .eq('sales_user_id', user.id)
-        .eq('table_name', 'assigned_prospects')
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from('sales_table_config').select('column_config, table_settings').eq('sales_user_id', user.id).eq('table_name', 'assigned_prospects').single();
       if (error && error.code !== 'PGRST116') throw error;
-      
       if (data?.column_config) {
         const config = Array.isArray(data.column_config) ? data.column_config : [];
         setCustomColumns(config);
-        
+
         // Appliquer la configuration des colonnes visibles si elle existe
         if (config.length > 0) {
-          const visibleCols = config
-            .filter((col: any) => col.visible !== false)
-            .map((col: any) => col.name);
+          const visibleCols = config.filter((col: any) => col.visible !== false).map((col: any) => col.name);
           setVisibleColumns(new Set(visibleCols));
         }
       }
@@ -174,17 +168,14 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
           setPageSize(settings.pageSize);
         }
       }
-
       setColumnConfigLoaded(true);
     } catch (error) {
       console.error('Error loading table config:', error);
       setColumnConfigLoaded(true);
     }
   };
-
   const saveTableConfig = async () => {
     if (!user) return;
-
     try {
       // Créer la configuration des colonnes basée sur les colonnes disponibles
       const columnConfig = availableColumns.map(column => ({
@@ -192,26 +183,22 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
         visible: visibleColumns.has(column.name),
         order: Array.from(visibleColumns).indexOf(column.name)
       }));
-
       const tableSettings = {
         pageSize,
         sortBy,
         sortOrder
       };
-
-      const { error } = await supabase
-        .from('sales_table_config')
-        .upsert({
-          sales_user_id: user.id,
-          table_name: 'assigned_prospects',
-          column_config: columnConfig,
-          table_settings: tableSettings
-        }, {
-          onConflict: 'sales_user_id,table_name'
-        });
-
+      const {
+        error
+      } = await supabase.from('sales_table_config').upsert({
+        sales_user_id: user.id,
+        table_name: 'assigned_prospects',
+        column_config: columnConfig,
+        table_settings: tableSettings
+      }, {
+        onConflict: 'sales_user_id,table_name'
+      });
       if (error) throw error;
-
       toast({
         title: "Succès",
         description: "Configuration des colonnes sauvegardée"
@@ -246,34 +233,90 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
 
   // Définir les colonnes disponibles pour les prospects assignés
   const getAllColumns = (): ColumnInfo[] => {
-    return [
-      { name: 'id', type: 'string', nullable: false },
-      { name: 'email', type: 'string', nullable: false },
-      { name: 'first_name', type: 'string', nullable: true },
-      { name: 'last_name', type: 'string', nullable: true },
-      { name: 'company', type: 'string', nullable: true },
-      { name: 'title', type: 'string', nullable: true },
-      { name: 'apollo_status', type: 'string', nullable: true },
-      { name: 'zoho_status', type: 'string', nullable: true },
-      { name: 'industry', type: 'string', nullable: true },
-      { name: 'seniority', type: 'string', nullable: true },
-      { name: 'departments', type: 'string', nullable: true },
-      { name: 'stage', type: 'string', nullable: true },
-      { name: 'nb_employees', type: 'number', nullable: true },
-      { name: 'mobile_phone', type: 'string', nullable: true },
-      { name: 'work_direct_phone', type: 'string', nullable: true },
-      { name: 'person_linkedin_url', type: 'string', nullable: true },
-      { name: 'website', type: 'string', nullable: true },
-      { name: 'last_contacted', type: 'date', nullable: true },
-      { name: 'assigned_at', type: 'date', nullable: false },
-      { name: 'source_table', type: 'string', nullable: false }
-    ];
+    return [{
+      name: 'id',
+      type: 'string',
+      nullable: false
+    }, {
+      name: 'email',
+      type: 'string',
+      nullable: false
+    }, {
+      name: 'first_name',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'last_name',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'company',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'title',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'apollo_status',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'zoho_status',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'industry',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'seniority',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'departments',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'stage',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'nb_employees',
+      type: 'number',
+      nullable: true
+    }, {
+      name: 'mobile_phone',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'work_direct_phone',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'person_linkedin_url',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'website',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'last_contacted',
+      type: 'date',
+      nullable: true
+    }, {
+      name: 'assigned_at',
+      type: 'date',
+      nullable: false
+    }, {
+      name: 'source_table',
+      type: 'string',
+      nullable: false
+    }];
   };
-
   const allColumns = getAllColumns();
-  const availableColumns = allColumns.filter(col => 
-    !['id'].includes(col.name)
-  );
+  const availableColumns = allColumns.filter(col => !['id'].includes(col.name));
 
   // Handlers
 
@@ -288,7 +331,6 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
       return newSet;
     });
   };
-
   const handleSelectAll = () => {
     if (selectedRows.size === data.length) {
       setSelectedRows(new Set());
@@ -311,7 +353,6 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     }
     setTempVisibleColumns(newVisible);
   };
-
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     const items = Array.from(tempColumnOrder.filter(col => tempVisibleColumns.has(col)));
@@ -319,13 +360,12 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     items.splice(result.destination.index, 0, reorderedItem);
 
     // Update the order with all columns (visible and hidden)
-    const newOrder = [
-      ...items, // reordered visible columns
-      ...tempColumnOrder.filter(col => !tempVisibleColumns.has(col)) // hidden columns at the end
+    const newOrder = [...items,
+    // reordered visible columns
+    ...tempColumnOrder.filter(col => !tempVisibleColumns.has(col)) // hidden columns at the end
     ];
     setTempColumnOrder(newOrder);
   };
-
   const getOrderedVisibleColumns = () => {
     const visibleColumnNames = Array.from(visibleColumns);
     const orderedColumns: string[] = [];
@@ -345,45 +385,40 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     });
     return orderedColumns;
   };
-
   const openColumnDialog = () => {
     setTempVisibleColumns(new Set(visibleColumns));
     setTempColumnOrder(getOrderedVisibleColumns());
     setColumnDialogOpen(true);
   };
-
   const applyColumnChanges = () => {
     setVisibleColumns(new Set(tempVisibleColumns));
     // Update the actual column order for future use
     const newOrder = tempColumnOrder.filter(col => tempVisibleColumns.has(col));
     setTempColumnOrder(newOrder);
     setColumnDialogOpen(false);
-    
+
     // Sauvegarder automatiquement la configuration
     setTimeout(() => {
       saveTableConfig();
     }, 100);
   };
-
   const cancelColumnChanges = () => {
     setTempVisibleColumns(new Set(visibleColumns));
     setTempColumnOrder(getOrderedVisibleColumns());
     setColumnDialogOpen(false);
   };
-
   const formatValue = (value: any, type: string, columnName?: string) => {
     if (!value) return '—';
-    
     if (type === 'date') {
       // Configuration locale française pour moment.js
       moment.locale('fr');
-      
+
       // Logique spéciale pour la colonne assigned_at
       if (columnName === 'assigned_at') {
         const now = moment();
         const assignedDate = moment(value);
         const daysDiff = now.diff(assignedDate, 'days');
-        
+
         // Si plus d'une semaine (7 jours), afficher la date formatée
         if (daysDiff > 7) {
           return assignedDate.format('D MMM YYYY');
@@ -392,7 +427,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
           return assignedDate.fromNow();
         }
       }
-      
+
       // Pour les autres colonnes de date, garder le format existant
       return new Date(value).toLocaleDateString('fr-FR', {
         day: '2-digit',
@@ -402,26 +437,22 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
         minute: '2-digit'
       });
     }
-    
     if (type === 'number') {
       return value.toLocaleString('fr-FR');
     }
-    
     return value.toString();
   };
-
   const renderSortIcon = (column: string) => {
     if (sortBy !== column) return <ArrowUpDown className="h-4 w-4" />;
     return sortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
   };
-
   const getStatusBadgeClass = (status: string) => {
     const statusColors: Record<string, string> = {
       'new': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
       'contacted': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
       'qualified': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
       'closed': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
-      'active': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+      'active': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
     };
     return statusColors[status?.toLowerCase()] || statusColors.new;
   };
@@ -446,7 +477,9 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
   // Fonction pour effacer le filtre d'une colonne
   const clearColumnFilter = (columnName: string) => {
     setColumnFilters(prev => {
-      const newFilters = { ...prev };
+      const newFilters = {
+        ...prev
+      };
       delete newFilters[columnName];
       return newFilters;
     });
@@ -468,18 +501,11 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     }
     setCurrentPage(1);
   };
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBack}
-            className="h-8 w-8 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={onBack} className="h-8 w-8 p-0">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -491,11 +517,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={saveTableConfig}
-          >
+          <Button variant="outline" size="sm" onClick={saveTableConfig}>
             <Download className="h-4 w-4 mr-2" />
             Sauvegarder Config
           </Button>
@@ -514,24 +536,12 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
               {/* Search */}
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher des prospects..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+                <Input placeholder="Rechercher des prospects..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
 
               {/* Filters */}
-              <TableFilters
-                tableName="apollo_contacts" // On utilise apollo_contacts comme base
-                filters={advancedFilters}
-                onFiltersChange={setAdvancedFilters}
-                onReset={() => setAdvancedFilters({})}
-                isOpen={filtersOpen}
-                onToggle={() => setFiltersOpen(!filtersOpen)}
-                showOnlyButton={true}
-              />
+              <TableFilters tableName="apollo_contacts" // On utilise apollo_contacts comme base
+            filters={advancedFilters} onFiltersChange={setAdvancedFilters} onReset={() => setAdvancedFilters({})} isOpen={filtersOpen} onToggle={() => setFiltersOpen(!filtersOpen)} showOnlyButton={true} />
 
               {/* Column visibility */}
               <Button variant="outline" size="sm" onClick={openColumnDialog}>
@@ -542,34 +552,19 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
             </div>
 
             {/* Selection info */}
-            {selectedRows.size > 0 && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {selectedRows.size > 0 && <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>{selectedRows.size} sélectionné{selectedRows.size > 1 ? 's' : ''}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedRows(new Set())}
-                >
+                <Button variant="ghost" size="sm" onClick={() => setSelectedRows(new Set())}>
                   <X className="h-4 w-4" />
                 </Button>
-              </div>
-            )}
+              </div>}
           </div>
         </CardContent>
       </Card>
 
       {/* Advanced Filters */}
       <AnimatePresence>
-        {filtersOpen && (
-          <TableFilters
-            tableName="apollo_contacts"
-            filters={advancedFilters}
-            onFiltersChange={setAdvancedFilters}
-            onReset={() => setAdvancedFilters({})}
-            isOpen={filtersOpen}
-            onToggle={() => setFiltersOpen(!filtersOpen)}
-          />
-        )}
+        {filtersOpen && <TableFilters tableName="apollo_contacts" filters={advancedFilters} onFiltersChange={setAdvancedFilters} onReset={() => setAdvancedFilters({})} isOpen={filtersOpen} onToggle={() => setFiltersOpen(!filtersOpen)} />}
       </AnimatePresence>
 
       {/* Table */}
@@ -578,143 +573,63 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-40">
-                  <Checkbox
-                    checked={data.length > 0 && selectedRows.size === data.length}
-                    onCheckedChange={handleSelectAll}
-                    aria-label="Sélectionner tous"
-                  />
+                <TableHead className="w-fit px-4 py-4 text-left sticky top-0 left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-40">
+                  <Checkbox checked={data.length > 0 && selectedRows.size === data.length} onCheckedChange={handleSelectAll} aria-label="Sélectionner tous" />
                 </TableHead>
                 {availableColumns.map(column => {
-                  if (!visibleColumns.has(column.name)) return null;
-                  
-                  const isPinned = pinnedColumns.has(column.name);
-                  // Style harmonisé pour les colonnes épinglées et non épinglées
-                  const pinnedStyle = isPinned ? 'bg-white/95 backdrop-blur-sm border-r border-border/50 shadow-sm' : '';
-                  
-                  return (
-                    <TableHead 
-                      key={column.name}
-                      className={`px-4 py-4 text-left min-w-[120px] sticky top-0 ${
-                        isPinned 
-                          ? `left-0 z-30 ${pinnedStyle} font-semibold text-foreground` 
-                          : 'z-20 bg-background/95 backdrop-blur-sm font-medium text-muted-foreground'
-                      }`}
-                      style={isPinned ? { left: '48px' } : {}}
-                    >
-                      <TableColumnHeader
-                        columnName={column.name}
-                        displayName={translateColumnName(column.name)}
-                        sortBy={sortBy}
-                        sortOrder={sortOrder}
-                        isPinned={isPinned}
-                        canPin={false} // Désactiver l'épinglage pour toutes les colonnes
-                        canHide={column.name !== 'id' && column.name !== 'email'}
-                        onSort={handleSort}
-                        onPin={() => {}} // Fonction vide car épinglage désactivé
-                        onHide={hideColumn}
-                        onFilter={handleColumnFilter}
-                        onClearFilter={clearColumnFilter}
-                        filterValue={columnFilters[column.name] || ''}
-                      />
-                    </TableHead>
-                  );
-                })}
+                if (!visibleColumns.has(column.name)) return null;
+                const isPinned = pinnedColumns.has(column.name);
+                // Style harmonisé pour les colonnes épinglées et non épinglées
+                const pinnedStyle = isPinned ? 'bg-white/95 backdrop-blur-sm border-r border-border/50 shadow-sm' : '';
+                return <TableHead key={column.name} className={`px-4 py-4 text-left min-w-[120px] sticky top-0 ${isPinned ? `left-0 z-30 ${pinnedStyle} font-semibold text-foreground` : 'z-20 bg-background/95 backdrop-blur-sm font-medium text-muted-foreground'}`} style={isPinned ? {
+                  left: '48px'
+                } : {}}>
+                      <TableColumnHeader columnName={column.name} displayName={translateColumnName(column.name)} sortBy={sortBy} sortOrder={sortOrder} isPinned={isPinned} canPin={false} // Désactiver l'épinglage pour toutes les colonnes
+                  canHide={column.name !== 'id' && column.name !== 'email'} onSort={handleSort} onPin={() => {}} // Fonction vide car épinglage désactivé
+                  onHide={hideColumn} onFilter={handleColumnFilter} onClearFilter={clearColumnFilter} filterValue={columnFilters[column.name] || ''} />
+                    </TableHead>;
+              })}
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell 
-                    colSpan={Array.from(visibleColumns).length + 2} 
-                    className="text-center py-8"
-                  >
+              {loading ? <TableRow>
+                  <TableCell colSpan={Array.from(visibleColumns).length + 2} className="text-center py-8">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Chargement des prospects...</span>
                     </div>
                   </TableCell>
-                </TableRow>
-              ) : data.length === 0 ? (
-                <TableRow>
-                  <TableCell 
-                    colSpan={Array.from(visibleColumns).length + 2} 
-                    className="text-center py-8 text-muted-foreground"
-                  >
+                </TableRow> : data.length === 0 ? <TableRow>
+                  <TableCell colSpan={Array.from(visibleColumns).length + 2} className="text-center py-8 text-muted-foreground">
                     Aucun prospect assigné trouvé
                   </TableCell>
-                </TableRow>
-              ) : (
-                data.map((prospect) => (
-                  <TableRow
-                    key={prospect.id}
-                    className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}
-                  >
+                </TableRow> : data.map(prospect => <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
                     <TableCell className="w-12 px-4 py-4 sticky left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-30">
-                      <Checkbox
-                        checked={selectedRows.has(prospect.id)}
-                        onCheckedChange={() => handleRowSelect(prospect.id)}
-                        aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`}
-                      />
+                      <Checkbox checked={selectedRows.has(prospect.id)} onCheckedChange={() => handleRowSelect(prospect.id)} aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`} />
                     </TableCell>
 
                     {availableColumns.map(column => {
-                      if (!visibleColumns.has(column.name)) return null;
-                      
-                      const isPinned = pinnedColumns.has(column.name);
-                      // Style cohérent pour les cellules épinglées
-                      const pinnedStyle = isPinned ? 'bg-white/95 backdrop-blur-sm border-r border-border/50 shadow-sm' : '';
-                      
-                      return (
-                        <TableCell 
-                          key={column.name}
-                          className={`px-4 py-4 min-w-[120px] ${
-                            isPinned 
-                              ? `sticky left-0 z-20 ${pinnedStyle} font-medium` 
-                              : ''
-                          }`}
-                          style={isPinned ? { left: '48px' } : {}}
-                        >
-                          {column.name === 'apollo_status' || column.name === 'zoho_status' ? (
-                            <Badge className={getStatusBadgeClass(prospect[column.name])}>
+                if (!visibleColumns.has(column.name)) return null;
+                const isPinned = pinnedColumns.has(column.name);
+                // Style cohérent pour les cellules épinglées
+                const pinnedStyle = isPinned ? 'bg-white/95 backdrop-blur-sm border-r border-border/50 shadow-sm' : '';
+                return <TableCell key={column.name} className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky left-0 z-20 ${pinnedStyle} font-medium` : ''}`} style={isPinned ? {
+                  left: '48px'
+                } : {}}>
+                          {column.name === 'apollo_status' || column.name === 'zoho_status' ? <Badge className={getStatusBadgeClass(prospect[column.name])}>
                               {prospect[column.name] || 'Non défini'}
-                            </Badge>
-                          ) : column.name === 'source_table' ? (
-                            <Badge variant="outline">
+                            </Badge> : column.name === 'source_table' ? <Badge variant="outline">
                               {prospect[column.name] === 'apollo_contacts' ? 'Apollo' : 'CRM'}
-                            </Badge>
-                          ) : column.name === 'email' ? (
-                            <a 
-                              href={`mailto:${prospect[column.name]}`}
-                              className="text-blue-600 hover:underline"
-                            >
+                            </Badge> : column.name === 'email' ? <a href={`mailto:${prospect[column.name]}`} className="text-blue-600 hover:underline">
                               {prospect[column.name]}
-                            </a>
-                          ) : column.name === 'person_linkedin_url' && prospect[column.name] ? (
-                            <a 
-                              href={prospect[column.name]}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                            >
+                            </a> : column.name === 'person_linkedin_url' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                               LinkedIn
-                            </a>
-                          ) : column.name === 'website' && prospect[column.name] ? (
-                            <a 
-                              href={prospect[column.name]}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                            >
+                            </a> : column.name === 'website' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                               Site web
-                            </a>
-                          ) : (
-                            formatValue(prospect[column.name], column.type, column.name)
-                          )}
-                        </TableCell>
-                      );
-                    })}
+                            </a> : formatValue(prospect[column.name], column.type, column.name)}
+                        </TableCell>;
+              })}
 
                     <TableCell>
                       <DropdownMenu>
@@ -729,19 +644,12 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                           <DropdownMenuCheckboxItem>
                             Voir les détails
                           </DropdownMenuCheckboxItem>
-                          {prospect.person_linkedin_url && (
-                            <DropdownMenuCheckboxItem asChild>
-                              <a 
-                                href={prospect.person_linkedin_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center"
-                              >
+                          {prospect.person_linkedin_url && <DropdownMenuCheckboxItem asChild>
+                              <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
                                 <ExternalLink className="h-4 w-4 mr-2" />
                                 LinkedIn
                               </a>
-                            </DropdownMenuCheckboxItem>
-                          )}
+                            </DropdownMenuCheckboxItem>}
                           <DropdownMenuSeparator />
                           <DropdownMenuCheckboxItem className="text-destructive">
                             Retirer l'assignation
@@ -749,36 +657,24 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                  </TableRow>
-                ))
-              )}
+                  </TableRow>)}
             </TableBody>
           </Table>
         </div>
       </Card>
 
       {/* Pagination */}
-      {!loading && totalCount > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      {!loading && totalCount > 0 && <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-sm text-muted-foreground">
-            Affichage de {((currentPage - 1) * pageSize) + 1} à {Math.min(currentPage * pageSize, totalCount)} sur {totalCount} prospects assignés
+            Affichage de {(currentPage - 1) * pageSize + 1} à {Math.min(currentPage * pageSize, totalCount)} sur {totalCount} prospects assignés
             {selectedRows.size > 0 && ` • ${selectedRows.size} sélectionné${selectedRows.size > 1 ? 's' : ''}`}
           </div>
           
-          <DataPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={totalCount}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(size) => {
-              setPageSize(size);
-              setCurrentPage(1);
-            }}
-            loading={loading}
-          />
-        </div>
-      )}
+          <DataPagination currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} totalItems={totalCount} onPageChange={setCurrentPage} onPageSizeChange={size => {
+        setPageSize(size);
+        setCurrentPage(1);
+      }} loading={loading} />
+        </div>}
 
       {/* Dialog de gestion des colonnes */}
       <Dialog open={columnDialogOpen} onOpenChange={setColumnDialogOpen}>
@@ -799,63 +695,30 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
               <div className="border rounded-lg p-3 bg-green-50/50 flex-1 overflow-y-auto">
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="visible-columns">
-                    {(provided, snapshot) => (
-                      <div 
-                        {...provided.droppableProps} 
-                        ref={provided.innerRef} 
-                        className={`space-y-2 min-h-[100px] transition-colors duration-200 ${
-                          snapshot.isDraggingOver ? 'bg-green-100/70 rounded-lg' : ''
-                        }`}
-                      >
+                    {(provided, snapshot) => <div {...provided.droppableProps} ref={provided.innerRef} className={`space-y-2 min-h-[100px] transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-green-100/70 rounded-lg' : ''}`}>
                         {tempColumnOrder.filter(colName => tempVisibleColumns.has(colName)).map((colName, index) => {
-                          const column = availableColumns.find(col => col.name === colName);
-                          if (!column) return null;
-                          return (
-                            <Draggable key={column.name} draggableId={column.name} index={index}>
-                              {(provided, snapshot) => (
-                                <div 
-                                  ref={provided.innerRef} 
-                                  {...provided.draggableProps} 
-                                  className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${
-                                    snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'
-                                  }`}
-                                  style={{
-                                    ...provided.draggableProps.style,
-                                    transform: snapshot.isDragging 
-                                      ? `${provided.draggableProps.style?.transform} rotate(1deg)` 
-                                      : provided.draggableProps.style?.transform
-                                  }}
-                                >
-                                  <div 
-                                    {...provided.dragHandleProps} 
-                                    className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded transition-colors duration-150" 
-                                    title="Glisser pour réorganiser"
-                                  >
+                      const column = availableColumns.find(col => col.name === colName);
+                      if (!column) return null;
+                      return <Draggable key={column.name} draggableId={column.name} index={index}>
+                              {(provided, snapshot) => <div ref={provided.innerRef} {...provided.draggableProps} className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'}`} style={{
+                          ...provided.draggableProps.style,
+                          transform: snapshot.isDragging ? `${provided.draggableProps.style?.transform} rotate(1deg)` : provided.draggableProps.style?.transform
+                        }}>
+                                  <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded transition-colors duration-150" title="Glisser pour réorganiser">
                                     <GripVertical className="h-4 w-4 text-gray-400" />
                                   </div>
                                   <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => toggleColumnVisibilityInDialog(column.name)} 
-                                    className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200" 
-                                    title="Masquer"
-                                  >
+                                  <Button variant="ghost" size="sm" onClick={() => toggleColumnVisibilityInDialog(column.name)} className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200" title="Masquer">
                                     <ArrowRight className="h-4 w-4 text-red-600" />
                                   </Button>
-                                </div>
-                              )}
-                            </Draggable>
-                          );
-                        })}
+                                </div>}
+                            </Draggable>;
+                    })}
                         {provided.placeholder}
-                        {tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length === 0 && (
-                          <div className="text-center text-muted-foreground text-sm py-8">
+                        {tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length === 0 && <div className="text-center text-muted-foreground text-sm py-8">
                             Aucune colonne affichée
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          </div>}
+                      </div>}
                   </Droppable>
                 </DragDropContext>
               </div>
@@ -868,28 +731,15 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
               </h3>
               <div className="border rounded-lg p-3 bg-gray-50/50 flex-1 overflow-y-auto">
                 <div className="space-y-2">
-                  {availableColumns.filter(col => !tempVisibleColumns.has(col.name)).map(column => (
-                    <div 
-                      key={column.name} 
-                      className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors duration-200 hover:shadow-sm"
-                    >
+                  {availableColumns.filter(col => !tempVisibleColumns.has(col.name)).map(column => <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors duration-200 hover:shadow-sm">
                       <span className="text-sm flex-1 mr-2">{translateColumnName(column.name)}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => toggleColumnVisibilityInDialog(column.name)} 
-                        className="h-8 w-8 p-0 hover:bg-green-100 transition-colors duration-200" 
-                        title="Afficher"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => toggleColumnVisibilityInDialog(column.name)} className="h-8 w-8 p-0 hover:bg-green-100 transition-colors duration-200" title="Afficher">
                         <ArrowLeftRight className="h-4 w-4 text-green-600" />
                       </Button>
-                    </div>
-                  ))}
-                  {availableColumns.filter(col => !tempVisibleColumns.has(col.name)).length === 0 && (
-                    <div className="text-center text-muted-foreground text-sm py-8">
+                    </div>)}
+                  {availableColumns.filter(col => !tempVisibleColumns.has(col.name)).length === 0 && <div className="text-center text-muted-foreground text-sm py-8">
                       Toutes les colonnes sont affichées
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </div>
             </div>
@@ -905,8 +755,6 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default AssignedProspectsTableView;
