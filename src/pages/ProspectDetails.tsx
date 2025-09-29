@@ -311,7 +311,7 @@ const ProspectDetails: React.FC = () => {
       {prospect.sources?.find(s => s.source_table === 'crm_contacts') && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold">CRM Contacts - Contact Principal</h3>
+            <h3 className="inline-flex items-center px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm font-medium">CRM Contacts - Contact Principal</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
