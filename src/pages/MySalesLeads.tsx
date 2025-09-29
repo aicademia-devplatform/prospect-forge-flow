@@ -573,7 +573,7 @@ const MySalesLeads: React.FC = () => {
                     );
                   })}
                   
-                  <TableHead className="w-12">Actions</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
