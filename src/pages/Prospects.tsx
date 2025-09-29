@@ -139,6 +139,7 @@ const Prospects = () => {
           </TabsList>
           
           <TabsContent value="assigned" className="space-y-4 mt-6">
+            {/* Prospects assignés via MySalesLeads */}
             <MySalesLeads />
           </TabsContent>
 
