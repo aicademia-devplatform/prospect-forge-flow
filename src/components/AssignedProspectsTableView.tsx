@@ -581,47 +581,128 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12 px-3 py-3 text-left sticky top-0 left-0 bg-background border-r z-40">
-                    <Checkbox checked={data.length > 0 && selectedRows.size === data.length} onCheckedChange={handleSelectAll} aria-label="Sélectionner tous" />
+                  {/* Colonne checkbox - épinglée à gauche */}
+                  <TableHead 
+                    className="w-[50px] px-3 py-3 text-left sticky top-0 left-0 bg-background border-r z-50"
+                  >
+                    <Checkbox 
+                      checked={data.length > 0 && selectedRows.size === data.length} 
+                      onCheckedChange={handleSelectAll} 
+                      aria-label="Sélectionner tous" 
+                    />
                   </TableHead>
+                  
+                  {/* Colonne email - épinglée après checkbox */}
+                  {visibleColumns.has('email') && (
+                    <TableHead 
+                      className="w-[200px] px-4 py-3 text-left sticky top-0 bg-background border-r z-40"
+                      style={{ left: '50px' }}
+                    >
+                      <TableColumnHeader 
+                        columnName="email" 
+                        displayName={translateColumnName('email')} 
+                        sortBy={sortBy} 
+                        sortOrder={sortOrder} 
+                        isPinned={true} 
+                        canPin={false} 
+                        canHide={false} 
+                        onSort={handleSort} 
+                        onPin={() => {}} 
+                        onHide={hideColumn} 
+                        onFilter={handleColumnFilter} 
+                        onClearFilter={clearColumnFilter} 
+                        filterValue={columnFilters['email'] || ''} 
+                      />
+                    </TableHead>
+                  )}
+                  
+                  {/* Autres colonnes - non épinglées */}
                   {availableColumns.map(column => {
-                  if (!visibleColumns.has(column.name)) return null;
-                  const isPinned = pinnedColumns.has(column.name);
-                  return <TableHead key={column.name} className={`px-4 py-3 text-left min-w-[120px] sticky top-0 ${isPinned ? 'left-12 z-30 bg-background border-r font-medium text-foreground' : 'z-20 bg-background font-medium text-muted-foreground'}`} style={isPinned ? { left: '48px' } : {}}>
-                        <TableColumnHeader columnName={column.name} displayName={translateColumnName(column.name)} sortBy={sortBy} sortOrder={sortOrder} isPinned={isPinned} canPin={false} canHide={column.name !== 'id' && column.name !== 'email'} onSort={handleSort} onPin={() => {}} onHide={hideColumn} onFilter={handleColumnFilter} onClearFilter={clearColumnFilter} filterValue={columnFilters[column.name] || ''} />
-                      </TableHead>;
-                })}
+                    if (!visibleColumns.has(column.name) || column.name === 'email') return null;
+                    return (
+                      <TableHead key={column.name} className="px-4 py-3 text-left min-w-[120px] sticky top-0 bg-background z-20">
+                        <TableColumnHeader 
+                          columnName={column.name} 
+                          displayName={translateColumnName(column.name)} 
+                          sortBy={sortBy} 
+                          sortOrder={sortOrder} 
+                          isPinned={false} 
+                          canPin={false} 
+                          canHide={column.name !== 'id'} 
+                          onSort={handleSort} 
+                          onPin={() => {}} 
+                          onHide={hideColumn} 
+                          onFilter={handleColumnFilter} 
+                          onClearFilter={clearColumnFilter} 
+                          filterValue={columnFilters[column.name] || ''} 
+                        />
+                      </TableHead>
+                    );
+                  })}
+                  
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.length === 0 ? <TableRow>
+                {data.length === 0 ? (
+                  <TableRow>
                     <TableCell colSpan={Array.from(visibleColumns).length + 2} className="text-center py-8 text-muted-foreground">
                       Aucun prospect assigné trouvé
                     </TableCell>
-                  </TableRow> : data.map(prospect => <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
-                      <TableCell className="w-12 px-3 py-3 sticky left-0 bg-background border-r z-30">
-                        <Checkbox checked={selectedRows.has(prospect.id)} onCheckedChange={() => handleRowSelect(prospect.id)} aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`} />
+                  </TableRow>
+                ) : (
+                  data.map(prospect => (
+                    <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
+                      {/* Colonne checkbox - épinglée */}
+                      <TableCell 
+                        className="w-[50px] px-3 py-3 sticky left-0 bg-background border-r z-30"
+                      >
+                        <Checkbox 
+                          checked={selectedRows.has(prospect.id)} 
+                          onCheckedChange={() => handleRowSelect(prospect.id)} 
+                          aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`} 
+                        />
                       </TableCell>
-
+                      
+                      {/* Colonne email - épinglée */}
+                      {visibleColumns.has('email') && (
+                        <TableCell 
+                          className="w-[200px] px-4 py-3 sticky bg-background border-r z-20"
+                          style={{ left: '50px' }}
+                        >
+                          <a href={`mailto:${prospect.email}`} className="text-primary hover:underline">
+                            {prospect.email}
+                          </a>
+                        </TableCell>
+                      )}
+                      
+                      {/* Autres colonnes - non épinglées */}
                       {availableColumns.map(column => {
-                  if (!visibleColumns.has(column.name)) return null;
-                  const isPinned = pinnedColumns.has(column.name);
-                  return <TableCell key={column.name} className={`px-4 py-3 min-w-[120px] ${isPinned ? 'sticky z-20 bg-background border-r font-medium' : ''}`} style={isPinned ? { left: '48px' } : {}}>
-                            {column.name === 'apollo_status' || column.name === 'zoho_status' ? <Badge className={getStatusBadgeClass(prospect[column.name])}>
+                        if (!visibleColumns.has(column.name) || column.name === 'email') return null;
+                        return (
+                          <TableCell key={column.name} className="px-4 py-3 min-w-[120px]">
+                            {column.name === 'apollo_status' || column.name === 'zoho_status' ? (
+                              <Badge className={getStatusBadgeClass(prospect[column.name])}>
                                 {prospect[column.name] || 'Non défini'}
-                              </Badge> : column.name === 'source_table' ? <Badge variant="outline">
+                              </Badge>
+                            ) : column.name === 'source_table' ? (
+                              <Badge variant="outline">
                                 {prospect[column.name] === 'apollo_contacts' ? 'Apollo' : 'CRM'}
-                              </Badge> : column.name === 'email' ? <a href={`mailto:${prospect[column.name]}`} className="text-primary hover:underline">
-                                {prospect[column.name]}
-                              </a> : column.name === 'person_linkedin_url' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                              </Badge>
+                            ) : column.name === 'person_linkedin_url' && prospect[column.name] ? (
+                              <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                                 LinkedIn
-                              </a> : column.name === 'website' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                              </a>
+                            ) : column.name === 'website' && prospect[column.name] ? (
+                              <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                                 Site web
-                              </a> : formatValue(prospect[column.name], column.type, column.name)}
-                          </TableCell>;
-                })}
-
+                              </a>
+                            ) : (
+                              formatValue(prospect[column.name], column.type, column.name)
+                            )}
+                          </TableCell>
+                        );
+                      })}
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -635,12 +716,14 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                             <DropdownMenuCheckboxItem>
                               Voir les détails
                             </DropdownMenuCheckboxItem>
-                            {prospect.person_linkedin_url && <DropdownMenuCheckboxItem asChild>
+                            {prospect.person_linkedin_url && (
+                              <DropdownMenuCheckboxItem asChild>
                                 <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
                                   <ExternalLink className="h-4 w-4 mr-2" />
                                   LinkedIn
                                 </a>
-                              </DropdownMenuCheckboxItem>}
+                              </DropdownMenuCheckboxItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuCheckboxItem className="text-destructive">
                               Retirer l'assignation
@@ -648,7 +731,9 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
-                    </TableRow>)}
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
