@@ -318,7 +318,7 @@ const ProspectDetails: React.FC = () => {
             {/* Informations personnelles */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
                   <User className="h-4 w-4" />
                   Informations personnelles
                 </CardTitle>
@@ -348,7 +348,7 @@ const ProspectDetails: React.FC = () => {
             {/* Entreprise */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
                   <Building2 className="h-4 w-4" />
                   Entreprise
                 </CardTitle>
@@ -368,14 +368,14 @@ const ProspectDetails: React.FC = () => {
       {prospect.sources?.find(s => s.source_table === 'apollo_contacts') && (
         <div className="space-y-4">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold">Apollo Contacts - Données Additionnelles</h3>
+            <h3 className="inline-flex items-center px-4 py-2 rounded-full bg-muted text-muted-foreground text-sm font-medium">Apollo Contacts - Données Additionnelles</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Informations personnelles Apollo */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
                   <User className="h-4 w-4" />
                   Informations personnelles
                 </CardTitle>
@@ -425,7 +425,7 @@ const ProspectDetails: React.FC = () => {
             {/* Entreprise Apollo */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
                   <Building2 className="h-4 w-4" />
                   Entreprise
                 </CardTitle>
@@ -467,7 +467,7 @@ const ProspectDetails: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
               <Phone className="h-4 w-4" />
               Contact
             </CardTitle>
@@ -489,7 +489,7 @@ const ProspectDetails: React.FC = () => {
         {/* Autres informations */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
               <Mail className="h-4 w-4" />
               Autres informations
             </CardTitle>
@@ -511,7 +511,7 @@ const ProspectDetails: React.FC = () => {
       {(prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_contact_id || prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_account_id) && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
               <Building2 className="h-4 w-4" />
               Plateforme & Intégrations
             </CardTitle>
@@ -540,10 +540,10 @@ const ProspectDetails: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Mail className="h-4 w-4" />
-                Activité & Engagement
-              </CardTitle>
+               <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
+                 <Mail className="h-4 w-4" />
+                 Activité & Engagement
+               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_sent !== undefined && (
@@ -584,10 +584,10 @@ const ProspectDetails: React.FC = () => {
           {/* Statut & Suivi */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <User className="h-4 w-4" />
-                Statut & Suivi
-              </CardTitle>
+               <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
+                 <User className="h-4 w-4" />
+                 Statut & Suivi
+               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {prospect.apollo_email_status && (
@@ -613,7 +613,7 @@ const ProspectDetails: React.FC = () => {
       {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.technologies && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
               <Building2 className="h-4 w-4" />
               Informations techniques
             </CardTitle>
@@ -630,10 +630,10 @@ const ProspectDetails: React.FC = () => {
       {/* Dates importantes */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <User className="h-4 w-4" />
-            Dates importantes
-          </CardTitle>
+           <CardTitle className="flex items-center gap-2 text-sm bg-muted text-muted-foreground px-3 py-1.5 rounded-full w-fit">
+             <User className="h-4 w-4" />
+             Dates importantes
+           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.created_at && (
