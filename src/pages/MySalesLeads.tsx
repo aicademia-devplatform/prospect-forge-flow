@@ -624,25 +624,29 @@ const MySalesLeads: React.FC = () => {
                                      <MoreHorizontal className="h-4 w-4" />
                                    </Button>
                                  </DropdownMenuTrigger>
-                                 <DropdownMenuContent align="end">
-                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                   <DropdownMenuSeparator />
-                                   <DropdownMenuCheckboxItem>
-                                     Voir les détails
-                                   </DropdownMenuCheckboxItem>
-                                   {prospect.person_linkedin_url && (
-                                     <DropdownMenuCheckboxItem asChild>
-                                       <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                                         <ExternalLink className="h-4 w-4 mr-2" />
-                                         LinkedIn
-                                       </a>
-                                     </DropdownMenuCheckboxItem>
-                                   )}
-                                   <DropdownMenuSeparator />
-                                   <DropdownMenuCheckboxItem className="text-destructive">
-                                     Retirer l'assignation
-                                   </DropdownMenuCheckboxItem>
-                                 </DropdownMenuContent>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuCheckboxItem>
+                                      Voir les détails
+                                    </DropdownMenuCheckboxItem>
+                                    {prospect.person_linkedin_url && (
+                                      <DropdownMenuCheckboxItem asChild>
+                                        <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                                          <ExternalLink className="h-4 w-4 mr-2" />
+                                          LinkedIn
+                                        </a>
+                                      </DropdownMenuCheckboxItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuCheckboxItem>
+                                      Traiter
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuCheckboxItem className="text-destructive">
+                                      Retirer l'assignation
+                                    </DropdownMenuCheckboxItem>
+                                  </DropdownMenuContent>
                                </DropdownMenu>
                              ) : column.name === 'person_linkedin_url' && prospect[column.name] ? (
                               <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
