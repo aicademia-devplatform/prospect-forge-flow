@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import moment from 'moment';
+import 'moment/locale/fr'; // Import French locale
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -357,10 +359,29 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     setColumnDialogOpen(false);
   };
 
-  const formatValue = (value: any, type: string) => {
+  const formatValue = (value: any, type: string, columnName?: string) => {
     if (!value) return '—';
     
     if (type === 'date') {
+      // Configuration locale française pour moment.js
+      moment.locale('fr');
+      
+      // Logique spéciale pour la colonne assigned_at
+      if (columnName === 'assigned_at') {
+        const now = moment();
+        const assignedDate = moment(value);
+        const daysDiff = now.diff(assignedDate, 'days');
+        
+        // Si plus d'une semaine (7 jours), afficher la date formatée
+        if (daysDiff > 7) {
+          return assignedDate.format('D MMM YYYY');
+        } else {
+          // Sinon, afficher la notation relative
+          return assignedDate.fromNow();
+        }
+      }
+      
+      // Pour les autres colonnes de date, garder le format existant
       return new Date(value).toLocaleDateString('fr-FR', {
         day: '2-digit',
         month: '2-digit',
@@ -599,7 +620,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                               Site web
                             </a>
                           ) : (
-                            formatValue(prospect[column.name], column.type)
+                            formatValue(prospect[column.name], column.type, column.name)
                           )}
                         </TableCell>
                       )
