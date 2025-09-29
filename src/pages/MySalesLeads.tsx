@@ -73,7 +73,7 @@ const MySalesLeads: React.FC = () => {
   const [sortBy, setSortBy] = useState('assigned_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['email', 'company', 'last_name', 'first_name', 'assigned_at', 'data_source', 'actions']));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']));
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
