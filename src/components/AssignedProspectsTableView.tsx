@@ -578,7 +578,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-30">
+                <TableHead className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-40">
                   <Checkbox
                     checked={data.length > 0 && selectedRows.size === data.length}
                     onCheckedChange={handleSelectAll}
@@ -589,12 +589,17 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                   if (!visibleColumns.has(column.name)) return null;
                   
                   const isPinned = pinnedColumns.has(column.name);
-                  const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
+                  // Style harmonisé pour les colonnes épinglées et non épinglées
+                  const pinnedStyle = isPinned ? 'bg-white/95 backdrop-blur-sm border-r border-border/50 shadow-sm' : '';
                   
                   return (
                     <TableHead 
                       key={column.name}
-                      className={`px-4 py-4 text-left min-w-[120px] sticky top-0 ${isPinned ? `z-30 bg-primary/5 backdrop-blur-sm font-semibold text-primary ${borderStyle}` : 'z-20 bg-table-header font-semibold text-muted-foreground'}`}
+                      className={`px-4 py-4 text-left min-w-[120px] sticky top-0 ${
+                        isPinned 
+                          ? `left-0 z-30 ${pinnedStyle} font-semibold text-foreground` 
+                          : 'z-20 bg-background/95 backdrop-blur-sm font-medium text-muted-foreground'
+                      }`}
                       style={isPinned ? { left: '48px' } : {}}
                     >
                       <TableColumnHeader
@@ -646,7 +651,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                     key={prospect.id}
                     className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}
                   >
-                    <TableCell className="w-12 px-4 py-4 sticky left-0 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-10">
+                    <TableCell className="w-12 px-4 py-4 sticky left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-30">
                       <Checkbox
                         checked={selectedRows.has(prospect.id)}
                         onCheckedChange={() => handleRowSelect(prospect.id)}
@@ -658,12 +663,17 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                       if (!visibleColumns.has(column.name)) return null;
                       
                       const isPinned = pinnedColumns.has(column.name);
-                      const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
+                      // Style cohérent pour les cellules épinglées
+                      const pinnedStyle = isPinned ? 'bg-white/95 backdrop-blur-sm border-r border-border/50 shadow-sm' : '';
                       
                       return (
                         <TableCell 
                           key={column.name}
-                          className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''}`}
+                          className={`px-4 py-4 min-w-[120px] ${
+                            isPinned 
+                              ? `sticky left-0 z-20 ${pinnedStyle} font-medium` 
+                              : ''
+                          }`}
                           style={isPinned ? { left: '48px' } : {}}
                         >
                           {column.name === 'apollo_status' || column.name === 'zoho_status' ? (
