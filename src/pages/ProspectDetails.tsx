@@ -241,15 +241,13 @@ const ProspectDetails: React.FC = () => {
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
       <motion.div 
-        className="flex-1 p-6 space-y-6 transition-all duration-300 ease-in-out"
+        className="flex-1 p-6 space-y-6"
         animate={{
           marginRight: showTraiterSidebar ? '384px' : '0px', // 384px = w-96
         }}
         transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 30,
-          duration: 0.3
+          duration: 0.35,
+          ease: [0.25, 0.46, 0.45, 0.94], // easeOutQuart pour plus de fluidité
         }}
       >
       {/* Header */}

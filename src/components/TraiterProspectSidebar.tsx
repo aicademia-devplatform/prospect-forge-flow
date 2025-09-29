@@ -148,14 +148,12 @@ export const TraiterProspectSidebar: React.FC<TraiterProspectSidebarProps> = ({
 
   return (
     <motion.div
-      initial={{ x: '100%', opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: '100%', opacity: 0 }}
+      initial={{ x: '100%' }}
+      animate={{ x: 0 }}
+      exit={{ x: '100%' }}
       transition={{ 
-        type: "spring",
-        stiffness: 300,
-        damping: 30,
-        duration: 0.3
+        duration: 0.35,
+        ease: [0.25, 0.46, 0.45, 0.94], // même easing que le contenu principal
       }}
       className="fixed top-0 right-0 h-full w-96 bg-background border-l border-border shadow-xl z-50"
     >
