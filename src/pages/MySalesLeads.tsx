@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, X, ChevronDown, UserPlus, ExternalLink, GripVertical, ArrowRight, ArrowLeftRight, Eye, Trash2 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ArrowLeft, Search, Download, Loader2, MoreHorizontal, X, ChevronDown, Columns, UserPlus, ExternalLink, GripVertical, ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DataPagination from '@/components/DataPagination';
 import TableFilters, { FilterValues } from '@/components/TableFilters';
@@ -464,6 +464,12 @@ const MySalesLeads: React.FC = () => {
                 showOnlyButton={true} 
               />
 
+              {/* Column visibility */}
+              <Button variant="outline" size="sm" onClick={openColumnDialog}>
+                <Columns className="h-4 w-4 mr-2" />
+                Colonnes
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
             </div>
 
             {/* Selection info */}
@@ -612,30 +618,36 @@ const MySalesLeads: React.FC = () => {
                                  {prospect.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM'}
                                </Badge>
                              ) : column.name === 'actions' ? (
-                                <TooltipProvider>
-                                  <div className="flex items-center gap-2">
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="sm">
-                                          <Eye className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Voir les détails</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Supprimer l'assignation</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </div>
-                                </TooltipProvider>
+                               <DropdownMenu>
+                                 <DropdownMenuTrigger asChild>
+                                   <Button variant="ghost" size="sm">
+                                     <MoreHorizontal className="h-4 w-4" />
+                                   </Button>
+                                 </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuCheckboxItem>
+                                      Voir les détails
+                                    </DropdownMenuCheckboxItem>
+                                    {prospect.person_linkedin_url && (
+                                      <DropdownMenuCheckboxItem asChild>
+                                        <a href={prospect.person_linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                                          <ExternalLink className="h-4 w-4 mr-2" />
+                                          LinkedIn
+                                        </a>
+                                      </DropdownMenuCheckboxItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuCheckboxItem>
+                                      Traiter
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuCheckboxItem className="text-destructive">
+                                      Retirer l'assignation
+                                    </DropdownMenuCheckboxItem>
+                                  </DropdownMenuContent>
+                               </DropdownMenu>
                              ) : column.name === 'person_linkedin_url' && prospect[column.name] ? (
                               <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                                 LinkedIn
@@ -682,6 +694,103 @@ const MySalesLeads: React.FC = () => {
         </div>
       )}
 
+      {/* Dialog de gestion des colonnes */}
+      <Dialog open={columnDialogOpen} onOpenChange={setColumnDialogOpen}>
+        <DialogContent className="max-w-5xl w-[90vw] h-[80vh] bg-background flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Gestion des colonnes</DialogTitle>
+            <DialogDescription>
+              Glissez et déposez les colonnes pour réorganiser leur ordre d'affichage.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex gap-4 flex-1 min-h-0 overflow-hidden">
+            {/* Colonnes affichées */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <h3 className="text-sm font-medium mb-3 text-green-600 flex-shrink-0">
+                Colonnes affichées ({tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length})
+              </h3>
+              <div className="border rounded-lg p-3 bg-green-50/50 flex-1 overflow-y-auto">
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="visible-columns">
+                    {(provided, snapshot) => (
+                      <div 
+                        {...provided.droppableProps} 
+                        ref={provided.innerRef} 
+                        className={`space-y-2 min-h-[100px] transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-green-100/70 rounded-lg' : ''}`}
+                      >
+                        {tempColumnOrder.filter(colName => tempVisibleColumns.has(colName)).map((colName, index) => {
+                          const column = availableColumns.find(col => col.name === colName);
+                          if (!column) return null;
+                          
+                          return (
+                            <Draggable key={column.name} draggableId={column.name} index={index}>
+                              {(provided, snapshot) => (
+                                <div 
+                                  ref={provided.innerRef} 
+                                  {...provided.draggableProps} 
+                                  className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'}`}
+                                >
+                                  <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded transition-colors duration-150">
+                                    <GripVertical className="h-4 w-4 text-gray-400" />
+                                  </div>
+                                  <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => toggleColumnVisibilityInDialog(column.name)} 
+                                    className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200"
+                                  >
+                                    <ArrowRight className="h-4 w-4 text-red-600" />
+                                  </Button>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              </div>
+            </div>
+
+            {/* Colonnes masquées */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <h3 className="text-sm font-medium mb-3 text-gray-600 flex-shrink-0">
+                Colonnes masquées ({availableColumns.filter(col => !tempVisibleColumns.has(col.name)).length})
+              </h3>
+              <div className="border rounded-lg p-3 bg-gray-50/50 flex-1 overflow-y-auto">
+                <div className="space-y-2">
+                  {availableColumns.filter(col => !tempVisibleColumns.has(col.name)).map(column => (
+                    <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors duration-200 hover:shadow-sm">
+                      <span className="text-sm flex-1 mr-2">{translateColumnName(column.name)}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => toggleColumnVisibilityInDialog(column.name)} 
+                        className="h-8 w-8 p-0 hover:bg-green-100 transition-colors duration-200"
+                      >
+                        <ArrowLeftRight className="h-4 w-4 text-green-600" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 pt-4 flex-shrink-0 border-t">
+            <Button variant="outline" onClick={cancelColumnChanges}>
+              Annuler
+            </Button>
+            <Button onClick={applyColumnChanges}>
+              Afficher ({tempColumnOrder.filter(col => tempVisibleColumns.has(col)).length} colonnes)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
