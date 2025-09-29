@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building2, User, Phone, MapPin, Mail, ExternalLink, Edit, FileText } from 'lucide-react';
+import { TraiterProspectDialog } from '@/components/TraiterProspectDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -87,6 +88,7 @@ const ProspectDetails: React.FC = () => {
   } = useToast();
   const [prospect, setProspect] = useState<ProspectData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTraiterDialog, setShowTraiterDialog] = useState(false);
   useEffect(() => {
     if (email) {
       fetchProspectDetails();
@@ -252,7 +254,11 @@ const ProspectDetails: React.FC = () => {
             <Edit className="h-4 w-4 mr-2" />
             Modifier
           </Button>
-          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+          <Button 
+            size="sm" 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => setShowTraiterDialog(true)}
+          >
             <FileText className="h-4 w-4 mr-2" />
             Traiter
           </Button>
@@ -572,6 +578,14 @@ const ProspectDetails: React.FC = () => {
             </div>}
         </CardContent>
       </Card>
+
+      {/* Dialog Traiter Prospect */}
+      <TraiterProspectDialog
+        open={showTraiterDialog}
+        onOpenChange={setShowTraiterDialog}
+        prospectEmail={prospect.email}
+        onSuccess={fetchProspectDetails}
+      />
     </div>;
 };
 export default ProspectDetails;
