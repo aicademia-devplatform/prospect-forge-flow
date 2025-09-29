@@ -109,6 +109,46 @@ const MySalesLeads: React.FC = () => {
     }
   }, [visibleColumns]);
 
+  // Effet pour afficher automatiquement les colonnes quand un filtre est appliqué
+  useEffect(() => {
+    if (Object.keys(advancedFilters).length > 0) {
+      const newVisibleColumns = new Set(visibleColumns);
+      let hasChanges = false;
+
+      // Mapper les filtres avancés vers les noms de colonnes correspondants
+      const filterColumnMapping: Record<string, string> = {
+        'dataSection': 'data_section',
+        'zohoStatus': 'zoho_status', 
+        'apolloStatus': 'apollo_status',
+        'industrie': 'industry',
+        'company': 'company',
+        'seniority': 'seniority',
+        'stage': 'stage',
+        'nbEmployees': 'nb_employees',
+        'departments': 'departments',
+        'contactOwner': 'contact_owner',
+        'lists': 'lists',
+        'emailStatus': 'email_status'
+      };
+
+      // Vérifier chaque filtre actif et ajouter la colonne correspondante
+      Object.entries(advancedFilters).forEach(([filterKey, filterValue]) => {
+        if (filterValue && filterColumnMapping[filterKey]) {
+          const columnName = filterColumnMapping[filterKey];
+          if (!newVisibleColumns.has(columnName)) {
+            newVisibleColumns.add(columnName);
+            hasChanges = true;
+          }
+        }
+      });
+
+      // Mettre à jour les colonnes visibles si des changements ont été faits
+      if (hasChanges) {
+        setVisibleColumns(newVisibleColumns);
+      }
+    }
+  }, [advancedFilters, visibleColumns]);
+
   const loadTableConfig = async () => {
     if (!user) return;
     try {
@@ -355,6 +395,11 @@ const MySalesLeads: React.FC = () => {
 
   const handleColumnFilter = (columnName: string, value: string) => {
     setColumnFilters(prev => ({ ...prev, [columnName]: value }));
+    
+    // Afficher automatiquement la colonne si un filtre est appliqué
+    if (value && !visibleColumns.has(columnName)) {
+      setVisibleColumns(prev => new Set([...prev, columnName]));
+    }
   };
 
   const clearColumnFilter = (columnName: string) => {
