@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building2, User, Phone, MapPin, Mail, ExternalLink, Edit, FileText } from 'lucide-react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TraiterProspectSidebar } from '@/components/TraiterProspectSidebar';
+import { ModifierProspectSidebar } from '@/components/ModifierProspectSidebar';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -91,6 +92,7 @@ const ProspectDetails: React.FC = () => {
   const [prospect, setProspect] = useState<ProspectData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showTraiterSidebar, setShowTraiterSidebar] = useState(false);
+  const [showModifierSidebar, setShowModifierSidebar] = useState(false);
   useEffect(() => {
     if (email) {
       fetchProspectDetails();
@@ -243,7 +245,7 @@ const ProspectDetails: React.FC = () => {
       <motion.div 
         className="flex-1 p-6 space-y-6"
         animate={{
-          marginRight: showTraiterSidebar ? '384px' : '0px', // 384px = w-96
+          marginRight: (showTraiterSidebar || showModifierSidebar) ? '384px' : '0px', // 384px = w-96
         }}
         transition={{
           duration: 0.35,
@@ -264,7 +266,12 @@ const ProspectDetails: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+            onClick={() => setShowModifierSidebar(true)}
+          >
             <Edit className="h-4 w-4 mr-2" />
             Modifier
           </Button>
@@ -594,7 +601,7 @@ const ProspectDetails: React.FC = () => {
       </Card>
       </motion.div>
       
-      {/* Sidebar Traiter Prospect */}
+      {/* Sidebars */}
       <AnimatePresence>
         {showTraiterSidebar && (
           <TraiterProspectSidebar
@@ -604,6 +611,16 @@ const ProspectDetails: React.FC = () => {
               setShowTraiterSidebar(false);
             }}
             onClose={() => setShowTraiterSidebar(false)}
+          />
+        )}
+        {showModifierSidebar && (
+          <ModifierProspectSidebar
+            prospect={prospect}
+            onSuccess={() => {
+              fetchProspectDetails();
+              setShowModifierSidebar(false);
+            }}
+            onClose={() => setShowModifierSidebar(false)}
           />
         )}
       </AnimatePresence>
