@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Plus, MoreHorizontal, ArrowLeft } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import AssignedProspectsTableView from '@/components/AssignedProspectsTableView';
+import MySalesLeads from '@/pages/MySalesLeads';
 
 interface CreatedTable {
   id: string;
@@ -139,7 +139,7 @@ const Prospects = () => {
           </TabsList>
           
           <TabsContent value="assigned" className="space-y-4 mt-6">
-            <AssignedProspectsTableView onBack={handleBackToMain} />
+            <MySalesLeads />
           </TabsContent>
 
           <TabsContent value="created" className="space-y-4 mt-6">
