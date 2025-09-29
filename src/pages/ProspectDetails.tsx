@@ -57,6 +57,12 @@ interface ProspectData {
   city?: string;
   country?: string;
   data_source?: string;
+  
+  // Sources data
+  sources?: Array<{
+    source_table: string;
+    data: any;
+  }>;
 }
 
 const ProspectDetails: React.FC = () => {
@@ -92,8 +98,12 @@ const ProspectDetails: React.FC = () => {
         // Fusionner les données des différentes sources
         data.data.forEach((contact: any) => {
           Object.keys(contact.data).forEach(key => {
-            if (contact.data[key] && !combinedProspect[key]) {
-              combinedProspect[key] = contact.data[key];
+            const value = contact.data[key];
+            // On prend la valeur si elle n'est pas nulle/vide et qu'on n'a pas déjà une valeur non-nulle
+            if (value !== null && value !== '' && value !== undefined) {
+              if (!combinedProspect[key] || combinedProspect[key] === null || combinedProspect[key] === '' || combinedProspect[key] === undefined) {
+                combinedProspect[key] = value;
+              }
             }
           });
         });
@@ -448,67 +458,42 @@ const ProspectDetails: React.FC = () => {
         </Card>
       </div>
 
-      {/* Apollo Data Section */}
-      {prospect.apollo_id && (
+      {/* Sources de données */}
+      {prospect.sources && prospect.sources.length > 0 && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Apollo Contacts - Données Additionnelles</h3>
-            <Badge variant="secondary">Apollo</Badge>
-          </div>
+          <h3 className="text-lg font-semibold">Sources de données disponibles</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Informations Apollo */}
-            <Card>
+          {prospect.sources.map((source: any, index: number) => (
+            <Card key={index}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Informations Apollo
+                <CardTitle className="flex items-center justify-between">
+                  <span>Données {source.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM'}</span>
+                  <Badge variant={source.source_table === 'apollo_contacts' ? 'default' : 'secondary'}>
+                    {source.source_table}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {prospect.apollo_contact_owner && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Propriétaire contact:</span>
-                    <span>{prospect.apollo_contact_owner}</span>
-                  </div>
-                )}
-                {prospect.apollo_last_contacted && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dernier contact:</span>
-                    <span>{new Date(prospect.apollo_last_contacted).toLocaleDateString('fr-FR')}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">ID Apollo:</span>
-                  <span className="text-xs font-mono">{prospect.apollo_id}</span>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(source.data).map(([key, value]: [string, any]) => {
+                    if (value && value !== '' && key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
+                      return (
+                        <div key={key} className="flex justify-between items-start">
+                          <span className="text-muted-foreground text-sm capitalize">
+                            {key.replace(/_/g, ' ')}:
+                          </span>
+                          <span className="text-sm text-right max-w-xs truncate" title={String(value)}>
+                            {String(value)}
+                          </span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
                 </div>
               </CardContent>
             </Card>
-
-            {/* Données techniques */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Données techniques
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Source de données:</span>
-                  <Badge variant="outline">{prospect.data_source || 'Apollo'}</Badge>
-                </div>
-                {prospect.apollo_email_status && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Statut email vérifié:</span>
-                    <Badge variant={prospect.apollo_email_status === 'verified' ? 'default' : 'secondary'}>
-                      {prospect.apollo_email_status}
-                    </Badge>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          ))}
         </div>
       )}
     </div>
