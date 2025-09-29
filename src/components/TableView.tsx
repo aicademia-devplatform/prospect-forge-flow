@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import moment from 'moment';
+import 'moment/locale/fr'; // Import French locale
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -1192,7 +1194,20 @@ const TableView: React.FC<TableViewProps> = ({
         if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
         if (Array.isArray(value)) return value.join(', ');
         if (typeof value === 'object' && value instanceof Date) {
-          return value.toLocaleDateString('fr-FR');
+          // Configuration locale française pour moment.js
+          moment.locale('fr');
+          
+          const now = moment();
+          const dateValue = moment(value);
+          const daysDiff = now.diff(dateValue, 'days');
+          
+          // Si plus d'une semaine (7 jours), afficher la date formatée
+          if (daysDiff > 7) {
+            return dateValue.format('D MMM YYYY');
+          } else {
+            // Sinon, afficher la notation relative
+            return dateValue.fromNow();
+          }
         }
         return String(value);
       }));
@@ -1536,8 +1551,20 @@ const TableView: React.FC<TableViewProps> = ({
     }
     if (columnName.includes('date') || columnName.includes('_at')) {
       try {
-        const date = new Date(value);
-        return <span className="text-sm text-muted-foreground">{date.toLocaleString('fr-FR')}</span>;
+        // Configuration locale française pour moment.js
+        moment.locale('fr');
+        
+        const now = moment();
+        const dateValue = moment(value);
+        const daysDiff = now.diff(dateValue, 'days');
+        
+        // Si plus d'une semaine (7 jours), afficher la date formatée
+        if (daysDiff > 7) {
+          return <span className="text-sm text-muted-foreground">{dateValue.format('D MMM YYYY')}</span>;
+        } else {
+          // Sinon, afficher la notation relative
+          return <span className="text-sm text-muted-foreground">{dateValue.fromNow()}</span>;
+        }
       } catch {
         return <span className="text-sm">{value}</span>;
       }

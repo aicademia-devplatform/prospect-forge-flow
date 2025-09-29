@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import moment from 'moment';
+import 'moment/locale/fr';
 import UserMenu from '@/components/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -82,11 +84,18 @@ const Prospects = () => {
   }, [user, activeTab]);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    moment.locale('fr');
+    const now = moment();
+    const dateValue = moment(dateString);
+    const daysDiff = now.diff(dateValue, 'days');
+    
+    // Si plus d'une semaine (7 jours), afficher la date formatée
+    if (daysDiff > 7) {
+      return dateValue.format('D MMM YYYY');
+    } else {
+      // Sinon, afficher la notation relative
+      return dateValue.fromNow();
+    }
   };
 
   const handleBackToMain = () => {

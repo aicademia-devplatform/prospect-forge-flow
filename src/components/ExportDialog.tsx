@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import moment from 'moment';
+import 'moment/locale/fr';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -153,8 +155,8 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
                   )}
                   {appliedFilters.dateRange?.from && (
                     <Badge variant="secondary">
-                      Période: {appliedFilters.dateRange.from.toLocaleDateString()}
-                      {appliedFilters.dateRange.to ? ` - ${appliedFilters.dateRange.to.toLocaleDateString()}` : ''}
+                      Période: {moment(appliedFilters.dateRange.from).format('D MMM YYYY')}
+                      {appliedFilters.dateRange.to ? ` - ${moment(appliedFilters.dateRange.to).format('D MMM YYYY')}` : ''}
                     </Badge>
                   )}
                   {appliedFilters.dataSection && (

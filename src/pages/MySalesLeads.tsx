@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import moment from 'moment';
+import 'moment/locale/fr';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -323,7 +325,18 @@ const MySalesLeads = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {new Date(assignment.assigned_at).toLocaleDateString()}
+                    {(() => {
+                      moment.locale('fr');
+                      const now = moment();
+                      const assignedDate = moment(assignment.assigned_at);
+                      const daysDiff = now.diff(assignedDate, 'days');
+                      
+                      if (daysDiff > 7) {
+                        return assignedDate.format('D MMM YYYY');
+                      } else {
+                        return assignedDate.fromNow();
+                      }
+                    })()}
                   </TableCell>
                   {customColumns.map((column) => (
                     <TableCell key={column.name}>
