@@ -587,7 +587,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                   {availableColumns.map(column => {
                   if (!visibleColumns.has(column.name)) return null;
                   const isPinned = pinnedColumns.has(column.name);
-                  return <TableHead key={column.name} className={`px-4 py-3 text-left min-w-[120px] sticky top-0 ${isPinned ? 'left-12 z-30 bg-background border-r font-medium text-foreground' : 'z-20 bg-background font-medium text-muted-foreground'}`}>
+                  return <TableHead key={column.name} className={`px-4 py-3 text-left min-w-[120px] sticky top-0 ${isPinned ? 'left-12 z-30 bg-background border-r font-medium text-foreground' : 'z-20 bg-background font-medium text-muted-foreground'}`} style={isPinned ? { left: '48px' } : {}}>
                         <TableColumnHeader columnName={column.name} displayName={translateColumnName(column.name)} sortBy={sortBy} sortOrder={sortOrder} isPinned={isPinned} canPin={false} canHide={column.name !== 'id' && column.name !== 'email'} onSort={handleSort} onPin={() => {}} onHide={hideColumn} onFilter={handleColumnFilter} onClearFilter={clearColumnFilter} filterValue={columnFilters[column.name] || ''} />
                       </TableHead>;
                 })}
@@ -607,7 +607,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                       {availableColumns.map(column => {
                   if (!visibleColumns.has(column.name)) return null;
                   const isPinned = pinnedColumns.has(column.name);
-                  return <TableCell key={column.name} className={`px-4 py-3 min-w-[120px] ${isPinned ? 'sticky left-12 z-20 bg-background border-r font-medium' : ''}`}>
+                  return <TableCell key={column.name} className={`px-4 py-3 min-w-[120px] ${isPinned ? 'sticky z-20 bg-background border-r font-medium' : ''}`} style={isPinned ? { left: '48px' } : {}}>
                             {column.name === 'apollo_status' || column.name === 'zoho_status' ? <Badge className={getStatusBadgeClass(prospect[column.name])}>
                                 {prospect[column.name] || 'Non défini'}
                               </Badge> : column.name === 'source_table' ? <Badge variant="outline">
