@@ -89,6 +89,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
   const [openColumnDropdown, setOpenColumnDropdown] = useState<string | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   
   // États pour le dialog de colonnes
   const [columnDialogOpen, setColumnDialogOpen] = useState(false);
@@ -123,6 +124,21 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
       setTempColumnOrder(Array.from(visibleColumns));
     }
   }, [visibleColumns]);
+
+  // Handle scroll detection for pinned columns border
+  useEffect(() => {
+    const handleScroll = () => {
+      if (tableContainerRef.current) {
+        const scrollLeft = tableContainerRef.current.scrollLeft;
+        setIsScrolled(scrollLeft > 0);
+      }
+    };
+    const tableContainer = tableContainerRef.current;
+    if (tableContainer) {
+      tableContainer.addEventListener('scroll', handleScroll);
+      return () => tableContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
 
   const loadTableConfig = async () => {
     if (!user) return;
@@ -579,18 +595,22 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">
+                <TableHead className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-30">
                   <Checkbox
                     checked={data.length > 0 && selectedRows.size === data.length}
                     onCheckedChange={handleSelectAll}
                     aria-label="Sélectionner tous"
                   />
                 </TableHead>
-                {availableColumns.map(column => 
-                  visibleColumns.has(column.name) && (
+                {availableColumns.map(column => {
+                  const isPinned = pinnedColumns.has(column.name);
+                  const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
+                  
+                  return visibleColumns.has(column.name) && (
                     <TableHead 
                       key={column.name}
-                      className={`px-4 py-4 text-left min-w-[120px] ${pinnedColumns.has(column.name) ? 'sticky left-[48px] z-30 bg-primary/5 backdrop-blur-sm font-semibold text-primary' : 'z-20 bg-table-header font-semibold text-muted-foreground'}`}
+                      className={`px-4 py-4 text-left min-w-[120px] sticky top-0 ${isPinned ? `left-0 z-30 bg-primary/5 backdrop-blur-sm font-semibold text-primary ${borderStyle}` : 'z-20 bg-table-header font-semibold text-muted-foreground'}`}
+                      style={isPinned ? { left: '48px' } : {}}
                     >
                       <TableColumnHeader
                         columnName={column.name}
@@ -608,8 +628,8 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                         filterValue={columnFilters[column.name] || ''}
                       />
                     </TableHead>
-                  )
-                )}
+                  );
+                })}
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -641,7 +661,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                     key={prospect.id}
                     className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}
                   >
-                    <TableCell>
+                    <TableCell className="w-12 px-4 py-4 sticky left-0 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-10">
                       <Checkbox
                         checked={selectedRows.has(prospect.id)}
                         onCheckedChange={() => handleRowSelect(prospect.id)}
@@ -649,9 +669,16 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                       />
                     </TableCell>
 
-                    {availableColumns.map(column => 
-                      visibleColumns.has(column.name) && (
-                        <TableCell key={column.name}>
+                    {availableColumns.map(column => {
+                      const isPinned = pinnedColumns.has(column.name);
+                      const borderStyle = isScrolled && isPinned ? 'border-r-4 border-primary/50 shadow-xl' : isPinned ? 'border-r-3 border-primary/40 shadow-lg' : '';
+                      
+                      return visibleColumns.has(column.name) && (
+                        <TableCell 
+                          key={column.name}
+                          className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''}`}
+                          style={isPinned ? { left: '48px' } : {}}
+                        >
                           {column.name === 'apollo_status' || column.name === 'zoho_status' ? (
                             <Badge className={getStatusBadgeClass(prospect[column.name])}>
                               {prospect[column.name] || 'Non défini'}
@@ -689,8 +716,8 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                             formatValue(prospect[column.name], column.type, column.name)
                           )}
                         </TableCell>
-                      )
-                    )}
+                      );
+                    })}
 
                     <TableCell>
                       <DropdownMenu>
