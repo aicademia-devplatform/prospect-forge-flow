@@ -37,11 +37,21 @@ interface ProspectData {
   apollo_nb_employees?: number;
   apollo_industry?: string;
   apollo_linkedin_url?: string;
+  apollo_company_linkedin_url?: string;
   apollo_website?: string;
   apollo_stage?: string;
   apollo_lists?: string;
   apollo_last_contacted?: string;
   apollo_status?: string;
+  apollo_contact_id?: string;
+  apollo_account_id?: string;
+  apollo_city?: string;
+  apollo_country?: string;
+  apollo_email_sent?: boolean;
+  apollo_email_open?: boolean;
+  apollo_replied?: boolean;
+  apollo_demoed?: boolean;
+  apollo_technologies?: string;
   
   // Common fields
   first_name?: string;
@@ -57,6 +67,8 @@ interface ProspectData {
   city?: string;
   country?: string;
   data_source?: string;
+  created_at?: string;
+  updated_at?: string;
   
   // Sources data
   sources?: Array<{
@@ -251,16 +263,16 @@ const ProspectDetails: React.FC = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">{prospect.email}</h1>
-            <p className="text-muted-foreground">Contact {prospect.data_source || 'CRM'}</p>
+            <p className="text-muted-foreground">Contact CRM</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
             <Edit className="h-4 w-4 mr-2" />
             Modifier
           </Button>
-          <Button size="sm">
+          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
             <User className="h-4 w-4 mr-2" />
             Assigner à un commercial
           </Button>
@@ -271,8 +283,8 @@ const ProspectDetails: React.FC = () => {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarFallback className="text-lg">
+            <Avatar className="h-16 w-16">
+              <AvatarFallback className="text-lg bg-blue-100 text-blue-600">
                 {getInitials(
                   prospect.first_name || prospect.crm_firstname || prospect.apollo_firstname,
                   prospect.last_name || prospect.crm_name || prospect.apollo_lastname,
@@ -281,7 +293,7 @@ const ProspectDetails: React.FC = () => {
               </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="text-xl font-semibold">{getDisplayName()}</h2>
+              <h2 className="text-xl font-semibold">{prospect.email}</h2>
               <div className="flex items-center gap-2 text-muted-foreground mt-1">
                 <Building2 className="h-4 w-4" />
                 <span>{getCompanyName()}</span>
@@ -295,121 +307,180 @@ const ProspectDetails: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Content Cards */}
+      {/* CRM Contacts - Contact Principal */}
+      {prospect.sources?.find(s => s.source_table === 'crm_contacts') && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">CRM Contacts - Contact Principal</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Informations personnelles */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <User className="h-4 w-4" />
+                  Informations personnelles
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground text-sm">Email:</span>
+                  <a href={`mailto:${prospect.email}`} className="text-blue-600 hover:underline text-sm">
+                    {prospect.email}
+                  </a>
+                </div>
+                {(prospect.first_name || prospect.crm_firstname) && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Prénom:</span>
+                    <span className="text-sm">{prospect.first_name || prospect.crm_firstname}</span>
+                  </div>
+                )}
+                {(prospect.last_name || prospect.crm_name) && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Nom:</span>
+                    <span className="text-sm">{prospect.last_name || prospect.crm_name}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Entreprise */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Building2 className="h-4 w-4" />
+                  Entreprise
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground text-sm">Entreprise:</span>
+                  <span className="text-sm">{getCompanyName()}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Apollo Contacts - Données Additionnelles */}
+      {prospect.sources?.find(s => s.source_table === 'apollo_contacts') && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">Apollo Contacts - Données Additionnelles</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Informations personnelles Apollo */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <User className="h-4 w-4" />
+                  Informations personnelles
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground text-sm">Email:</span>
+                  <a href={`mailto:${prospect.email}`} className="text-blue-600 hover:underline text-sm">
+                    {prospect.email}
+                  </a>
+                </div>
+                {prospect.apollo_firstname && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Prénom:</span>
+                    <span className="text-sm">{prospect.apollo_firstname}</span>
+                  </div>
+                )}
+                {prospect.apollo_lastname && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Nom:</span>
+                    <span className="text-sm">{prospect.apollo_lastname}</span>
+                  </div>
+                )}
+                {(prospect.title || prospect.apollo_title) && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Titre:</span>
+                    <span className="text-sm">{prospect.title || prospect.apollo_title}</span>
+                  </div>
+                )}
+                {prospect.apollo_seniority && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Ancienneté:</span>
+                    <span className="text-sm">{prospect.apollo_seniority}</span>
+                  </div>
+                )}
+                {getLinkedInUrl() && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">URL LinkedIn personnel:</span>
+                    <a href={getLinkedInUrl()} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                      Profil LinkedIn
+                    </a>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Entreprise Apollo */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Building2 className="h-4 w-4" />
+                  Entreprise
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground text-sm">Entreprise:</span>
+                  <span className="text-sm">{getCompanyName()}</span>
+                </div>
+                {(prospect.industry || prospect.apollo_industry) && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Industrie:</span>
+                    <span className="text-sm">{prospect.industry || prospect.apollo_industry}</span>
+                  </div>
+                )}
+                {getWebsite() && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Site web:</span>
+                    <a href={getWebsite()} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                      {getWebsite()}
+                    </a>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground text-sm">Ville entreprise:</span>
+                  <span className="text-sm">{getCity()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground text-sm">Pays entreprise:</span>
+                  <span className="text-sm">{prospect.country || 'France'}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Contact */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Informations personnelles */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Informations personnelles
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Email:</span>
-              <a href={`mailto:${prospect.email}`} className="text-primary hover:underline">
-                {prospect.email}
-              </a>
-            </div>
-            {(prospect.first_name || prospect.crm_firstname || prospect.apollo_firstname) && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Prénom:</span>
-                <span>{prospect.first_name || prospect.crm_firstname || prospect.apollo_firstname}</span>
-              </div>
-            )}
-            {(prospect.last_name || prospect.crm_name || prospect.apollo_lastname) && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Nom:</span>
-                <span>{prospect.last_name || prospect.crm_name || prospect.apollo_lastname}</span>
-              </div>
-            )}
-            {(prospect.title || prospect.apollo_title) && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Titre:</span>
-                <span>{prospect.title || prospect.apollo_title}</span>
-              </div>
-            )}
-            {prospect.apollo_seniority && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Ancienneté:</span>
-                <span>{prospect.apollo_seniority}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Entreprise */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Entreprise
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Entreprise:</span>
-              <span>{getCompanyName()}</span>
-            </div>
-            {(prospect.industry || prospect.apollo_industry) && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Industrie:</span>
-                <span>{prospect.industry || prospect.apollo_industry}</span>
-              </div>
-            )}
-            {(prospect.nb_employees || prospect.apollo_nb_employees) && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Nb employés:</span>
-                <span>{prospect.nb_employees || prospect.apollo_nb_employees}</span>
-              </div>
-            )}
-            {prospect.apollo_departments && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Départements:</span>
-                <span>{prospect.apollo_departments}</span>
-              </div>
-            )}
-            {getWebsite() && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Site web:</span>
-                <a href={getWebsite()} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                  Site web <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Contact */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Phone className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Phone className="h-4 w-4" />
               Contact
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Ville:</span>
-              <span>{getCity()}</span>
+              <span className="text-muted-foreground text-sm">Ville:</span>
+              <span className="text-sm">{getCity()}</span>
             </div>
             {(prospect.country || prospect.crm_country) && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Pays:</span>
-                <span>{prospect.country || prospect.crm_country}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Téléphone:</span>
-              <span>{getPhone()}</span>
-            </div>
-            {getLinkedInUrl() && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">LinkedIn:</span>
-                <a href={getLinkedInUrl()} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                  Profil <ExternalLink className="h-3 w-3" />
-                </a>
+                <span className="text-muted-foreground text-sm">Pays:</span>
+                <span className="text-sm">{prospect.country || prospect.crm_country}</span>
               </div>
             )}
           </CardContent>
@@ -418,84 +489,167 @@ const ProspectDetails: React.FC = () => {
         {/* Autres informations */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Mail className="h-4 w-4" />
               Autres informations
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {prospect.zoho_status && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Statut Zoho:</span>
-                <Badge variant="outline">{prospect.zoho_status}</Badge>
-              </div>
-            )}
-            {prospect.apollo_status && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Statut Apollo:</span>
-                <Badge variant="outline">{prospect.apollo_status}</Badge>
-              </div>
-            )}
             {prospect.apollo_email_status && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Statut Email:</span>
-                <Badge variant="outline">{prospect.apollo_email_status}</Badge>
-              </div>
-            )}
-            {prospect.apollo_stage && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Étape:</span>
-                <Badge variant="outline">{prospect.apollo_stage}</Badge>
-              </div>
-            )}
-            {prospect.apollo_lists && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Listes:</span>
-                <span className="text-sm">{prospect.apollo_lists}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground text-sm">_email_unique:</span>
+                <Badge variant={prospect.apollo_email_status === 'Verified' ? 'default' : 'secondary'} className="text-xs">
+                  {prospect.apollo_email_status === 'Verified' ? 'Oui' : 'Non'}
+                </Badge>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Sources de données */}
-      {prospect.sources && prospect.sources.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Sources de données disponibles</h3>
-          
-          {prospect.sources.map((source: any, index: number) => (
-            <Card key={index}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Données {source.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM'}</span>
-                  <Badge variant={source.source_table === 'apollo_contacts' ? 'default' : 'secondary'}>
-                    {source.source_table}
+      {/* Plateforme & Intégrations */}
+      {(prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_contact_id || prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_account_id) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Building2 className="h-4 w-4" />
+              Plateforme & Intégrations
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_contact_id && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground text-sm">ID contact Apollo:</span>
+                <span className="text-xs font-mono">{prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_contact_id}</span>
+              </div>
+            )}
+            {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_account_id && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground text-sm">ID compte Apollo:</span>
+                <span className="text-xs font-mono">{prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.apollo_account_id}</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Activité & Engagement */}
+      {(prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_sent !== undefined || 
+        prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_open !== undefined || 
+        prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.replied !== undefined) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Mail className="h-4 w-4" />
+                Activité & Engagement
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_sent !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-sm">Email envoyé:</span>
+                  <Badge variant={prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_sent ? 'default' : 'secondary'} className="text-xs">
+                    {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_sent ? 'Oui' : 'Non'}
                   </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(source.data).map(([key, value]: [string, any]) => {
-                    if (value && value !== '' && key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
-                      return (
-                        <div key={key} className="flex justify-between items-start">
-                          <span className="text-muted-foreground text-sm capitalize">
-                            {key.replace(/_/g, ' ')}:
-                          </span>
-                          <span className="text-sm text-right max-w-xs truncate" title={String(value)}>
-                            {String(value)}
-                          </span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              )}
+              {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_open !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-sm">Email ouvert:</span>
+                  <Badge variant={prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_open ? 'default' : 'secondary'} className="text-xs">
+                    {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.email_open ? 'Oui' : 'Non'}
+                  </Badge>
+                </div>
+              )}
+              {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.replied !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-sm">Email répliqué:</span>
+                  <Badge variant={prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.replied ? 'default' : 'secondary'} className="text-xs">
+                    {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.replied ? 'Oui' : 'Non'}
+                  </Badge>
+                </div>
+              )}
+              {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.demoed !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-sm">Démo effectuée:</span>
+                  <Badge variant={prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.demoed ? 'default' : 'secondary'} className="text-xs">
+                    {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.demoed ? 'Oui' : 'Non'}
+                  </Badge>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Statut & Suivi */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <User className="h-4 w-4" />
+                Statut & Suivi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {prospect.apollo_email_status && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-sm">Statut email:</span>
+                  <Badge variant={prospect.apollo_email_status === 'Verified' ? 'default' : 'secondary'} className="text-xs">
+                    {prospect.apollo_email_status}
+                  </Badge>
+                </div>
+              )}
+              {prospect.apollo_stage && (
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-sm">Étape:</span>
+                  <Badge variant="outline" className="text-xs">{prospect.apollo_stage}</Badge>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
+
+      {/* Informations techniques */}
+      {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.technologies && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Building2 className="h-4 w-4" />
+              Informations techniques
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <span className="text-muted-foreground text-sm block mb-2">Technologies:</span>
+              <p className="text-sm leading-relaxed">{prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.technologies}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dates importantes */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <User className="h-4 w-4" />
+            Dates importantes
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.created_at && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground text-sm">Date de création:</span>
+              <span className="text-sm">{new Date(prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.created_at).toLocaleDateString('fr-FR')}</span>
+            </div>
+          )}
+          {prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.updated_at && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground text-sm">Mise à jour il y a:</span>
+              <span className="text-sm">{new Date(prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.updated_at).toLocaleDateString('fr-FR')}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
