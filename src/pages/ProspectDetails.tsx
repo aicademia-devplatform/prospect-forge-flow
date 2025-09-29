@@ -344,7 +344,7 @@ const ProspectDetails: React.FC = () => {
             {/* Informations personnelles Apollo */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-sm bg-accent/10 text-accent px-3 py-1.5 rounded-full w-fit">
+                <CardTitle className="flex items-center gap-2 text-sm bg-green-600/10 px-3 py-1.5 rounded-full w-fit text-green-500">
                   <User className="h-4 w-4" />
                   Informations personnelles
                 </CardTitle>
