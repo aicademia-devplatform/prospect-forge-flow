@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon, Columns, UserPlus } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Edit2, Trash2, ExternalLink, MoreHorizontal, X, ChevronDown, Settings, ArrowRight, ArrowLeftRight, GripVertical, Check, X as XIcon, Columns, UserPlus, Save } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -67,7 +67,7 @@ const translateColumnName = (columnName: string): string => {
 const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const { toast } = useToast();
 
   // États similaires à TableView
@@ -83,6 +83,10 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Configuration des colonnes personnalisées
+  const [customColumns, setCustomColumns] = useState<any[]>([]);
+  const [columnConfigLoaded, setColumnConfigLoaded] = useState(false);
+
   // Refs
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -92,6 +96,98 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
 
   // Memoize visible columns array
   const visibleColumnsArray = useMemo(() => Array.from(visibleColumns), [visibleColumns]);
+
+  // Charger la configuration des colonnes au montage
+  useEffect(() => {
+    if (user && !columnConfigLoaded) {
+      loadTableConfig();
+    }
+  }, [user, columnConfigLoaded]);
+
+  const loadTableConfig = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('sales_table_config')
+        .select('column_config, table_settings')
+        .eq('sales_user_id', user.id)
+        .eq('table_name', 'assigned_prospects')
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data?.column_config) {
+        const config = Array.isArray(data.column_config) ? data.column_config : [];
+        setCustomColumns(config);
+        
+        // Appliquer la configuration des colonnes visibles si elle existe
+        if (config.length > 0) {
+          const visibleCols = config
+            .filter((col: any) => col.visible !== false)
+            .map((col: any) => col.name);
+          setVisibleColumns(new Set(visibleCols));
+        }
+      }
+
+      // Charger les paramètres de table (comme la taille de page)
+      if (data?.table_settings) {
+        const settings = data.table_settings as any;
+        if (settings.pageSize) {
+          setPageSize(settings.pageSize);
+        }
+      }
+
+      setColumnConfigLoaded(true);
+    } catch (error) {
+      console.error('Error loading table config:', error);
+      setColumnConfigLoaded(true);
+    }
+  };
+
+  const saveTableConfig = async () => {
+    if (!user) return;
+
+    try {
+      // Créer la configuration des colonnes basée sur les colonnes disponibles
+      const columnConfig = availableColumns.map(column => ({
+        name: column.name,
+        visible: visibleColumns.has(column.name),
+        order: Array.from(visibleColumns).indexOf(column.name)
+      }));
+
+      const tableSettings = {
+        pageSize,
+        sortBy,
+        sortOrder
+      };
+
+      const { error } = await supabase
+        .from('sales_table_config')
+        .upsert({
+          sales_user_id: user.id,
+          table_name: 'assigned_prospects',
+          column_config: columnConfig,
+          table_settings: tableSettings
+        }, {
+          onConflict: 'sales_user_id,table_name'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Succès",
+        description: "Configuration des colonnes sauvegardée"
+      });
+    } catch (error) {
+      console.error('Error saving table config:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de sauvegarder la configuration",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Fetch data using assigned prospects hook
   const {
@@ -183,6 +279,11 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
       }
       return newSet;
     });
+    
+    // Sauvegarder automatiquement la configuration
+    setTimeout(() => {
+      saveTableConfig();
+    }, 100);
   };
 
   const formatValue = (value: any, type: string) => {
@@ -243,6 +344,14 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={saveTableConfig}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Sauvegarder Config
+          </Button>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Exporter
