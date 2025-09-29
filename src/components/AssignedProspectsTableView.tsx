@@ -573,20 +573,14 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-40">
+                <TableHead className="w-12 px-3 py-3 text-left sticky top-0 left-0 bg-background border-r z-40">
                   <Checkbox checked={data.length > 0 && selectedRows.size === data.length} onCheckedChange={handleSelectAll} aria-label="Sélectionner tous" />
                 </TableHead>
                 {availableColumns.map(column => {
                 if (!visibleColumns.has(column.name)) return null;
                 const isPinned = pinnedColumns.has(column.name);
-                // Style harmonisé pour les colonnes épinglées et non épinglées
-                const pinnedStyle = isPinned ? 'bg-white/95 backdrop-blur-sm border-r border-border/50 shadow-sm' : '';
-                return <TableHead key={column.name} className={`px-4 py-4 text-left min-w-[120px] sticky top-0 ${isPinned ? `left-0 z-30 ${pinnedStyle} font-semibold text-foreground` : 'z-20 bg-background/95 backdrop-blur-sm font-medium text-muted-foreground'}`} style={isPinned ? {
-                  left: '48px'
-                } : {}}>
-                      <TableColumnHeader columnName={column.name} displayName={translateColumnName(column.name)} sortBy={sortBy} sortOrder={sortOrder} isPinned={isPinned} canPin={false} // Désactiver l'épinglage pour toutes les colonnes
-                  canHide={column.name !== 'id' && column.name !== 'email'} onSort={handleSort} onPin={() => {}} // Fonction vide car épinglage désactivé
-                  onHide={hideColumn} onFilter={handleColumnFilter} onClearFilter={clearColumnFilter} filterValue={columnFilters[column.name] || ''} />
+                return <TableHead key={column.name} className={`px-4 py-3 text-left min-w-[120px] sticky top-0 ${isPinned ? 'left-12 z-30 bg-background border-r font-medium text-foreground' : 'z-20 bg-background font-medium text-muted-foreground'}`}>
+                      <TableColumnHeader columnName={column.name} displayName={translateColumnName(column.name)} sortBy={sortBy} sortOrder={sortOrder} isPinned={isPinned} canPin={false} canHide={column.name !== 'id' && column.name !== 'email'} onSort={handleSort} onPin={() => {}} onHide={hideColumn} onFilter={handleColumnFilter} onClearFilter={clearColumnFilter} filterValue={columnFilters[column.name] || ''} />
                     </TableHead>;
               })}
                 <TableHead className="w-12"></TableHead>
@@ -605,27 +599,23 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                     Aucun prospect assigné trouvé
                   </TableCell>
                 </TableRow> : data.map(prospect => <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
-                    <TableCell className="w-fit px-4 py-4 sticky left-0 bg-white/95 backdrop-blur-sm border-r border-border/50 z-30">
+                    <TableCell className="w-12 px-3 py-3 sticky left-0 bg-background border-r z-30">
                       <Checkbox checked={selectedRows.has(prospect.id)} onCheckedChange={() => handleRowSelect(prospect.id)} aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`} />
                     </TableCell>
 
                     {availableColumns.map(column => {
                 if (!visibleColumns.has(column.name)) return null;
                 const isPinned = pinnedColumns.has(column.name);
-                // Style cohérent pour les cellules épinglées
-                const pinnedStyle = isPinned ? 'bg-white/95 backdrop-blur-sm border-r border-border/50 shadow-sm' : '';
-                return <TableCell key={column.name} className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky left-0 z-20 ${pinnedStyle} font-medium` : ''}`} style={isPinned ? {
-                  left: '48px'
-                } : {}}>
+                return <TableCell key={column.name} className={`px-4 py-3 min-w-[120px] ${isPinned ? 'sticky left-12 z-20 bg-background border-r font-medium' : ''}`}>
                           {column.name === 'apollo_status' || column.name === 'zoho_status' ? <Badge className={getStatusBadgeClass(prospect[column.name])}>
                               {prospect[column.name] || 'Non défini'}
                             </Badge> : column.name === 'source_table' ? <Badge variant="outline">
                               {prospect[column.name] === 'apollo_contacts' ? 'Apollo' : 'CRM'}
-                            </Badge> : column.name === 'email' ? <a href={`mailto:${prospect[column.name]}`} className="text-blue-600 hover:underline">
+                            </Badge> : column.name === 'email' ? <a href={`mailto:${prospect[column.name]}`} className="text-primary hover:underline">
                               {prospect[column.name]}
-                            </a> : column.name === 'person_linkedin_url' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            </a> : column.name === 'person_linkedin_url' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                               LinkedIn
-                            </a> : column.name === 'website' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            </a> : column.name === 'website' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                               Site web
                             </a> : formatValue(prospect[column.name], column.type, column.name)}
                         </TableCell>;
