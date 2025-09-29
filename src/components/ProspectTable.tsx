@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, Download, Plus, MoreHorizontal, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,75 +18,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
-// Mock data for demonstration
-const mockProspects = [
-  {
-    id: 1,
-    name: 'John Smith',
-    email: 'john.smith@techcorp.com',
-    company: 'TechCorp Inc.',
-    title: 'VP Sales',
-    status: 'new',
-    assignee: 'Sarah Johnson',
-    phone: '+1 (555) 123-4567',
-    source: 'LinkedIn',
-    lastContact: '2024-01-15',
-    value: 25000,
-  },
-  {
-    id: 2,
-    name: 'Emily Davis',
-    email: 'emily.davis@innovate.com',
-    company: 'Innovate Solutions',
-    title: 'Marketing Director',
-    status: 'contacted',
-    assignee: 'Mike Chen',
-    phone: '+1 (555) 234-5678',
-    source: 'Website',
-    lastContact: '2024-01-12',
-    value: 45000,
-  },
-  {
-    id: 3,
-    name: 'Robert Wilson',
-    email: 'r.wilson@growth.co',
-    company: 'Growth Co.',
-    title: 'CEO',
-    status: 'qualified',
-    assignee: 'Sarah Johnson',
-    phone: '+1 (555) 345-6789',
-    source: 'Referral',
-    lastContact: '2024-01-10',
-    value: 75000,
-  },
-  {
-    id: 4,
-    name: 'Lisa Anderson',
-    email: 'lisa.a@digitalfirm.com',
-    company: 'Digital Firm',
-    title: 'CTO',
-    status: 'closed',
-    assignee: 'Alex Rodriguez',
-    phone: '+1 (555) 456-7890',
-    source: 'Cold Email',
-    lastContact: '2024-01-08',
-    value: 120000,
-  },
-  {
-    id: 5,
-    name: 'David Brown',
-    email: 'david.brown@startupx.io',
-    company: 'StartupX',
-    title: 'Founder',
-    status: 'new',
-    assignee: 'Mike Chen',
-    phone: '+1 (555) 567-8901',
-    source: 'Event',
-    lastContact: '2024-01-14',
-    value: 15000,
-  },
-];
+interface AssignedProspect {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  title: string;
+  status: string;
+  assignee: string;
+  phone?: string;
+  source: string;
+  lastContact?: string;
+  value?: number;
+  sourceTable: string;
+  customTableName?: string;
+}
 
 const columns = [
   { key: 'name', label: 'Name', visible: true },
@@ -106,21 +55,101 @@ const statusColors = {
   contacted: 'status-contacted', 
   qualified: 'status-qualified',
   closed: 'status-closed',
+  active: 'status-new',
+  'Not Contacted': 'status-new',
+  'Replied': 'status-contacted',
+  'Bounced': 'status-qualified',
+  'Engaged': 'status-qualified'
 };
 
 export const ProspectTable = () => {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all');
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
     columns.reduce((acc, col) => ({ ...acc, [col.key]: col.visible }), {} as Record<string, boolean>)
   );
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [prospects, setProspects] = useState<AssignedProspect[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const assignees = [...new Set(mockProspects.map(p => p.assignee))];
+  const assignees = [...new Set(prospects.map(p => p.assignee))];
+  const sources = [...new Set(prospects.map(p => p.source))];
+
+  // Fetch assigned prospects
+  useEffect(() => {
+    const fetchAssignedProspects = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
+        // Get all assignments for the current user
+        const { data: assignments, error: assignError } = await supabase
+          .from('sales_assignments')
+          .select('*')
+          .eq('sales_user_id', user.id)
+          .eq('status', 'active');
+
+        if (assignError) throw assignError;
+
+        const assignedProspects: AssignedProspect[] = [];
+
+        for (const assignment of assignments || []) {
+          let prospectData: any = null;
+          
+          if (assignment.source_table === 'apollo_contacts') {
+            const { data } = await supabase
+              .from('apollo_contacts')
+              .select('*')
+              .eq('id', assignment.source_id)
+              .single();
+            prospectData = data;
+          } else if (assignment.source_table === 'crm_contacts') {
+            const { data } = await supabase
+              .from('crm_contacts')
+              .select('*')
+              .eq('id', parseInt(assignment.source_id))
+              .single();
+            prospectData = data;
+          }
+
+          if (prospectData) {
+            assignedProspects.push({
+              id: assignment.id,
+              name: prospectData.first_name && prospectData.last_name 
+                ? `${prospectData.first_name} ${prospectData.last_name}`
+                : prospectData.firstname && prospectData.name
+                ? `${prospectData.firstname} ${prospectData.name}`
+                : prospectData.name || prospectData.email,
+              email: prospectData.email,
+              company: prospectData.company || 'N/A',
+              title: prospectData.title || prospectData.linkedin_function || 'N/A',
+              status: prospectData.apollo_status || prospectData.zoho_status || 'new',
+              assignee: 'You',
+              phone: prospectData.mobile_phone || prospectData.work_direct_phone || prospectData.mobile || prospectData.tel || 'N/A',
+              source: assignment.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM',
+              lastContact: prospectData.last_contacted || prospectData.created_at,
+              sourceTable: assignment.source_table,
+              customTableName: assignment.custom_table_name
+            });
+          }
+        }
+
+        setProspects(assignedProspects);
+      } catch (error) {
+        console.error('Error fetching assigned prospects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignedProspects();
+  }, [user]);
 
   const filteredProspects = useMemo(() => {
-    return mockProspects.filter(prospect => {
+    return prospects.filter(prospect => {
       const matchesSearch = 
         prospect.name.toLowerCase().includes(search.toLowerCase()) ||
         prospect.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -128,12 +157,13 @@ export const ProspectTable = () => {
       
       const matchesStatus = statusFilter === 'all' || prospect.status === statusFilter;
       const matchesAssignee = assigneeFilter === 'all' || prospect.assignee === assigneeFilter;
+      const matchesSource = sourceFilter === 'all' || prospect.source === sourceFilter;
       
-      return matchesSearch && matchesStatus && matchesAssignee;
+      return matchesSearch && matchesStatus && matchesAssignee && matchesSource;
     });
-  }, [search, statusFilter, assigneeFilter]);
+  }, [prospects, search, statusFilter, assigneeFilter, sourceFilter]);
 
-  const handleRowSelect = (id: number) => {
+  const handleRowSelect = (id: string) => {
     setSelectedRows(prev => 
       prev.includes(id) 
         ? prev.filter(rowId => rowId !== id)
@@ -141,7 +171,8 @@ export const ProspectTable = () => {
     );
   };
 
-  const formatValue = (value: number) => {
+  const formatValue = (value?: number) => {
+    if (!value) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -149,12 +180,17 @@ export const ProspectTable = () => {
     }).format(value);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
   };
+
+  if (loading) {
+    return <div className="p-4">Loading your assigned prospects...</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -192,6 +228,18 @@ export const ProspectTable = () => {
               <SelectItem value="all">All Assignees</SelectItem>
               {assignees.map(assignee => (
                 <SelectItem key={assignee} value={assignee}>{assignee}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              {sources.map(source => (
+                <SelectItem key={source} value={source}>{source}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -341,7 +389,8 @@ export const ProspectTable = () => {
       {/* Results Footer */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          Showing {filteredProspects.length} of {mockProspects.length} prospects
+          Showing {filteredProspects.length} of {prospects.length} assigned prospects
+          {sources.length > 1 && ` from ${sources.length} different sources`}
         </span>
         <span>
           {selectedRows.length > 0 && `${selectedRows.length} selected`}
