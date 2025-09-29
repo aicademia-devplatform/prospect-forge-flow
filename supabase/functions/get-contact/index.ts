@@ -6,8 +6,9 @@ const corsHeaders = {
 }
 
 interface QueryParams {
-  tableName: 'apollo_contacts' | 'crm_contacts'
-  contactId: string
+  tableName?: 'apollo_contacts' | 'crm_contacts'
+  contactId?: string
+  email?: string
 }
 
 interface ContactData {
@@ -28,24 +29,87 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    const { tableName, contactId }: QueryParams = await req.json()
+    const { tableName, contactId, email: queryEmail }: QueryParams = await req.json()
 
-    console.log('Getting contact:', { tableName, contactId })
+    console.log('Getting contact:', { tableName, contactId, email: queryEmail })
 
-    // Récupérer le contact principal
-    const { data: mainContact, error: mainError } = await supabase
-      .from(tableName)
-      .select('*')
-      .eq('id', contactId)
-      .single()
+    let allContactData: ContactData[] = []
 
-    if (mainError) {
-      console.error('Database error:', mainError)
-      throw mainError
+    // Si on recherche par email, chercher dans toutes les tables
+    if (queryEmail) {
+      console.log('Searching by email:', queryEmail)
+      
+      // Chercher dans les deux tables
+      const tables: ('apollo_contacts' | 'crm_contacts')[] = ['apollo_contacts', 'crm_contacts']
+      
+      for (const table of tables) {
+        const { data: contacts, error } = await supabase
+          .from(table)
+          .select('*')
+          .eq('email', queryEmail)
+
+        if (!error && contacts && contacts.length > 0) {
+          console.log(`Found ${contacts.length} contact(s) in ${table}`)
+          contacts.forEach(contact => {
+            allContactData.push({
+              source_table: table,
+              data: contact
+            })
+          })
+        } else if (error) {
+          console.error(`Error searching in ${table}:`, error)
+        }
+      }
+    } else if (tableName && contactId) {
+      // Recherche par ID (ancienne logique)
+      const { data: mainContact, error: mainError } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('id', contactId)
+        .single()
+
+      if (mainError) {
+        console.error('Database error:', mainError)
+        throw mainError
+      }
+
+      if (mainContact) {
+        console.log(`Found main contact:`, 'Yes')
+        
+        // Ajouter le contact principal
+        allContactData.push({
+          source_table: tableName,
+          data: mainContact
+        })
+
+        // Rechercher dans l'autre table si l'email existe
+        const email = mainContact.email
+        const otherTableName = tableName === 'crm_contacts' ? 'apollo_contacts' : 'crm_contacts'
+        
+        if (email) {
+          const { data: otherContact, error: otherError } = await supabase
+            .from(otherTableName)
+            .select('*')
+            .eq('email', email)
+            .maybeSingle()
+
+          if (!otherError && otherContact) {
+            console.log(`Found contact in ${otherTableName}:`, 'Yes')
+            allContactData.push({
+              source_table: otherTableName,
+              data: otherContact
+            })
+          } else if (otherError) {
+            console.error(`Error searching in ${otherTableName}:`, otherError)
+          } else {
+            console.log(`No contact found in ${otherTableName}`)
+          }
+        }
+      }
     }
 
-    if (!mainContact) {
-      console.log('Contact not found')
+    if (allContactData.length === 0) {
+      console.log('No contacts found')
       return new Response(
         JSON.stringify({
           data: null,
@@ -57,41 +121,6 @@ Deno.serve(async (req) => {
           status: 404,
         }
       )
-    }
-
-    console.log(`Found main contact:`, mainContact ? 'Yes' : 'No')
-
-    // Rechercher le même contact dans les autres tables par email
-    const email = mainContact.email
-    const allContactData: ContactData[] = []
-
-    // Ajouter le contact principal
-    allContactData.push({
-      source_table: tableName,
-      data: mainContact
-    })
-
-    // Rechercher dans l'autre table si l'email existe
-    const otherTableName = tableName === 'crm_contacts' ? 'apollo_contacts' : 'crm_contacts'
-    
-    if (email) {
-      const { data: otherContact, error: otherError } = await supabase
-        .from(otherTableName)
-        .select('*')
-        .eq('email', email)
-        .maybeSingle()
-
-      if (!otherError && otherContact) {
-        console.log(`Found contact in ${otherTableName}:`, 'Yes')
-        allContactData.push({
-          source_table: otherTableName,
-          data: otherContact
-        })
-      } else if (otherError) {
-        console.error(`Error searching in ${otherTableName}:`, otherError)
-      } else {
-        console.log(`No contact found in ${otherTableName}`)
-      }
     }
 
     return new Response(

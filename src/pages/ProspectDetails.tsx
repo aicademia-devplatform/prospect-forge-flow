@@ -82,8 +82,23 @@ const ProspectDetails: React.FC = () => {
 
       if (error) throw error;
 
-      if (data) {
-        setProspect(data);
+      if (data && data.success && data.data) {
+        // Combiner toutes les données des différentes sources
+        const combinedProspect: any = { 
+          email: decodeURIComponent(email!),
+          sources: data.data 
+        };
+        
+        // Fusionner les données des différentes sources
+        data.data.forEach((contact: any) => {
+          Object.keys(contact.data).forEach(key => {
+            if (contact.data[key] && !combinedProspect[key]) {
+              combinedProspect[key] = contact.data[key];
+            }
+          });
+        });
+        
+        setProspect(combinedProspect);
       } else {
         toast({
           title: "Erreur",
