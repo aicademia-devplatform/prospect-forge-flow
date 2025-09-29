@@ -441,7 +441,7 @@ const ProspectDetails: React.FC = () => {
         {/* Autres informations */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm bg-accent/10 text-accent px-3 py-1.5 rounded-full w-fit">
+            <CardTitle className="flex items-center gap-2 text-sm bg-accent text-slate-500 px-3 py-1.5 rounded-full w-fit">
               <Mail className="h-4 w-4" />
               Autres informations
             </CardTitle>
@@ -556,7 +556,7 @@ const ProspectDetails: React.FC = () => {
       {/* Dates importantes */}
       <Card>
         <CardHeader>
-           <CardTitle className="flex items-center gap-2 text-sm bg-accent/10 text-accent px-3 py-1.5 rounded-full w-fit">
+           <CardTitle className="flex items-center gap-2 text-sm bg-orange-500/10 px-3 py-1.5 rounded-full w-fit text-orange-400">
              <User className="h-4 w-4" />
              Dates importantes
            </CardTitle>
