@@ -84,7 +84,8 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set([
     'email', 'first_name', 'last_name', 'company', 'title', 'apollo_status', 'assigned_at'
   ]));
-  const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set(['email']));
+  // Colonnes épinglées fixes - seulement email et checkbox
+  const pinnedColumns = new Set(['email']);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [openColumnDropdown, setOpenColumnDropdown] = useState<string | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
@@ -425,35 +426,7 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     return statusColors[status?.toLowerCase()] || statusColors.new;
   };
 
-  // Fonction pour épingler/dépingler une colonne - LOGIQUE SIMPLIFIÉE
-  const toggleColumnPin = (columnName: string) => {
-    console.log('Épinglage de la colonne:', columnName);
-    console.log('Colonnes épinglées actuelles:', Array.from(pinnedColumns));
-    
-    setPinnedColumns(prev => {
-      const newPinned = new Set(prev);
-      
-      if (newPinned.has(columnName)) {
-        // Dépingler la colonne (sauf email qui reste toujours épinglée)
-        if (columnName !== 'email') {
-          newPinned.delete(columnName);
-        }
-      } else {
-        // Épingler la nouvelle colonne
-        // D'abord, supprimer toutes les colonnes épinglées sauf email
-        for (const col of newPinned) {
-          if (col !== 'email') {
-            newPinned.delete(col);
-          }
-        }
-        // Puis ajouter la nouvelle colonne à épingler
-        newPinned.add(columnName);
-      }
-      
-      console.log('Nouvelles colonnes épinglées:', Array.from(newPinned));
-      return newPinned;
-    });
-  };
+  // Suppression de la fonction toggleColumnPin - plus besoin d'épinglage dynamique
 
   // Fonction pour masquer une colonne
   const hideColumn = (columnName: string) => {
@@ -630,13 +603,10 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                         sortBy={sortBy}
                         sortOrder={sortOrder}
                         isPinned={isPinned}
-                        canPin={column.name !== 'id'}
+                        canPin={false} // Désactiver l'épinglage pour toutes les colonnes
                         canHide={column.name !== 'id' && column.name !== 'email'}
                         onSort={handleSort}
-                        onPin={(colName) => {
-                          console.log('TableColumnHeader onPin appelé avec:', colName);
-                          toggleColumnPin(colName);
-                        }}
+                        onPin={() => {}} // Fonction vide car épinglage désactivé
                         onHide={hideColumn}
                         onFilter={handleColumnFilter}
                         onClearFilter={clearColumnFilter}
