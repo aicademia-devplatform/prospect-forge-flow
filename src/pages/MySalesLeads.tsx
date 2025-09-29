@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Search, Download, Loader2, Eye, Trash2, X, ChevronDown, Columns, UserPlus, ExternalLink, GripVertical, ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -63,6 +64,7 @@ interface ColumnInfo {
 const MySalesLeads: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // États
   const [searchTerm, setSearchTerm] = useState('');
@@ -623,7 +625,12 @@ const MySalesLeads: React.FC = () => {
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="h-8 w-8 p-0"
+                                          onClick={() => navigate(`/prospect/${encodeURIComponent(prospect.email)}`)}
+                                        >
                                           <Eye className="h-4 w-4" />
                                         </Button>
                                       </TooltipTrigger>

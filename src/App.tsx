@@ -13,6 +13,7 @@ import Reports from "./pages/Reports";
 import DataSources from "./pages/DataSources";
 import DataSourceTable from "./pages/DataSourceTable";
 import ContactDetails from "./pages/ContactDetails";
+import ProspectDetails from "./pages/ProspectDetails";
 import AdminPanel from "./pages/AdminPanel";
 import Settings from "./pages/Settings";
 import MySalesLeads from "./pages/MySalesLeads";
@@ -96,6 +97,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <ContactDetails />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/prospect/:email" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ProspectDetails />
                   </Layout>
                 </ProtectedRoute>
               } 
