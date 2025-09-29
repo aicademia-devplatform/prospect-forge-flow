@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import DataPagination from './DataPagination';
 import TableFilters, { FilterValues } from './TableFilters';
+import TableColumnHeader from './TableColumnHeader';
 import { useAssignedProspectsData } from '@/hooks/useAssignedProspectsData';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -83,6 +84,9 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set([
     'email', 'first_name', 'last_name', 'company', 'title', 'apollo_status', 'assigned_at'
   ]));
+  const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set(['email']));
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [openColumnDropdown, setOpenColumnDropdown] = useState<string | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
   
@@ -255,15 +259,6 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
   );
 
   // Handlers
-  const handleSort = (column: string) => {
-    if (sortBy === column) {
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortOrder('asc');
-    }
-    setCurrentPage(1);
-  };
 
   const handleRowSelect = (id: string) => {
     setSelectedRows(prev => {
@@ -414,6 +409,63 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
     return statusColors[status?.toLowerCase()] || statusColors.new;
   };
 
+  // Fonction pour épingler/dépingler une colonne
+  const toggleColumnPin = (columnName: string) => {
+    setPinnedColumns(prev => {
+      const newPinned = new Set(prev);
+      if (newPinned.has(columnName)) {
+        newPinned.delete(columnName);
+      } else {
+        // Ne permettre qu'une seule colonne épinglée à la fois (en plus d'email)
+        newPinned.clear();
+        newPinned.add('email'); // Toujours garder email épinglé
+        newPinned.add(columnName);
+      }
+      return newPinned;
+    });
+  };
+
+  // Fonction pour masquer une colonne
+  const hideColumn = (columnName: string) => {
+    const newVisible = new Set(visibleColumns);
+    newVisible.delete(columnName);
+    setVisibleColumns(newVisible);
+  };
+
+  // Fonction pour filtrer par colonne
+  const handleColumnFilter = (columnName: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnName]: value
+    }));
+  };
+
+  // Fonction pour effacer le filtre d'une colonne
+  const clearColumnFilter = (columnName: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[columnName];
+      return newFilters;
+    });
+  };
+
+  // Fonction de tri mise à jour pour fonctionner avec TableColumnHeader
+  const handleSort = (columnName: string, order?: 'asc' | 'desc') => {
+    if (order) {
+      setSortBy(columnName);
+      setSortOrder(order);
+    } else {
+      // Comportement de toggle si pas d'ordre spécifié
+      if (sortBy === columnName) {
+        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      } else {
+        setSortBy(columnName);
+        setSortOrder('asc');
+      }
+    }
+    setCurrentPage(1);
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -534,13 +586,23 @@ const AssignedProspectsTableView: React.FC<AssignedProspectsTableViewProps> = ({
                   visibleColumns.has(column.name) && (
                     <TableHead 
                       key={column.name}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleSort(column.name)}
+                      className={`px-4 py-4 text-left min-w-[120px] ${pinnedColumns.has(column.name) ? 'sticky left-[48px] z-30 bg-primary/5 backdrop-blur-sm font-semibold text-primary' : 'z-20 bg-table-header font-semibold text-muted-foreground'}`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span>{translateColumnName(column.name)}</span>
-                        {renderSortIcon(column.name)}
-                      </div>
+                      <TableColumnHeader
+                        columnName={column.name}
+                        displayName={translateColumnName(column.name)}
+                        sortBy={sortBy}
+                        sortOrder={sortOrder}
+                        isPinned={pinnedColumns.has(column.name)}
+                        canPin={column.name !== 'id'}
+                        canHide={column.name !== 'id' && column.name !== 'email'}
+                        onSort={handleSort}
+                        onPin={toggleColumnPin}
+                        onHide={hideColumn}
+                        onFilter={handleColumnFilter}
+                        onClearFilter={clearColumnFilter}
+                        filterValue={columnFilters[column.name] || ''}
+                      />
                     </TableHead>
                   )
                 )}

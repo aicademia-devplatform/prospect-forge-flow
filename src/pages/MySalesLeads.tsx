@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import UserMenu from '@/components/UserMenu';
+import TableColumnHeader from '@/components/TableColumnHeader';
 
 interface Assignment {
   id: string;
@@ -41,6 +42,10 @@ const MySalesLeads = () => {
   const [newColumnName, setNewColumnName] = useState('');
   const [newColumnType, setNewColumnType] = useState<'text' | 'number' | 'date' | 'select'>('text');
   const [newColumnOptions, setNewColumnOptions] = useState('');
+  const [sortBy, setSortBy] = useState('assigned_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(new Set(['lead_email']));
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -185,6 +190,75 @@ const MySalesLeads = () => {
     }
   };
 
+  // Fonctions pour le nouveau header de tableau
+  const handleSort = (columnName: string, order?: 'asc' | 'desc') => {
+    if (order) {
+      setSortBy(columnName);
+      setSortOrder(order);
+    } else {
+      if (sortBy === columnName) {
+        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      } else {
+        setSortBy(columnName);
+        setSortOrder('asc');
+      }
+    }
+  };
+
+  const toggleColumnPin = (columnName: string) => {
+    setPinnedColumns(prev => {
+      const newPinned = new Set(prev);
+      if (newPinned.has(columnName)) {
+        newPinned.delete(columnName);
+      } else {
+        newPinned.clear();
+        newPinned.add('lead_email');
+        newPinned.add(columnName);
+      }
+      return newPinned;
+    });
+  };
+
+  const hideColumn = (columnName: string) => {
+    // Pour ce tableau simple, on ne fait rien car les colonnes sont fixes
+  };
+
+  const handleColumnFilter = (columnName: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnName]: value
+    }));
+  };
+
+  const clearColumnFilter = (columnName: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[columnName];
+      return newFilters;
+    });
+  };
+
+  // Filtrer et trier les assignments
+  const filteredAndSortedAssignments = assignments
+    .filter(assignment => {
+      // Appliquer les filtres de colonnes
+      return Object.entries(columnFilters).every(([columnName, filterValue]) => {
+        if (!filterValue) return true;
+        const value = assignment[columnName as keyof Assignment] || '';
+        return value.toString().toLowerCase().includes(filterValue.toLowerCase());
+      });
+    })
+    .sort((a, b) => {
+      const aValue = a[sortBy as keyof Assignment] || '';
+      const bValue = b[sortBy as keyof Assignment] || '';
+      
+      if (sortOrder === 'asc') {
+        return aValue.toString().localeCompare(bValue.toString());
+      } else {
+        return bValue.toString().localeCompare(aValue.toString());
+      }
+    });
+
   if (loading) {
     return <div className="p-6">Chargement...</div>;
   }
@@ -306,17 +380,81 @@ const MySalesLeads = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Date d'assignation</TableHead>
+                <TableHead className={`px-4 py-4 text-left min-w-[120px] ${pinnedColumns.has('lead_email') ? 'sticky left-0 z-30 bg-primary/5 backdrop-blur-sm font-semibold text-primary' : ''}`}>
+                  <TableColumnHeader
+                    columnName="lead_email"
+                    displayName="Email"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                    isPinned={pinnedColumns.has('lead_email')}
+                    canPin={true}
+                    canHide={false}
+                    onSort={handleSort}
+                    onPin={toggleColumnPin}
+                    onHide={hideColumn}
+                    onFilter={handleColumnFilter}
+                    onClearFilter={clearColumnFilter}
+                    filterValue={columnFilters['lead_email'] || ''}
+                  />
+                </TableHead>
+                <TableHead>
+                  <TableColumnHeader
+                    columnName="source_table"
+                    displayName="Source"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                    isPinned={pinnedColumns.has('source_table')}
+                    canPin={true}
+                    canHide={true}
+                    onSort={handleSort}
+                    onPin={toggleColumnPin}
+                    onHide={hideColumn}
+                    onFilter={handleColumnFilter}
+                    onClearFilter={clearColumnFilter}
+                    filterValue={columnFilters['source_table'] || ''}
+                  />
+                </TableHead>
+                <TableHead>
+                  <TableColumnHeader
+                    columnName="assigned_at"
+                    displayName="Date d'assignation"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                    isPinned={pinnedColumns.has('assigned_at')}
+                    canPin={true}
+                    canHide={true}
+                    onSort={handleSort}
+                    onPin={toggleColumnPin}
+                    onHide={hideColumn}
+                    onFilter={handleColumnFilter}
+                    onClearFilter={clearColumnFilter}
+                    filterValue={columnFilters['assigned_at'] || ''}
+                  />
+                </TableHead>
                 {customColumns.map((column) => (
-                  <TableHead key={column.name}>{column.name}</TableHead>
+                  <TableHead key={column.name}>
+                    <TableColumnHeader
+                      columnName={column.name}
+                      displayName={column.name}
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                      isPinned={pinnedColumns.has(column.name)}
+                      canPin={true}
+                      canHide={true}
+                      onSort={handleSort}
+                      onPin={toggleColumnPin}
+                      onHide={hideColumn}
+                      onFilter={handleColumnFilter}
+                      onClearFilter={clearColumnFilter}
+                      filterValue={columnFilters[column.name] || ''}
+                    />
+                  </TableHead>
                 ))}
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {assignments.map((assignment) => (
+              {filteredAndSortedAssignments.map((assignment) => (
                 <TableRow key={assignment.id}>
                   <TableCell className="font-medium">{assignment.lead_email}</TableCell>
                   <TableCell>
