@@ -671,8 +671,16 @@ const ProspectDetails: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <span className="text-muted-foreground text-sm block mb-2">Technologies:</span>
-              <p className="text-sm leading-relaxed">{prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.technologies}</p>
+              <span className="text-muted-foreground text-sm block mb-3">Technologies:</span>
+              <div className="flex flex-wrap gap-2">
+                {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.technologies
+                  .split(',')
+                  .map((tech: string, index: number) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {tech.trim()}
+                    </Badge>
+                  ))}
+              </div>
             </div>
           </CardContent>
         </Card>}
