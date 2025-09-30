@@ -65,26 +65,40 @@ Deno.serve(async (req) => {
 
     console.log('Query params:', { page, pageSize, searchTerm, searchColumns, sortBy, sortOrder, visibleColumns, filterMode, advancedFilters })
 
-    // Build query based on filter mode
+    // Build query based on filter mode - get only the most recent assignment per email
     let assignmentsQuery = supabase
       .from('sales_assignments')
       .select('*')
       .eq('sales_user_id', user.id)
       .eq('status', 'active')
+      .order('assigned_at', { ascending: false })
 
-    // Apply filter mode
-    if (filterMode === 'traites') {
-      // Filter for closed prospects: bouclé OR specific statuses
-      assignmentsQuery = assignmentsQuery.eq('boucle', true)
-    } else if (filterMode === 'rappeler') {
-      // Filter for prospects to call back (this can be customized based on your criteria)
-      assignmentsQuery = assignmentsQuery.eq('boucle', false)
-    } else {
-      // Default: active prospects (not bouclé) - exclude closed prospects from assigned view
-      assignmentsQuery = assignmentsQuery.eq('boucle', false)
+    const { data: allAssignments, error: assignError } = await assignmentsQuery
+
+    if (assignError) throw assignError
+
+    // Group by email and take the most recent assignment for each email
+    const latestAssignmentsByEmail = new Map()
+    for (const assignment of allAssignments || []) {
+      const email = assignment.lead_email
+      if (!latestAssignmentsByEmail.has(email) || 
+          new Date(assignment.assigned_at) > new Date(latestAssignmentsByEmail.get(email).assigned_at)) {
+        latestAssignmentsByEmail.set(email, assignment)
+      }
     }
 
-    const { data: assignments, error: assignError } = await assignmentsQuery
+    // Filter based on mode using the latest assignments
+    let assignments = Array.from(latestAssignmentsByEmail.values())
+    if (filterMode === 'traites') {
+      // Filter for closed prospects: bouclé
+      assignments = assignments.filter(assignment => assignment.boucle === true)
+    } else if (filterMode === 'rappeler') {
+      // Filter for prospects to call back
+      assignments = assignments.filter(assignment => assignment.boucle === false)
+    } else {
+      // Default: active prospects (not bouclé) - exclude closed prospects from assigned view
+      assignments = assignments.filter(assignment => assignment.boucle === false)
+    }
 
     if (assignError) throw assignError
 
