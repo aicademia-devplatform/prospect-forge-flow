@@ -2003,12 +2003,15 @@ export type Database = {
           created_at: string
           custom_data: Json | null
           custom_table_name: string | null
+          date_action: string | null
           id: string
           lead_email: string
+          notes_sales: string | null
           sales_user_id: string
           source_id: string
           source_table: string
           status: string | null
+          statut_prospect: string | null
           updated_at: string
         }
         Insert: {
@@ -2018,12 +2021,15 @@ export type Database = {
           created_at?: string
           custom_data?: Json | null
           custom_table_name?: string | null
+          date_action?: string | null
           id?: string
           lead_email: string
+          notes_sales?: string | null
           sales_user_id: string
           source_id: string
           source_table: string
           status?: string | null
+          statut_prospect?: string | null
           updated_at?: string
         }
         Update: {
@@ -2033,12 +2039,15 @@ export type Database = {
           created_at?: string
           custom_data?: Json | null
           custom_table_name?: string | null
+          date_action?: string | null
           id?: string
           lead_email?: string
+          notes_sales?: string | null
           sales_user_id?: string
           source_id?: string
           source_table?: string
           status?: string | null
+          statut_prospect?: string | null
           updated_at?: string
         }
         Relationships: []
