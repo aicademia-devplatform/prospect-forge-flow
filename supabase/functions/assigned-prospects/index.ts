@@ -65,66 +65,30 @@ Deno.serve(async (req) => {
 
     console.log('Query params:', { page, pageSize, searchTerm, searchColumns, sortBy, sortOrder, visibleColumns, filterMode, advancedFilters })
 
-    // Get all assignments for the user
-    const { data: allAssignments, error: assignError } = await supabase
-      .from('sales_assignments')
-      .select('*')
-      .eq('sales_user_id', user.id)
-      .eq('status', 'active')
-      .order('assigned_at', { ascending: false })
-
-    if (assignError) throw assignError
-
-    // Group assignments by email to determine status
-    const assignmentsByEmail = new Map()
-    for (const assignment of allAssignments || []) {
-      const email = assignment.lead_email
-      if (!assignmentsByEmail.has(email)) {
-        assignmentsByEmail.set(email, [])
-      }
-      assignmentsByEmail.get(email).push(assignment)
-    }
-
-    // Determine the status for each email and select the appropriate assignment to display
     let assignments = []
-    for (const [email, emailAssignments] of assignmentsByEmail) {
-      // Check if any assignment for this email is "bouclé"
-      const hasBoucleAssignment = emailAssignments.some(a => a.boucle === true)
-      
-      console.log(`Email: ${email}, hasBoucleAssignment: ${hasBoucleAssignment}, filterMode: ${filterMode}`)
-      
-      let shouldInclude = false
-      if (filterMode === 'traites') {
-        // Include if any assignment is bouclé
-        shouldInclude = hasBoucleAssignment
-      } else if (filterMode === 'rappeler') {
-        // Include if no assignment is bouclé (for future use)
-        shouldInclude = !hasBoucleAssignment
-      } else {
-        // Default 'assigned': include if no assignment is bouclé
-        shouldInclude = !hasBoucleAssignment
-      }
-      
-      console.log(`Email: ${email}, shouldInclude: ${shouldInclude}`)
 
-      if (shouldInclude) {
-        // For display, use the most recent assignment OR the bouclé one if we're in traites mode
-        let assignmentToShow
-        if (filterMode === 'traites' && hasBoucleAssignment) {
-          // Show the bouclé assignment (or the most recent bouclé one if multiple)
-          assignmentToShow = emailAssignments
-            .filter(a => a.boucle === true)
-            .sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime())[0]
-        } else {
-          // Show the most recent assignment
-          assignmentToShow = emailAssignments
-            .sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime())[0]
-        }
-        assignments.push(assignmentToShow)
-      }
+    if (filterMode === 'traites') {
+      // Get prospects from prospects_traites table
+      const { data: processedProspects, error: processedError } = await supabase
+        .from('prospects_traites')
+        .select('*')
+        .eq('sales_user_id', user.id)
+        .order('completed_at', { ascending: false })
+
+      if (processedError) throw processedError
+      assignments = processedProspects || []
+    } else {
+      // Get active assignments from sales_assignments table (assigned and rappeler modes)
+      const { data: activeAssignments, error: assignError } = await supabase
+        .from('sales_assignments')
+        .select('*')
+        .eq('sales_user_id', user.id)
+        .eq('status', 'active')
+        .order('assigned_at', { ascending: false })
+
+      if (assignError) throw assignError
+      assignments = activeAssignments || []
     }
-
-    if (assignError) throw assignError
 
     let allProspects: any[] = []
 
@@ -155,19 +119,6 @@ Deno.serve(async (req) => {
       console.log(`Found prospectData for ${assignment.lead_email}:`, prospectData ? 'YES' : 'NO')
 
       if (prospectData) {
-        // For "traites" mode, also check if contact has "barrage" or "déjà accompagné" status
-        const isTraiteByStatus = filterMode === 'traites' && (
-          prospectData.apollo_status === 'barrage' || 
-          prospectData.apollo_status === 'déjà accompagné' ||
-          prospectData.zoho_status === 'barrage' ||
-          prospectData.zoho_status === 'déjà accompagné'
-        )
-
-        // Skip if filterMode is "traites" but assignment is not bouclé and doesn't have special status
-        if (filterMode === 'traites' && !assignment.boucle && !isTraiteByStatus) {
-          continue
-        }
-
         // Normalize the data to match expected table format
         const normalizedProspect = {
           id: assignment.id,
@@ -175,10 +126,11 @@ Deno.serve(async (req) => {
           source_id: assignment.source_id,
           source_table: assignment.source_table,
           assigned_at: assignment.assigned_at,
-          boucle: assignment.boucle,
+          boucle: filterMode === 'traites', // Set based on table
           notes_sales: assignment.notes_sales,
           statut_prospect: assignment.statut_prospect,
           date_action: assignment.date_action,
+          completed_at: filterMode === 'traites' ? assignment.completed_at : null,
           
           // Normalize field names to match table expectations
           email: prospectData.email,

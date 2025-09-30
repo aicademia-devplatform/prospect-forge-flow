@@ -1995,11 +1995,67 @@ export type Database = {
         }
         Relationships: []
       }
+      prospects_traites: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          completed_at: string
+          created_at: string
+          custom_data: Json | null
+          custom_table_name: string | null
+          date_action: string | null
+          id: string
+          lead_email: string
+          notes_sales: string | null
+          original_assignment_id: string
+          sales_user_id: string
+          source_id: string
+          source_table: string
+          statut_prospect: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at: string
+          assigned_by?: string | null
+          completed_at?: string
+          created_at?: string
+          custom_data?: Json | null
+          custom_table_name?: string | null
+          date_action?: string | null
+          id?: string
+          lead_email: string
+          notes_sales?: string | null
+          original_assignment_id: string
+          sales_user_id: string
+          source_id: string
+          source_table: string
+          statut_prospect?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          completed_at?: string
+          created_at?: string
+          custom_data?: Json | null
+          custom_table_name?: string | null
+          date_action?: string | null
+          id?: string
+          lead_email?: string
+          notes_sales?: string | null
+          original_assignment_id?: string
+          sales_user_id?: string
+          source_id?: string
+          source_table?: string
+          statut_prospect?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sales_assignments: {
         Row: {
           assigned_at: string
           assigned_by: string | null
-          boucle: boolean
           created_at: string
           custom_data: Json | null
           custom_table_name: string | null
@@ -2017,7 +2073,6 @@ export type Database = {
         Insert: {
           assigned_at?: string
           assigned_by?: string | null
-          boucle?: boolean
           created_at?: string
           custom_data?: Json | null
           custom_table_name?: string | null
@@ -2035,7 +2090,6 @@ export type Database = {
         Update: {
           assigned_at?: string
           assigned_by?: string | null
-          boucle?: boolean
           created_at?: string
           custom_data?: Json | null
           custom_table_name?: string | null
