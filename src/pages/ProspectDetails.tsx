@@ -75,6 +75,20 @@ interface ProspectData {
   created_at?: string;
   updated_at?: string;
 
+  // Additional CRM fields
+  firstname?: string;
+  name?: string;
+  tel?: string;
+  mobile?: string;
+  mobile_2?: string;
+  tel_pro?: string;
+  address?: string;
+  departement?: string;
+  industrie?: string;
+  linkedin_function?: string;
+  company_website?: string;
+  linkedin_company_url?: string;
+
   // Sources data
   sources?: Array<{
     source_table: string;
@@ -353,13 +367,51 @@ const ProspectDetails: React.FC = () => {
                     {prospect.email}
                   </a>
                 </div>
-                {(prospect.first_name || prospect.crm_firstname) && <div className="flex justify-between">
+                {(prospect.first_name || prospect.crm_firstname || prospect.firstname) && <div className="flex justify-between">
                     <span className="text-muted-foreground text-sm">Prénom:</span>
-                    <span className="text-sm">{prospect.first_name || prospect.crm_firstname}</span>
+                    <span className="text-sm">{prospect.first_name || prospect.crm_firstname || prospect.firstname}</span>
                   </div>}
-                {(prospect.last_name || prospect.crm_name) && <div className="flex justify-between">
+                {(prospect.last_name || prospect.crm_name || prospect.name) && <div className="flex justify-between">
                     <span className="text-muted-foreground text-sm">Nom:</span>
-                    <span className="text-sm">{prospect.last_name || prospect.crm_name}</span>
+                    <span className="text-sm">{prospect.last_name || prospect.crm_name || prospect.name}</span>
+                  </div>}
+                {getPhone() !== 'Non renseigné' && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Téléphone:</span>
+                    <a href={`tel:${getPhone()}`} className="text-blue-600 hover:underline text-sm">
+                      {getPhone()}
+                    </a>
+                  </div>}
+                {(prospect.tel || prospect.crm_mobile || prospect.mobile || prospect.tel_pro) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Tél. fixe:</span>
+                    <a href={`tel:${prospect.tel || prospect.crm_mobile || prospect.mobile || prospect.tel_pro}`} className="text-blue-600 hover:underline text-sm">
+                      {prospect.tel || prospect.crm_mobile || prospect.mobile || prospect.tel_pro}
+                    </a>
+                  </div>}
+                {(prospect.mobile || prospect.crm_mobile || prospect.mobile_phone) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Mobile:</span>
+                    <a href={`tel:${prospect.mobile || prospect.crm_mobile || prospect.mobile_phone}`} className="text-blue-600 hover:underline text-sm">
+                      {prospect.mobile || prospect.crm_mobile || prospect.mobile_phone}
+                    </a>
+                  </div>}
+                {(prospect.mobile_2) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Mobile 2:</span>
+                    <a href={`tel:${prospect.mobile_2}`} className="text-blue-600 hover:underline text-sm">
+                      {prospect.mobile_2}
+                    </a>
+                  </div>}
+                {(prospect.tel_pro) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Tél. pro:</span>
+                    <a href={`tel:${prospect.tel_pro}`} className="text-blue-600 hover:underline text-sm">
+                      {prospect.tel_pro}
+                    </a>
+                  </div>}
+                {(prospect.address) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Adresse:</span>
+                    <span className="text-sm">{prospect.address}</span>
+                  </div>}
+                {(prospect.departement) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Département:</span>
+                    <span className="text-sm">{prospect.departement}</span>
                   </div>}
               </CardContent>
             </Card>
@@ -377,6 +429,30 @@ const ProspectDetails: React.FC = () => {
                   <span className="text-muted-foreground text-sm">Entreprise:</span>
                   <span className="text-sm">{getCompanyName()}</span>
                 </div>
+                {(prospect.industrie || prospect.industry || prospect.apollo_industry) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Industrie:</span>
+                    <span className="text-sm">{prospect.industrie || prospect.industry || prospect.apollo_industry}</span>
+                  </div>}
+                {(prospect.nb_employees || prospect.apollo_nb_employees) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Nb employés:</span>
+                    <span className="text-sm">{prospect.nb_employees || prospect.apollo_nb_employees}</span>
+                  </div>}
+                {(prospect.linkedin_function) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Fonction LinkedIn:</span>
+                    <span className="text-sm">{prospect.linkedin_function}</span>
+                  </div>}
+                {(prospect.company_website || prospect.website || prospect.apollo_website) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">Site web:</span>
+                    <a href={prospect.company_website || prospect.website || prospect.apollo_website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                      {prospect.company_website || prospect.website || prospect.apollo_website}
+                    </a>
+                  </div>}
+                {(prospect.linkedin_company_url || prospect.apollo_company_linkedin_url) && <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm">LinkedIn entreprise:</span>
+                    <a href={prospect.linkedin_company_url || prospect.apollo_company_linkedin_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                      LinkedIn entreprise
+                    </a>
+                  </div>}
               </CardContent>
             </Card>
           </div>
