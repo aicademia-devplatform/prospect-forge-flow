@@ -127,6 +127,14 @@ export const ModifierProspectForm: React.FC<ModifierProspectFormProps> = ({
     }
   };
 
+  const removeField = (index: number) => {
+    try {
+      remove(index);
+    } catch (error) {
+      console.error('Error removing field:', error);
+    }
+  };
+
   const getFieldDefinition = (key: string) => {
     return AVAILABLE_FIELDS.find(f => f.key === key);
   };
@@ -175,7 +183,14 @@ export const ModifierProspectForm: React.FC<ModifierProspectFormProps> = ({
 
   const renderFieldInput = (field: any, index: number) => {
     const fieldDef = getFieldDefinition(field.key);
-    const Icon = fieldDef?.icon || User;
+    
+    // Si on ne trouve pas la définition du champ, on ignore ce champ
+    if (!fieldDef) {
+      console.warn(`Field definition not found for key: ${field.key}`);
+      return null;
+    }
+    
+    const Icon = fieldDef.icon || User;
 
     return (
       <motion.div
@@ -198,7 +213,7 @@ export const ModifierProspectForm: React.FC<ModifierProspectFormProps> = ({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => remove(index)}
+                  onClick={() => removeField(index)}
                   className="h-6 w-6 p-0 ml-auto"
                 >
                   <X className="h-3 w-3" />
@@ -207,7 +222,7 @@ export const ModifierProspectForm: React.FC<ModifierProspectFormProps> = ({
               <FormControl>
                 {fieldDef?.type === 'textarea' ? (
                   <Textarea
-                    placeholder={`Entrez ${fieldDef.label.toLowerCase()}`}
+                    placeholder={`Entrez ${fieldDef?.label?.toLowerCase() || field.key}`}
                     {...inputField}
                   />
                 ) : (
