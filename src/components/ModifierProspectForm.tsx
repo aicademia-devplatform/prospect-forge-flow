@@ -143,25 +143,139 @@ export const ModifierProspectForm: React.FC<ModifierProspectFormProps> = ({
     try {
       setIsSubmitting(true);
 
-      // Construire l'objet de mise à jour
-      const updateData: any = {};
+      // Construire les objets de mise à jour pour chaque table
+      const crmUpdateData: any = {};
+      const apolloUpdateData: any = {};
       
       data.fields.forEach(field => {
         if (field.value && field.value.trim()) {
-          updateData[field.key] = field.value.trim();
+          const value = field.value.trim();
+          
+          // Mapping des champs pour crm_contacts
+          switch (field.key) {
+            case 'firstname':
+              crmUpdateData.firstname = value;
+              break;
+            case 'name':
+              crmUpdateData.name = value;
+              break;
+            case 'company':
+              crmUpdateData.company = value;
+              break;
+            case 'city':
+              crmUpdateData.city = value;
+              break;
+            case 'country':
+              crmUpdateData.country = value;
+              break;
+            case 'departement':
+              crmUpdateData.departement = value;
+              break;
+            case 'address':
+              crmUpdateData.address = value;
+              break;
+            case 'tel':
+              crmUpdateData.tel = value;
+              break;
+            case 'mobile':
+              crmUpdateData.mobile = value;
+              break;
+            case 'mobile_2':
+              crmUpdateData.mobile_2 = value;
+              break;
+            case 'tel_pro':
+              crmUpdateData.tel_pro = value;
+              break;
+            case 'industrie':
+              crmUpdateData.industrie = value;
+              break;
+            case 'nb_employees':
+              crmUpdateData.nb_employees = value;
+              break;
+            case 'linkedin_url':
+              crmUpdateData.linkedin_url = value;
+              break;
+            case 'linkedin_company_url':
+              crmUpdateData.linkedin_company_url = value;
+              break;
+            case 'company_website':
+              crmUpdateData.company_website = value;
+              break;
+            case 'linkedin_function':
+              crmUpdateData.linkedin_function = value;
+              break;
+          }
+
+          // Mapping des champs pour apollo_contacts
+          switch (field.key) {
+            case 'firstname':
+              apolloUpdateData.first_name = value;
+              break;
+            case 'name':
+              apolloUpdateData.last_name = value;
+              break;
+            case 'company':
+              apolloUpdateData.company = value;
+              break;
+            case 'city':
+              apolloUpdateData.city = value;
+              break;
+            case 'country':
+              apolloUpdateData.country = value;
+              break;
+            case 'mobile':
+              apolloUpdateData.mobile_phone = value;
+              break;
+            case 'tel':
+              apolloUpdateData.work_direct_phone = value;
+              break;
+            case 'tel_pro':
+              apolloUpdateData.corporate_phone = value;
+              break;
+            case 'industrie':
+              apolloUpdateData.industry = value;
+              break;
+            case 'nb_employees':
+              apolloUpdateData.nb_employees = parseInt(value) || null;
+              break;
+            case 'linkedin_url':
+              apolloUpdateData.person_linkedin_url = value;
+              break;
+            case 'linkedin_company_url':
+              apolloUpdateData.company_linkedin_url = value;
+              break;
+            case 'company_website':
+              apolloUpdateData.website = value;
+              break;
+          }
         }
       });
 
-      // Mettre à jour dans crm_contacts
-      const { error } = await supabase
-        .from('crm_contacts')
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('email', prospect.email);
+      // Mettre à jour crm_contacts si des champs correspondent
+      if (Object.keys(crmUpdateData).length > 0) {
+        const { error: crmError } = await supabase
+          .from('crm_contacts')
+          .update({
+            ...crmUpdateData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('email', prospect.email);
 
-      if (error) throw error;
+        if (crmError) throw crmError;
+      }
+
+      // Mettre à jour apollo_contacts si des champs correspondent
+      if (Object.keys(apolloUpdateData).length > 0) {
+        const { error: apolloError } = await supabase
+          .from('apollo_contacts')
+          .update({
+            ...apolloUpdateData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('email', prospect.email);
+
+        if (apolloError) throw apolloError;
+      }
 
       toast({
         title: 'Succès',
