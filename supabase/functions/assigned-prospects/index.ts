@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
       // Filter for prospects to call back (this can be customized based on your criteria)
       assignmentsQuery = assignmentsQuery.eq('boucle', false)
     } else {
-      // Default: active prospects (not bouclé)
+      // Default: active prospects (not bouclé) - exclude closed prospects from assigned view
       assignmentsQuery = assignmentsQuery.eq('boucle', false)
     }
 
@@ -132,6 +132,9 @@ Deno.serve(async (req) => {
           source_table: assignment.source_table,
           assigned_at: assignment.assigned_at,
           boucle: assignment.boucle,
+          notes_sales: assignment.notes_sales,
+          statut_prospect: assignment.statut_prospect,
+          date_action: assignment.date_action,
           
           // Normalize field names to match table expectations
           email: prospectData.email,

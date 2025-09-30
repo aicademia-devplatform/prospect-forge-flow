@@ -29,7 +29,6 @@ interface ColumnInfo {
   nullable: boolean;
 }
 
-// Fonction de traduction des noms de colonnes
 const translateColumnName = (columnName: string): string => {
   const translations: Record<string, string> = {
     'id': 'ID',
@@ -56,7 +55,11 @@ const translateColumnName = (columnName: string): string => {
     'data_section': 'Section',
     'source_table': 'Source',
     'data_source': 'Source de données',
-    'actions': 'Actions'
+    'actions': 'Actions',
+    'boucle': 'Statut',
+    'notes_sales': 'Notes du commercial',
+    'statut_prospect': 'Statut prospect',
+    'date_action': 'Date d\'action'
   };
   return translations[columnName] || columnName;
 };
@@ -80,7 +83,11 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
   const [sortBy, setSortBy] = useState('assigned_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(
+    filterMode === 'traites' 
+      ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'boucle', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
+      : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']
+  ));
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -251,9 +258,8 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
     filterMode
   });
 
-  // Définir les colonnes disponibles (seulement les colonnes de base)
   const getAllColumns = (): ColumnInfo[] => {
-    return [{
+    const baseColumns = [{
       name: 'email',
       type: 'string',
       nullable: false
@@ -282,6 +288,34 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
       type: 'string',
       nullable: false
     }];
+
+    // Add treatment columns for traites mode
+    if (filterMode === 'traites') {
+      baseColumns.splice(-2, 0, ...[
+        {
+          name: 'boucle',
+          type: 'boolean',
+          nullable: false
+        },
+        {
+          name: 'notes_sales',
+          type: 'string',
+          nullable: true
+        },
+        {
+          name: 'statut_prospect',
+          type: 'string',
+          nullable: true
+        },
+        {
+          name: 'date_action',
+          type: 'date',
+          nullable: true
+        }
+      ]);
+    }
+
+    return baseColumns;
   };
   const allColumns = getAllColumns();
   const availableColumns = allColumns;
@@ -363,7 +397,12 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
     setColumnDialogOpen(false);
   };
   const formatValue = (value: any, type: string, columnName?: string) => {
-    if (!value) return '—';
+    if (value === null || value === undefined) return '—';
+    
+    if (type === 'boolean' && columnName === 'boucle') {
+      return value ? 'Bouclé' : 'Actif';
+    }
+    
     if (type === 'date') {
       moment.locale('fr');
       if (columnName === 'assigned_at') {
@@ -375,6 +414,9 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
         } else {
           return assignedDate.fromNow();
         }
+      }
+      if (columnName === 'date_action') {
+        return moment(value).format('D MMM YYYY à HH:mm');
       }
       return new Date(value).toLocaleDateString('fr-FR', {
         day: '2-digit',
@@ -567,7 +609,13 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
                                 {prospect[column.name] || 'Non défini'}
                               </Badge> : column.name === 'source_table' || column.name === 'data_source' ? <Badge variant="outline">
                                  {prospect.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM'}
-                               </Badge> : column.name === 'actions' ? <div className="flex items-center gap-2">
+                               </Badge> : column.name === 'boucle' ? <Badge className={prospect[column.name] ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'}>
+                                 {formatValue(prospect[column.name], column.type, column.name)}
+                               </Badge> : column.name === 'statut_prospect' && prospect[column.name] ? <Badge variant="secondary">
+                                 {prospect[column.name]}
+                               </Badge> : column.name === 'notes_sales' ? <div className="max-w-xs truncate" title={prospect[column.name] || ''}>
+                                 {prospect[column.name] || '—'}
+                               </div> : column.name === 'actions' ? <div className="flex items-center gap-2">
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
