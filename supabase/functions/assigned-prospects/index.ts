@@ -13,6 +13,7 @@ interface QueryParams {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
   visibleColumns?: string[]
+  filterMode?: 'assigned' | 'traites' | 'rappeler'
   advancedFilters?: {
     dateRange?: {
       from?: string
@@ -58,17 +59,32 @@ Deno.serve(async (req) => {
       sortBy = 'assigned_at', 
       sortOrder = 'desc',
       visibleColumns = [],
+      filterMode = 'assigned',
       advancedFilters = {}
     }: QueryParams = await req.json()
 
-    console.log('Query params:', { page, pageSize, searchTerm, searchColumns, sortBy, sortOrder, visibleColumns, advancedFilters })
+    console.log('Query params:', { page, pageSize, searchTerm, searchColumns, sortBy, sortOrder, visibleColumns, filterMode, advancedFilters })
 
-    // Get assignments for the current user
-    const { data: assignments, error: assignError } = await supabase
+    // Build query based on filter mode
+    let assignmentsQuery = supabase
       .from('sales_assignments')
       .select('*')
       .eq('sales_user_id', user.id)
       .eq('status', 'active')
+
+    // Apply filter mode
+    if (filterMode === 'traites') {
+      // Filter for closed prospects: bouclé OR specific statuses
+      assignmentsQuery = assignmentsQuery.eq('boucle', true)
+    } else if (filterMode === 'rappeler') {
+      // Filter for prospects to call back (this can be customized based on your criteria)
+      assignmentsQuery = assignmentsQuery.eq('boucle', false)
+    } else {
+      // Default: active prospects (not bouclé)
+      assignmentsQuery = assignmentsQuery.eq('boucle', false)
+    }
+
+    const { data: assignments, error: assignError } = await assignmentsQuery
 
     if (assignError) throw assignError
 
@@ -95,6 +111,19 @@ Deno.serve(async (req) => {
       }
 
       if (prospectData) {
+        // For "traites" mode, also check if contact has "barrage" or "déjà accompagné" status
+        const isTraiteByStatus = filterMode === 'traites' && (
+          prospectData.apollo_status === 'barrage' || 
+          prospectData.apollo_status === 'déjà accompagné' ||
+          prospectData.zoho_status === 'barrage' ||
+          prospectData.zoho_status === 'déjà accompagné'
+        )
+
+        // Skip if filterMode is "traites" but assignment is not bouclé and doesn't have special status
+        if (filterMode === 'traites' && !assignment.boucle && !isTraiteByStatus) {
+          continue
+        }
+
         // Normalize the data to match expected table format
         const normalizedProspect = {
           id: assignment.id,
@@ -102,6 +131,7 @@ Deno.serve(async (req) => {
           source_id: assignment.source_id,
           source_table: assignment.source_table,
           assigned_at: assignment.assigned_at,
+          boucle: assignment.boucle,
           
           // Normalize field names to match table expectations
           email: prospectData.email,
@@ -136,6 +166,7 @@ Deno.serve(async (req) => {
           // Additional fields for display
           data_section: assignment.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM',
           contact_active: 'Oui', // Since they're assigned
+          data_source: assignment.source_table,
           
           // Include all original data in case needed
           _original_data: prospectData,

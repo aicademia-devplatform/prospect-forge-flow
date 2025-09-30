@@ -60,7 +60,11 @@ const translateColumnName = (columnName: string): string => {
   };
   return translations[columnName] || columnName;
 };
-const MySalesLeads: React.FC = () => {
+interface MySalesLeadsProps {
+  filterMode?: 'assigned' | 'traites' | 'rappeler';
+}
+
+const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) => {
   const {
     user
   } = useAuth();
@@ -243,7 +247,8 @@ const MySalesLeads: React.FC = () => {
     sortBy,
     sortOrder,
     visibleColumns: visibleColumnsArray,
-    advancedFilters
+    advancedFilters,
+    filterMode
   });
 
   // Définir les colonnes disponibles (seulement les colonnes de base)
@@ -441,9 +446,17 @@ const MySalesLeads: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Prospects Assignés</h2>
+          <h2 className="text-xl font-semibold">
+            {filterMode === 'traites' ? 'Prospects Traités' : 
+             filterMode === 'rappeler' ? 'Prospects à Rappeler' : 
+             'Prospects Assignés'}
+          </h2>
           <p className="text-sm text-muted-foreground">
-            {totalCount} prospects assignés depuis vos différentes sources
+            {filterMode === 'traites' ? 
+              `${totalCount} prospects bouclés ou avec statut "barrage" / "déjà accompagné"` :
+             filterMode === 'rappeler' ? 
+              `${totalCount} prospects à rappeler` :
+              `${totalCount} prospects assignés depuis vos différentes sources`}
           </p>
         </div>
         

@@ -23,57 +23,6 @@ interface CreatedTable {
 const Prospects = () => {
   const { userRole, user } = useAuth();
   const [activeTab, setActiveTab] = useState('assigned');
-  const [traitesList, setTraitesList] = useState<any[]>([]);
-  const [traitesLoading, setTraitesLoading] = useState(false);
-
-  // Fetch prospects traités when "traites" tab is active
-  useEffect(() => {
-    const fetchTraitesProspects = async () => {
-      if (!user || activeTab !== 'traites') return;
-      
-      setTraitesLoading(true);
-      try {
-        // Récupérer tous les prospects avec des assignations bouclées ou avec certains statuts
-        const { data: assignments, error } = await supabase
-          .from('sales_assignments')
-          .select(`
-            *,
-            apollo_contacts:apollo_contacts!inner(
-              id,
-              email,
-              first_name,
-              last_name,
-              company,
-              title,
-              stage,
-              apollo_status,
-              zoho_status
-            ),
-            crm_contacts:crm_contacts!inner(
-              id,
-              email,
-              firstname,
-              name,
-              company,
-              apollo_status,
-              zoho_status
-            )
-          `)
-          .or('boucle.eq.true,apollo_contacts.apollo_status.eq.barrage,apollo_contacts.apollo_status.eq.déjà accompagné,crm_contacts.apollo_status.eq.barrage,crm_contacts.apollo_status.eq.déjà accompagné')
-          .eq('sales_user_id', user.id);
-
-        if (error) throw error;
-
-        setTraitesList(assignments || []);
-      } catch (error) {
-        console.error('Error fetching prospects traités:', error);
-      } finally {
-        setTraitesLoading(false);
-      }
-    };
-
-    fetchTraitesProspects();
-  }, [user, activeTab]);
 
   const formatDate = (dateString: string) => {
     moment.locale('fr');
@@ -145,67 +94,7 @@ const Prospects = () => {
           </TabsContent>
 
           <TabsContent value="traites" className="space-y-4 mt-6">
-            {traitesLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p className="text-muted-foreground">Chargement des prospects traités...</p>
-                </div>
-              </div>
-            ) : traitesList.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Aucun prospect traité pour le moment</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">
-                    {traitesList.length} prospect{traitesList.length > 1 ? 's' : ''} traité{traitesList.length > 1 ? 's' : ''}
-                  </h3>
-                </div>
-                
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {traitesList.map((assignment) => {
-                    const contact = assignment.apollo_contacts || assignment.crm_contacts;
-                    if (!contact) return null;
-                    
-                    return (
-                      <div key={assignment.id} className="rounded-lg border bg-card p-4 hover:shadow-md transition-shadow">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm">
-                              {contact.first_name || contact.firstname} {contact.last_name || contact.name}
-                            </h4>
-                            {assignment.boucle && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                Bouclé
-                              </span>
-                            )}
-                          </div>
-                          
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            <p>{contact.email}</p>
-                            {contact.company && <p>{contact.company}</p>}
-                            {contact.title && <p>{contact.title}</p>}
-                          </div>
-                          
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">
-                              Assigné le {formatDate(assignment.assigned_at)}
-                            </span>
-                            {(contact.apollo_status || contact.zoho_status) && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                {contact.apollo_status || contact.zoho_status}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <MySalesLeads filterMode="traites" />
           </TabsContent>
         </Tabs>
       </div>

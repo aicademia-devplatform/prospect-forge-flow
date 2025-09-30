@@ -11,6 +11,7 @@ interface UseAssignedProspectsDataParams {
   sortOrder?: 'asc' | 'desc';
   visibleColumns?: string[];
   advancedFilters?: Record<string, any>;
+  filterMode?: 'assigned' | 'traites' | 'rappeler';
 }
 
 interface AssignedProspectsDataResponse {
@@ -39,7 +40,8 @@ export const useAssignedProspectsData = (params: UseAssignedProspectsDataParams)
           sortBy: params.sortBy,
           sortOrder: params.sortOrder,
           visibleColumns: params.visibleColumns,
-          advancedFilters: params.advancedFilters
+          advancedFilters: params.advancedFilters,
+          filterMode: params.filterMode
         }
       });
 
