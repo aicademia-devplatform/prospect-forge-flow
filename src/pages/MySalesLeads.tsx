@@ -23,48 +23,50 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
 interface ColumnInfo {
   name: string;
   type: string;
   nullable: boolean;
 }
 
-  // Fonction de traduction des noms de colonnes
-  const translateColumnName = (columnName: string): string => {
-    const translations: Record<string, string> = {
-      'id': 'ID',
-      'email': 'Email',
-      'created_at': 'Date de création',
-      'updated_at': 'Date de mise à jour',
-      'assigned_at': 'Date d\'assignation',
-      'first_name': 'Prénom',
-      'last_name': 'Nom',
-      'company': 'Entreprise',
-      'title': 'Titre',
-      'seniority': 'Ancienneté',
-      'departments': 'Départements',
-      'stage': 'Étape',
-      'industry': 'Industrie',
-      'nb_employees': 'Nombre d\'employés',
-      'apollo_status': 'Statut Apollo',
-      'zoho_status': 'Statut Zoho',
-      'mobile_phone': 'Téléphone portable',
-      'work_direct_phone': 'Téléphone professionnel',
-      'person_linkedin_url': 'LinkedIn',
-      'website': 'Site web',
-      'last_contacted': 'Dernier contact',
-      'data_section': 'Section',
-      'source_table': 'Source',
-      'data_source': 'Source de données',
-      'actions': 'Actions'
-    };
-    return translations[columnName] || columnName;
+// Fonction de traduction des noms de colonnes
+const translateColumnName = (columnName: string): string => {
+  const translations: Record<string, string> = {
+    'id': 'ID',
+    'email': 'Email',
+    'created_at': 'Date de création',
+    'updated_at': 'Date de mise à jour',
+    'assigned_at': 'Date d\'assignation',
+    'first_name': 'Prénom',
+    'last_name': 'Nom',
+    'company': 'Entreprise',
+    'title': 'Titre',
+    'seniority': 'Ancienneté',
+    'departments': 'Départements',
+    'stage': 'Étape',
+    'industry': 'Industrie',
+    'nb_employees': 'Nombre d\'employés',
+    'apollo_status': 'Statut Apollo',
+    'zoho_status': 'Statut Zoho',
+    'mobile_phone': 'Téléphone portable',
+    'work_direct_phone': 'Téléphone professionnel',
+    'person_linkedin_url': 'LinkedIn',
+    'website': 'Site web',
+    'last_contacted': 'Dernier contact',
+    'data_section': 'Section',
+    'source_table': 'Source',
+    'data_source': 'Source de données',
+    'actions': 'Actions'
   };
-
+  return translations[columnName] || columnName;
+};
 const MySalesLeads: React.FC = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
 
   // États
@@ -124,7 +126,7 @@ const MySalesLeads: React.FC = () => {
       // Mapper les filtres avancés vers les noms de colonnes correspondants
       const filterColumnMapping: Record<string, string> = {
         'dataSection': 'data_section',
-        'zohoStatus': 'zoho_status', 
+        'zohoStatus': 'zoho_status',
         'apolloStatus': 'apollo_status',
         'industrie': 'industry',
         'company': 'company',
@@ -154,23 +156,17 @@ const MySalesLeads: React.FC = () => {
       }
     }
   }, [advancedFilters, visibleColumns]);
-
   const loadTableConfig = async () => {
     if (!user) return;
     try {
-      const { data, error } = await supabase
-        .from('sales_table_config')
-        .select('column_config, table_settings')
-        .eq('sales_user_id', user.id)
-        .eq('table_name', 'assigned_prospects')
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from('sales_table_config').select('column_config, table_settings').eq('sales_user_id', user.id).eq('table_name', 'assigned_prospects').single();
       if (error && error.code !== 'PGRST116') throw error;
-
       if (data?.column_config) {
         const config = Array.isArray(data.column_config) ? data.column_config : [];
         setCustomColumns(config);
-
         if (config.length > 0) {
           const visibleCols = config.filter((col: any) => col.visible !== false).map((col: any) => col.name);
           // S'assurer que les colonnes épinglées sont toujours incluses
@@ -182,7 +178,6 @@ const MySalesLeads: React.FC = () => {
           setVisibleColumns(new Set(visibleCols));
         }
       }
-
       if (data?.table_settings) {
         const settings = data.table_settings as any;
         if (settings.pageSize) {
@@ -195,7 +190,6 @@ const MySalesLeads: React.FC = () => {
       setColumnConfigLoaded(true);
     }
   };
-
   const saveTableConfig = async () => {
     if (!user) return;
     try {
@@ -204,20 +198,22 @@ const MySalesLeads: React.FC = () => {
         visible: visibleColumns.has(column.name),
         order: Array.from(visibleColumns).indexOf(column.name)
       }));
-
-      const tableSettings = { pageSize, sortBy, sortOrder };
-
-      const { error } = await supabase
-        .from('sales_table_config')
-        .upsert({
-          sales_user_id: user.id,
-          table_name: 'assigned_prospects',
-          column_config: columnConfig,
-          table_settings: tableSettings
-        }, { onConflict: 'sales_user_id,table_name' });
-
+      const tableSettings = {
+        pageSize,
+        sortBy,
+        sortOrder
+      };
+      const {
+        error
+      } = await supabase.from('sales_table_config').upsert({
+        sales_user_id: user.id,
+        table_name: 'assigned_prospects',
+        column_config: columnConfig,
+        table_settings: tableSettings
+      }, {
+        onConflict: 'sales_user_id,table_name'
+      });
       if (error) throw error;
-
       toast({
         title: "Succès",
         description: "Configuration des colonnes sauvegardée"
@@ -233,7 +229,13 @@ const MySalesLeads: React.FC = () => {
   };
 
   // Fetch data using assigned prospects hook
-  const { data, totalCount, totalPages, loading, refetch } = useAssignedProspectsData({
+  const {
+    data,
+    totalCount,
+    totalPages,
+    loading,
+    refetch
+  } = useAssignedProspectsData({
     page: currentPage,
     pageSize,
     searchTerm: debouncedSearchTerm,
@@ -246,17 +248,36 @@ const MySalesLeads: React.FC = () => {
 
   // Définir les colonnes disponibles (seulement les colonnes de base)
   const getAllColumns = (): ColumnInfo[] => {
-    return [
-      { name: 'email', type: 'string', nullable: false },
-      { name: 'company', type: 'string', nullable: true },
-      { name: 'last_name', type: 'string', nullable: true },
-      { name: 'first_name', type: 'string', nullable: true },
-      { name: 'assigned_at', type: 'date', nullable: false },
-      { name: 'data_source', type: 'string', nullable: false },
-      { name: 'actions', type: 'string', nullable: false }
-    ];
+    return [{
+      name: 'email',
+      type: 'string',
+      nullable: false
+    }, {
+      name: 'company',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'last_name',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'first_name',
+      type: 'string',
+      nullable: true
+    }, {
+      name: 'assigned_at',
+      type: 'date',
+      nullable: false
+    }, {
+      name: 'data_source',
+      type: 'string',
+      nullable: false
+    }, {
+      name: 'actions',
+      type: 'string',
+      nullable: false
+    }];
   };
-
   const allColumns = getAllColumns();
   const availableColumns = allColumns;
 
@@ -272,7 +293,6 @@ const MySalesLeads: React.FC = () => {
       return newSet;
     });
   };
-
   const handleSelectAll = () => {
     if (selectedRows.size === data.length) {
       setSelectedRows(new Set());
@@ -280,13 +300,11 @@ const MySalesLeads: React.FC = () => {
       setSelectedRows(new Set(data.map(item => item.id)));
     }
   };
-
   const toggleColumnVisibilityInDialog = (columnName: string) => {
     // Empêcher de masquer les colonnes épinglées
     if (pinnedColumns.has(columnName)) {
       return;
     }
-    
     const newVisible = new Set(tempVisibleColumns);
     if (newVisible.has(columnName)) {
       newVisible.delete(columnName);
@@ -297,27 +315,22 @@ const MySalesLeads: React.FC = () => {
     }
     setTempVisibleColumns(newVisible);
   };
-
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     const items = Array.from(tempColumnOrder.filter(col => tempVisibleColumns.has(col)));
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
-
     const newOrder = [...items, ...tempColumnOrder.filter(col => !tempVisibleColumns.has(col))];
     setTempColumnOrder(newOrder);
   };
-
   const getOrderedVisibleColumns = () => {
     const visibleColumnNames = Array.from(visibleColumns);
     const orderedColumns: string[] = [];
-
     tempColumnOrder.forEach(colName => {
       if (visibleColumnNames.includes(colName)) {
         orderedColumns.push(colName);
       }
     });
-
     visibleColumnNames.forEach(colName => {
       if (!orderedColumns.includes(colName)) {
         orderedColumns.push(colName);
@@ -325,47 +338,39 @@ const MySalesLeads: React.FC = () => {
     });
     return orderedColumns;
   };
-
   const openColumnDialog = () => {
     setTempVisibleColumns(new Set(visibleColumns));
     setTempColumnOrder(getOrderedVisibleColumns());
     setColumnDialogOpen(true);
   };
-
   const applyColumnChanges = () => {
     setVisibleColumns(new Set(tempVisibleColumns));
     const newOrder = tempColumnOrder.filter(col => tempVisibleColumns.has(col));
     setTempColumnOrder(newOrder);
     setColumnDialogOpen(false);
-
     setTimeout(() => {
       saveTableConfig();
     }, 100);
   };
-
   const cancelColumnChanges = () => {
     setTempVisibleColumns(new Set(visibleColumns));
     setTempColumnOrder(getOrderedVisibleColumns());
     setColumnDialogOpen(false);
   };
-
   const formatValue = (value: any, type: string, columnName?: string) => {
     if (!value) return '—';
     if (type === 'date') {
       moment.locale('fr');
-
       if (columnName === 'assigned_at') {
         const now = moment();
         const assignedDate = moment(value);
         const daysDiff = now.diff(assignedDate, 'days');
-
         if (daysDiff > 7) {
           return assignedDate.format('D MMM YYYY');
         } else {
           return assignedDate.fromNow();
         }
       }
-
       return new Date(value).toLocaleDateString('fr-FR', {
         day: '2-digit',
         month: '2-digit',
@@ -379,7 +384,6 @@ const MySalesLeads: React.FC = () => {
     }
     return value.toString();
   };
-
   const getStatusBadgeClass = (status: string) => {
     const statusColors: Record<string, string> = {
       'new': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
@@ -390,7 +394,6 @@ const MySalesLeads: React.FC = () => {
     };
     return statusColors[status?.toLowerCase()] || statusColors.new;
   };
-
   const hideColumn = (columnName: string) => {
     // Empêcher de masquer les colonnes épinglées
     if (pinnedColumns.has(columnName)) {
@@ -400,24 +403,26 @@ const MySalesLeads: React.FC = () => {
     newVisible.delete(columnName);
     setVisibleColumns(newVisible);
   };
-
   const handleColumnFilter = (columnName: string, value: string) => {
-    setColumnFilters(prev => ({ ...prev, [columnName]: value }));
-    
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnName]: value
+    }));
+
     // Afficher automatiquement la colonne si un filtre est appliqué
     if (value && !visibleColumns.has(columnName)) {
       setVisibleColumns(prev => new Set([...prev, columnName]));
     }
   };
-
   const clearColumnFilter = (columnName: string) => {
     setColumnFilters(prev => {
-      const newFilters = { ...prev };
+      const newFilters = {
+        ...prev
+      };
       delete newFilters[columnName];
       return newFilters;
     });
   };
-
   const handleSort = (columnName: string, order?: 'asc' | 'desc') => {
     if (order) {
       setSortBy(columnName);
@@ -432,9 +437,7 @@ const MySalesLeads: React.FC = () => {
     }
     setCurrentPage(1);
   };
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -445,10 +448,7 @@ const MySalesLeads: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={saveTableConfig}>
-            <Download className="h-4 w-4 mr-2" />
-            Sauvegarder Config
-          </Button>
+          
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Exporter
@@ -464,24 +464,11 @@ const MySalesLeads: React.FC = () => {
               {/* Search */}
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input 
-                  placeholder="Rechercher des prospects..." 
-                  value={searchTerm} 
-                  onChange={e => setSearchTerm(e.target.value)} 
-                  className="pl-10" 
-                />
+                <Input placeholder="Rechercher des prospects..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
 
               {/* Filters */}
-              <TableFilters 
-                tableName="apollo_contacts"
-                filters={advancedFilters} 
-                onFiltersChange={setAdvancedFilters} 
-                onReset={() => setAdvancedFilters({})} 
-                isOpen={filtersOpen} 
-                onToggle={() => setFiltersOpen(!filtersOpen)} 
-                showOnlyButton={true} 
-              />
+              <TableFilters tableName="apollo_contacts" filters={advancedFilters} onFiltersChange={setAdvancedFilters} onReset={() => setAdvancedFilters({})} isOpen={filtersOpen} onToggle={() => setFiltersOpen(!filtersOpen)} showOnlyButton={true} />
 
               {/* Column visibility */}
               <Button variant="outline" size="sm" onClick={openColumnDialog}>
@@ -492,163 +479,86 @@ const MySalesLeads: React.FC = () => {
             </div>
 
             {/* Selection info */}
-            {selectedRows.size > 0 && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {selectedRows.size > 0 && <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>{selectedRows.size} sélectionné{selectedRows.size > 1 ? 's' : ''}</span>
                 <Button variant="ghost" size="sm" onClick={() => setSelectedRows(new Set())}>
                   <X className="h-4 w-4" />
                 </Button>
-              </div>
-            )}
+              </div>}
           </div>
         </CardContent>
       </Card>
 
       {/* Advanced Filters */}
       <AnimatePresence>
-        {filtersOpen && (
-          <TableFilters 
-            tableName="apollo_contacts" 
-            filters={advancedFilters} 
-            onFiltersChange={setAdvancedFilters} 
-            onReset={() => setAdvancedFilters({})} 
-            isOpen={filtersOpen} 
-            onToggle={() => setFiltersOpen(!filtersOpen)} 
-          />
-        )}
+        {filtersOpen && <TableFilters tableName="apollo_contacts" filters={advancedFilters} onFiltersChange={setAdvancedFilters} onReset={() => setAdvancedFilters({})} isOpen={filtersOpen} onToggle={() => setFiltersOpen(!filtersOpen)} />}
       </AnimatePresence>
 
       {/* Table */}
       <Card>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
+        {loading ? <div className="flex items-center justify-center py-12">
             <div className="flex items-center gap-3">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <span className="text-lg font-medium">Chargement des prospects...</span>
             </div>
-          </div>
-        ) : (
-          <div ref={tableContainerRef} className="overflow-x-auto">
+          </div> : <div ref={tableContainerRef} className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   {/* Colonne checkbox - épinglée */}
                   <TableHead className="w-[50px] px-3 py-3 text-left sticky top-0 left-0 bg-background border-r z-50">
-                    <Checkbox 
-                      checked={data.length > 0 && selectedRows.size === data.length} 
-                      onCheckedChange={handleSelectAll} 
-                      aria-label="Sélectionner tous" 
-                    />
+                    <Checkbox checked={data.length > 0 && selectedRows.size === data.length} onCheckedChange={handleSelectAll} aria-label="Sélectionner tous" />
                   </TableHead>
                   
                   {/* Colonne email - épinglée */}
-                  {visibleColumns.has('email') && (
-                    <TableHead 
-                      className="w-[200px] px-4 py-3 text-left sticky top-0 bg-background border-r z-40"
-                      style={{ left: '50px' }}
-                    >
-                      <TableColumnHeader 
-                        columnName="email" 
-                        displayName={translateColumnName('email')} 
-                        sortBy={sortBy} 
-                        sortOrder={sortOrder} 
-                        isPinned={true} 
-                        canPin={false} 
-                        canHide={false} 
-                        onSort={handleSort} 
-                        onPin={() => {}} 
-                        onHide={hideColumn} 
-                        onFilter={handleColumnFilter} 
-                        onClearFilter={clearColumnFilter} 
-                        filterValue={columnFilters['email'] || ''} 
-                      />
-                    </TableHead>
-                  )}
+                  {visibleColumns.has('email') && <TableHead className="w-[200px] px-4 py-3 text-left sticky top-0 bg-background border-r z-40" style={{
+                left: '50px'
+              }}>
+                      <TableColumnHeader columnName="email" displayName={translateColumnName('email')} sortBy={sortBy} sortOrder={sortOrder} isPinned={true} canPin={false} canHide={false} onSort={handleSort} onPin={() => {}} onHide={hideColumn} onFilter={handleColumnFilter} onClearFilter={clearColumnFilter} filterValue={columnFilters['email'] || ''} />
+                    </TableHead>}
                   
                    {/* Autres colonnes */}
                    {availableColumns.map(column => {
-                     if (!visibleColumns.has(column.name) || column.name === 'email') return null;
-                     return (
-                       <TableHead key={column.name} className="px-4 py-3 text-left min-w-[120px] sticky top-0 bg-background z-20">
-                         {column.name === 'actions' ? (
-                           'Actions'
-                         ) : (
-                           <TableColumnHeader 
-                             columnName={column.name} 
-                             displayName={translateColumnName(column.name)} 
-                             sortBy={sortBy} 
-                             sortOrder={sortOrder} 
-                             isPinned={false} 
-                             canPin={false} 
-                             canHide={!pinnedColumns.has(column.name)} 
-                             onSort={handleSort} 
-                             onPin={() => {}} 
-                             onHide={hideColumn} 
-                             onFilter={handleColumnFilter} 
-                             onClearFilter={clearColumnFilter} 
-                             filterValue={columnFilters[column.name] || ''} 
-                           />
-                         )}
-                       </TableHead>
-                     );
-                   })}
+                if (!visibleColumns.has(column.name) || column.name === 'email') return null;
+                return <TableHead key={column.name} className="px-4 py-3 text-left min-w-[120px] sticky top-0 bg-background z-20">
+                         {column.name === 'actions' ? 'Actions' : <TableColumnHeader columnName={column.name} displayName={translateColumnName(column.name)} sortBy={sortBy} sortOrder={sortOrder} isPinned={false} canPin={false} canHide={!pinnedColumns.has(column.name)} onSort={handleSort} onPin={() => {}} onHide={hideColumn} onFilter={handleColumnFilter} onClearFilter={clearColumnFilter} filterValue={columnFilters[column.name] || ''} />}
+                       </TableHead>;
+              })}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.length === 0 ? (
-                  <TableRow>
+                {data.length === 0 ? <TableRow>
                     <TableCell colSpan={Array.from(visibleColumns).length + 2} className="text-center py-8 text-muted-foreground">
                       Aucun prospect assigné trouvé
                     </TableCell>
-                  </TableRow>
-                ) : (
-                  data.map(prospect => (
-                    <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
+                  </TableRow> : data.map(prospect => <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
                       {/* Colonne checkbox */}
                       <TableCell className="w-[50px] px-3 py-3 sticky left-0 bg-background border-r z-30">
-                        <Checkbox 
-                          checked={selectedRows.has(prospect.id)} 
-                          onCheckedChange={() => handleRowSelect(prospect.id)} 
-                          aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`} 
-                        />
+                        <Checkbox checked={selectedRows.has(prospect.id)} onCheckedChange={() => handleRowSelect(prospect.id)} aria-label={`Sélectionner ${prospect.first_name} ${prospect.last_name}`} />
                       </TableCell>
                       
                       {/* Colonne email */}
-                      {visibleColumns.has('email') && (
-                        <TableCell 
-                          className="w-[200px] px-4 py-3 sticky bg-background border-r z-20"
-                          style={{ left: '50px' }}
-                        >
+                      {visibleColumns.has('email') && <TableCell className="w-[200px] px-4 py-3 sticky bg-background border-r z-20" style={{
+                left: '50px'
+              }}>
                           <a href={`mailto:${prospect.email}`} className="text-primary hover:underline">
                             {prospect.email}
                           </a>
-                        </TableCell>
-                      )}
+                        </TableCell>}
                       
                       {/* Autres colonnes */}
                       {availableColumns.map(column => {
-                        if (!visibleColumns.has(column.name) || column.name === 'email') return null;
-                        return (
-                          <TableCell key={column.name} className="px-4 py-3 min-w-[120px]">
-                            {column.name === 'apollo_status' || column.name === 'zoho_status' ? (
-                              <Badge className={getStatusBadgeClass(prospect[column.name])}>
+                if (!visibleColumns.has(column.name) || column.name === 'email') return null;
+                return <TableCell key={column.name} className="px-4 py-3 min-w-[120px]">
+                            {column.name === 'apollo_status' || column.name === 'zoho_status' ? <Badge className={getStatusBadgeClass(prospect[column.name])}>
                                 {prospect[column.name] || 'Non défini'}
-                              </Badge>
-                             ) : column.name === 'source_table' || column.name === 'data_source' ? (
-                               <Badge variant="outline">
+                              </Badge> : column.name === 'source_table' || column.name === 'data_source' ? <Badge variant="outline">
                                  {prospect.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM'}
-                               </Badge>
-                             ) : column.name === 'actions' ? (
-                                <div className="flex items-center gap-2">
+                               </Badge> : column.name === 'actions' ? <div className="flex items-center gap-2">
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button 
-                                          variant="ghost" 
-                                          size="sm" 
-                                          className="h-8 w-8 p-0"
-                                          onClick={() => navigate(createProspectUrl(prospect.email))}
-                                        >
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(createProspectUrl(prospect.email))}>
                                           <Eye className="h-4 w-4" />
                                         </Button>
                                       </TooltipTrigger>
@@ -670,52 +580,31 @@ const MySalesLeads: React.FC = () => {
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
-                                </div>
-                             ) : column.name === 'person_linkedin_url' && prospect[column.name] ? (
-                              <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                </div> : column.name === 'person_linkedin_url' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                                 LinkedIn
-                              </a>
-                            ) : column.name === 'website' && prospect[column.name] ? (
-                              <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                              </a> : column.name === 'website' && prospect[column.name] ? <a href={prospect[column.name]} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                                 Site web
-                              </a>
-                            ) : (
-                              formatValue(prospect[column.name], column.type, column.name)
-                            )}
-                          </TableCell>
-                        );
-                       })}
-                    </TableRow>
-                  ))
-                )}
+                              </a> : formatValue(prospect[column.name], column.type, column.name)}
+                          </TableCell>;
+              })}
+                    </TableRow>)}
               </TableBody>
             </Table>
-          </div>
-        )}
+          </div>}
       </Card>
 
       {/* Pagination */}
-      {!loading && totalCount > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      {!loading && totalCount > 0 && <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-sm text-muted-foreground">
             Affichage de {(currentPage - 1) * pageSize + 1} à {Math.min(currentPage * pageSize, totalCount)} sur {totalCount} prospects assignés
             {selectedRows.size > 0 && ` • ${selectedRows.size} sélectionné${selectedRows.size > 1 ? 's' : ''}`}
           </div>
           
-          <DataPagination 
-            currentPage={currentPage} 
-            totalPages={totalPages} 
-            pageSize={pageSize} 
-            totalItems={totalCount} 
-            onPageChange={setCurrentPage} 
-            onPageSizeChange={size => {
-              setPageSize(size);
-              setCurrentPage(1);
-            }} 
-            loading={loading} 
-          />
-        </div>
-      )}
+          <DataPagination currentPage={currentPage} totalPages={totalPages} pageSize={pageSize} totalItems={totalCount} onPageChange={setCurrentPage} onPageSizeChange={size => {
+        setPageSize(size);
+        setCurrentPage(1);
+      }} loading={loading} />
+        </div>}
 
       {/* Dialog de gestion des colonnes */}
       <Dialog open={columnDialogOpen} onOpenChange={setColumnDialogOpen}>
@@ -736,48 +625,24 @@ const MySalesLeads: React.FC = () => {
               <div className="border rounded-lg p-3 bg-green-50/50 flex-1 overflow-y-auto">
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="visible-columns">
-                    {(provided, snapshot) => (
-                      <div 
-                        {...provided.droppableProps} 
-                        ref={provided.innerRef} 
-                        className={`space-y-2 min-h-[100px] transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-green-100/70 rounded-lg' : ''}`}
-                      >
+                    {(provided, snapshot) => <div {...provided.droppableProps} ref={provided.innerRef} className={`space-y-2 min-h-[100px] transition-colors duration-200 ${snapshot.isDraggingOver ? 'bg-green-100/70 rounded-lg' : ''}`}>
                         {tempColumnOrder.filter(colName => tempVisibleColumns.has(colName)).map((colName, index) => {
-                          const column = availableColumns.find(col => col.name === colName);
-                          if (!column) return null;
-                          
-                          return (
-                            <Draggable key={column.name} draggableId={column.name} index={index}>
-                              {(provided, snapshot) => (
-                                <div 
-                                  ref={provided.innerRef} 
-                                  {...provided.draggableProps} 
-                                  className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'}`}
-                                >
+                      const column = availableColumns.find(col => col.name === colName);
+                      if (!column) return null;
+                      return <Draggable key={column.name} draggableId={column.name} index={index}>
+                              {(provided, snapshot) => <div ref={provided.innerRef} {...provided.draggableProps} className={`flex items-center gap-2 p-2 bg-background rounded border border-green-200 hover:border-green-300 transition-all duration-200 ${snapshot.isDragging ? 'shadow-lg scale-105 rotate-1 bg-green-50 z-50' : 'hover:shadow-md'}`}>
                                   <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 hover:bg-gray-100 rounded transition-colors duration-150">
                                     <GripVertical className="h-4 w-4 text-gray-400" />
                                   </div>
                                   <span className="text-sm font-medium flex-1">{translateColumnName(column.name)}</span>
-                                   {!pinnedColumns.has(column.name) ? (
-                                     <Button 
-                                       variant="ghost" 
-                                       size="sm" 
-                                       onClick={() => toggleColumnVisibilityInDialog(column.name)} 
-                                       className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200"
-                                     >
+                                   {!pinnedColumns.has(column.name) ? <Button variant="ghost" size="sm" onClick={() => toggleColumnVisibilityInDialog(column.name)} className="h-8 w-8 p-0 hover:bg-red-100 transition-colors duration-200">
                                        <ArrowRight className="h-4 w-4 text-red-600" />
-                                     </Button>
-                                   ) : (
-                                     <span className="text-xs text-gray-500 px-2">Épinglée</span>
-                                   )}
-                                </div>
-                              )}
-                            </Draggable>
-                          );
-                        })}
+                                     </Button> : <span className="text-xs text-gray-500 px-2">Épinglée</span>}
+                                </div>}
+                            </Draggable>;
+                    })}
                         {provided.placeholder}
-                      </div>
-                    )}
+                      </div>}
                   </Droppable>
                 </DragDropContext>
               </div>
@@ -790,19 +655,12 @@ const MySalesLeads: React.FC = () => {
               </h3>
               <div className="border rounded-lg p-3 bg-gray-50/50 flex-1 overflow-y-auto">
                 <div className="space-y-2">
-                  {availableColumns.filter(col => !tempVisibleColumns.has(col.name)).map(column => (
-                    <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors duration-200 hover:shadow-sm">
+                  {availableColumns.filter(col => !tempVisibleColumns.has(col.name)).map(column => <div key={column.name} className="flex items-center justify-between p-2 bg-background rounded border border-gray-200 hover:border-gray-300 transition-colors duration-200 hover:shadow-sm">
                       <span className="text-sm flex-1 mr-2">{translateColumnName(column.name)}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => toggleColumnVisibilityInDialog(column.name)} 
-                        className="h-8 w-8 p-0 hover:bg-green-100 transition-colors duration-200"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => toggleColumnVisibilityInDialog(column.name)} className="h-8 w-8 p-0 hover:bg-green-100 transition-colors duration-200">
                         <ArrowLeftRight className="h-4 w-4 text-green-600" />
                       </Button>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </div>
             </div>
@@ -818,8 +676,6 @@ const MySalesLeads: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default MySalesLeads;
