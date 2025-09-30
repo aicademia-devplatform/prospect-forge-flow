@@ -129,12 +129,15 @@ const Prospects = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="assigned">
               Prospects Assignés
             </TabsTrigger>
-            <TabsTrigger value="created">
-              Tables Créées ({createdTables.length})
+            <TabsTrigger value="rappeler">
+              Prospects à rappeler
+            </TabsTrigger>
+            <TabsTrigger value="traites">
+              Prospects Traités
             </TabsTrigger>
           </TabsList>
           
@@ -143,58 +146,16 @@ const Prospects = () => {
             <MySalesLeads />
           </TabsContent>
 
-          <TabsContent value="created" className="space-y-4 mt-6">
-            {loading ? (
-              <div className="p-4">Chargement des tables créées...</div>
-            ) : createdTables.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Aucune table créée pour le moment</p>
-                <Button className="mt-4">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Créer une nouvelle table
-                </Button>
-              </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {createdTables.map((table) => (
-                  <div key={table.id} className="rounded-lg border bg-card p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-lg">{table.customTableName}</h3>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Voir la table</DropdownMenuItem>
-                          <DropdownMenuItem>Modifier la configuration</DropdownMenuItem>
-                          <DropdownMenuItem>Exporter les données</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            Supprimer la table
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Source: <span className="font-medium">{table.tableName}</span>
-                    </p>
-                    <div className="flex items-center justify-between text-sm mb-4">
-                      <span className="font-medium">
-                        {table.totalRecords.toLocaleString()} enregistrements
-                      </span>
-                      <span className="text-muted-foreground">
-                        Créé le {formatDate(table.createdAt)}
-                      </span>
-                    </div>
-                    <Button size="sm" className="w-full">
-                      Ouvrir la table
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+          <TabsContent value="rappeler" className="space-y-4 mt-6">
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Liste des prospects à rappeler</p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="traites" className="space-y-4 mt-6">
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Liste des prospects traités</p>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
