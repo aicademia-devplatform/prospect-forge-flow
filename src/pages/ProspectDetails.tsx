@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, User, Phone, MapPin, Mail, ExternalLink, Edit, FileText } from 'lucide-react';
+import { ArrowLeft, Building2, User, Phone, MapPin, Mail, ExternalLink, Edit, FileText, Code, Database, Globe, Laptop, Server, Shield, Smartphone, Cpu, Cloud, Zap } from 'lucide-react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TraiterProspectSidebar } from '@/components/TraiterProspectSidebar';
 import { ModifierProspectSidebar } from '@/components/ModifierProspectSidebar';
@@ -96,6 +96,23 @@ interface ProspectData {
   }>;
 }
 const ProspectDetails: React.FC = () => {
+  // Fonction pour obtenir l'icône appropriée pour chaque technologie
+  const getTechIcon = (techName: string) => {
+    const tech = techName.toLowerCase().trim();
+    
+    if (tech.includes('react') || tech.includes('vue') || tech.includes('angular') || tech.includes('javascript') || tech.includes('js')) return Code;
+    if (tech.includes('node') || tech.includes('express') || tech.includes('backend')) return Server;
+    if (tech.includes('database') || tech.includes('sql') || tech.includes('mysql') || tech.includes('postgresql') || tech.includes('mongodb')) return Database;
+    if (tech.includes('web') || tech.includes('html') || tech.includes('css') || tech.includes('frontend')) return Globe;
+    if (tech.includes('mobile') || tech.includes('ios') || tech.includes('android') || tech.includes('flutter') || tech.includes('react native')) return Smartphone;
+    if (tech.includes('cloud') || tech.includes('aws') || tech.includes('azure') || tech.includes('gcp')) return Cloud;
+    if (tech.includes('security') || tech.includes('auth') || tech.includes('encryption')) return Shield;
+    if (tech.includes('api') || tech.includes('rest') || tech.includes('graphql')) return Zap;
+    if (tech.includes('python') || tech.includes('java') || tech.includes('c++') || tech.includes('programming')) return Cpu;
+    
+    // Icône par défaut
+    return Laptop;
+  };
   const {
     encryptedEmail
   } = useParams<{
@@ -675,11 +692,15 @@ const ProspectDetails: React.FC = () => {
               <div className="flex flex-wrap gap-2">
                 {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.technologies
                   .split(',')
-                  .map((tech: string, index: number) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {tech.trim()}
-                    </Badge>
-                  ))}
+                  .map((tech: string, index: number) => {
+                    const TechIcon = getTechIcon(tech);
+                    return (
+                      <Badge key={index} variant="secondary" className="text-xs flex items-center gap-1">
+                        <TechIcon className="h-3 w-3" />
+                        {tech.trim()}
+                      </Badge>
+                    );
+                  })}
               </div>
             </div>
           </CardContent>
