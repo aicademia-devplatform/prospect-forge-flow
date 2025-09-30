@@ -65,39 +65,59 @@ Deno.serve(async (req) => {
 
     console.log('Query params:', { page, pageSize, searchTerm, searchColumns, sortBy, sortOrder, visibleColumns, filterMode, advancedFilters })
 
-    // Build query based on filter mode - get only the most recent assignment per email
-    let assignmentsQuery = supabase
+    // Get all assignments for the user
+    const { data: allAssignments, error: assignError } = await supabase
       .from('sales_assignments')
       .select('*')
       .eq('sales_user_id', user.id)
       .eq('status', 'active')
       .order('assigned_at', { ascending: false })
 
-    const { data: allAssignments, error: assignError } = await assignmentsQuery
-
     if (assignError) throw assignError
 
-    // Group by email and take the most recent assignment for each email
-    const latestAssignmentsByEmail = new Map()
+    // Group assignments by email to determine status
+    const assignmentsByEmail = new Map()
     for (const assignment of allAssignments || []) {
       const email = assignment.lead_email
-      if (!latestAssignmentsByEmail.has(email) || 
-          new Date(assignment.assigned_at) > new Date(latestAssignmentsByEmail.get(email).assigned_at)) {
-        latestAssignmentsByEmail.set(email, assignment)
+      if (!assignmentsByEmail.has(email)) {
+        assignmentsByEmail.set(email, [])
       }
+      assignmentsByEmail.get(email).push(assignment)
     }
 
-    // Filter based on mode using the latest assignments
-    let assignments = Array.from(latestAssignmentsByEmail.values())
-    if (filterMode === 'traites') {
-      // Filter for closed prospects: bouclé
-      assignments = assignments.filter(assignment => assignment.boucle === true)
-    } else if (filterMode === 'rappeler') {
-      // Filter for prospects to call back
-      assignments = assignments.filter(assignment => assignment.boucle === false)
-    } else {
-      // Default: active prospects (not bouclé) - exclude closed prospects from assigned view
-      assignments = assignments.filter(assignment => assignment.boucle === false)
+    // Determine the status for each email and select the appropriate assignment to display
+    let assignments = []
+    for (const [email, emailAssignments] of assignmentsByEmail) {
+      // Check if any assignment for this email is "bouclé"
+      const hasBoucleAssignment = emailAssignments.some(a => a.boucle === true)
+      
+      let shouldInclude = false
+      if (filterMode === 'traites') {
+        // Include if any assignment is bouclé
+        shouldInclude = hasBoucleAssignment
+      } else if (filterMode === 'rappeler') {
+        // Include if no assignment is bouclé (for future use)
+        shouldInclude = !hasBoucleAssignment
+      } else {
+        // Default 'assigned': include if no assignment is bouclé
+        shouldInclude = !hasBoucleAssignment
+      }
+
+      if (shouldInclude) {
+        // For display, use the most recent assignment OR the bouclé one if we're in traites mode
+        let assignmentToShow
+        if (filterMode === 'traites' && hasBoucleAssignment) {
+          // Show the bouclé assignment (or the most recent bouclé one if multiple)
+          assignmentToShow = emailAssignments
+            .filter(a => a.boucle === true)
+            .sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime())[0]
+        } else {
+          // Show the most recent assignment
+          assignmentToShow = emailAssignments
+            .sort((a, b) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime())[0]
+        }
+        assignments.push(assignmentToShow)
+      }
     }
 
     if (assignError) throw assignError
