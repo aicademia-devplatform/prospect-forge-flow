@@ -57,6 +57,7 @@ const translateColumnName = (columnName: string): string => {
     'data_source': 'Source de données',
     'actions': 'Actions',
     'boucle': 'Statut',
+    'completed_at': 'Date de finalisation',
     'notes_sales': 'Notes du commercial',
     'statut_prospect': 'Statut prospect',
     'date_action': 'Date d\'action'
@@ -85,7 +86,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(
     filterMode === 'traites' 
-      ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'boucle', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
+      ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
       : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']
   ));
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
@@ -293,8 +294,8 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
     if (filterMode === 'traites') {
       baseColumns.splice(-2, 0, ...[
         {
-          name: 'boucle',
-          type: 'boolean',
+          name: 'completed_at',
+          type: 'timestamp',
           nullable: false
         },
         {
@@ -403,7 +404,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
       return value ? 'Bouclé' : 'Actif';
     }
     
-    if (type === 'date') {
+    if (type === 'date' || type === 'timestamp') {
       moment.locale('fr');
       if (columnName === 'assigned_at') {
         const now = moment();
@@ -413,6 +414,16 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
           return assignedDate.format('D MMM YYYY');
         } else {
           return assignedDate.fromNow();
+        }
+      }
+      if (columnName === 'completed_at') {
+        const now = moment();
+        const completedDate = moment(value);
+        const daysDiff = now.diff(completedDate, 'days');
+        if (daysDiff > 7) {
+          return completedDate.format('D MMM YYYY à HH:mm');
+        } else {
+          return completedDate.fromNow();
         }
       }
       if (columnName === 'date_action') {
@@ -609,10 +620,12 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
                                 {prospect[column.name] || 'Non défini'}
                               </Badge> : column.name === 'source_table' || column.name === 'data_source' ? <Badge variant="outline">
                                  {prospect.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM'}
-                               </Badge> : column.name === 'boucle' ? <Badge className={prospect[column.name] ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'}>
-                                 {formatValue(prospect[column.name], column.type, column.name)}
-                               </Badge> : column.name === 'statut_prospect' && prospect[column.name] ? <Badge variant="secondary">
-                                 {prospect[column.name]}
+                                </Badge> : column.name === 'boucle' ? <Badge className={prospect[column.name] ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'}>
+                                  {formatValue(prospect[column.name], column.type, column.name)}
+                                </Badge> : column.name === 'completed_at' ? <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                                  {formatValue(prospect[column.name], column.type, column.name)}
+                                </Badge> : column.name === 'statut_prospect' && prospect[column.name] ? <Badge variant="secondary">
+                                  {prospect[column.name]}
                                </Badge> : column.name === 'notes_sales' ? <div className="max-w-xs truncate" title={prospect[column.name] || ''}>
                                  {prospect[column.name] || '—'}
                                </div> : column.name === 'actions' ? <div className="flex items-center gap-2">
