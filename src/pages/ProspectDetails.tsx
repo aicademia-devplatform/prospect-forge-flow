@@ -101,7 +101,6 @@ const ProspectDetails: React.FC = () => {
   // Fonction pour obtenir l'icône appropriée pour chaque technologie
   const getTechIcon = (techName: string) => {
     const tech = techName.toLowerCase().trim();
-    
     if (tech.includes('react') || tech.includes('vue') || tech.includes('angular') || tech.includes('javascript') || tech.includes('js')) return Code;
     if (tech.includes('node') || tech.includes('express') || tech.includes('backend')) return Server;
     if (tech.includes('database') || tech.includes('sql') || tech.includes('mysql') || tech.includes('postgresql') || tech.includes('mongodb')) return Database;
@@ -111,7 +110,7 @@ const ProspectDetails: React.FC = () => {
     if (tech.includes('security') || tech.includes('auth') || tech.includes('encryption')) return Shield;
     if (tech.includes('api') || tech.includes('rest') || tech.includes('graphql')) return Zap;
     if (tech.includes('python') || tech.includes('java') || tech.includes('c++') || tech.includes('programming')) return Cpu;
-    
+
     // Icône par défaut
     return Laptop;
   };
@@ -148,53 +147,44 @@ const ProspectDetails: React.FC = () => {
   useEffect(() => {
     // Configuration de la locale française pour moment.js
     moment.locale('fr');
-    
     if (email) {
       fetchProspectDetails();
       fetchTreatmentHistory();
     }
   }, [email]);
-  
   const fetchTreatmentHistory = async () => {
     if (!email) return;
-
     try {
       // D'abord récupérer les assignments
-      const { data: assignments, error } = await supabase
-        .from('sales_assignments')
-        .select('*')
-        .eq('lead_email', email)
-        .order('created_at', { ascending: false });
-
+      const {
+        data: assignments,
+        error
+      } = await supabase.from('sales_assignments').select('*').eq('lead_email', email).order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
 
       // Ensuite récupérer les profiles séparément pour chaque assignment
-      const enrichedAssignments = await Promise.all(
-        (assignments || []).map(async (assignment) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_name, last_name, email')
-            .eq('id', assignment.sales_user_id)
-            .single();
-
-          return {
-            ...assignment,
-            profiles: profile
-          };
-        })
-      );
-
+      const enrichedAssignments = await Promise.all((assignments || []).map(async assignment => {
+        const {
+          data: profile
+        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', assignment.sales_user_id).single();
+        return {
+          ...assignment,
+          profiles: profile
+        };
+      }));
       setTreatmentHistory(enrichedAssignments);
     } catch (error) {
       console.error('Error fetching treatment history:', error);
       // En cas d'erreur, essayer de récupérer juste les assignments sans les profiles
       try {
-        const { data: fallbackAssignments, error: fallbackError } = await supabase
-          .from('sales_assignments')
-          .select('*')
-          .eq('lead_email', email)
-          .order('created_at', { ascending: false });
-
+        const {
+          data: fallbackAssignments,
+          error: fallbackError
+        } = await supabase.from('sales_assignments').select('*').eq('lead_email', email).order('created_at', {
+          ascending: false
+        });
         if (!fallbackError) {
           setTreatmentHistory(fallbackAssignments || []);
         }
@@ -203,7 +193,6 @@ const ProspectDetails: React.FC = () => {
       }
     }
   };
-
   const fetchProspectDetails = async () => {
     if (!email) {
       console.error('No email found from encrypted URL');
@@ -224,33 +213,32 @@ const ProspectDetails: React.FC = () => {
       if (data && data.success && data.data) {
         // Combiner toutes les données des différentes sources
         const combinedProspect: any = {
-          email: email, // Utiliser l'email décrypté
+          email: email,
+          // Utiliser l'email décrypté
           sources: data.data
-  };
-
-  const fetchTreatmentHistory = async () => {
-    if (!email) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('sales_assignments')
-        .select(`
+        };
+        const fetchTreatmentHistory = async () => {
+          if (!email) return;
+          try {
+            const {
+              data,
+              error
+            } = await supabase.from('sales_assignments').select(`
           *,
           profiles!sales_assignments_sales_user_id_fkey (
             first_name,
             last_name,
             email
           )
-        `)
-        .eq('lead_email', email)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTreatmentHistory(data || []);
-    } catch (error) {
-      console.error('Error fetching treatment history:', error);
-    }
-  };
+        `).eq('lead_email', email).order('created_at', {
+              ascending: false
+            });
+            if (error) throw error;
+            setTreatmentHistory(data || []);
+          } catch (error) {
+            console.error('Error fetching treatment history:', error);
+          }
+        };
 
         // Fusionner les données des différentes sources
         data.data.forEach((contact: any) => {
@@ -374,19 +362,13 @@ const ProspectDetails: React.FC = () => {
         </Button>
       </div>;
   }
-  
-  return (
-    <div className="min-h-screen w-full relative overflow-hidden">
-      <motion.div 
-        className="flex-1 p-6 space-y-6"
-        animate={{
-          marginRight: showActionSidebar ? '480px' : '0px', // 480px pour le sidebar plus large
-        }}
-        transition={{
-          duration: 0.35,
-          ease: [0.25, 0.46, 0.45, 0.94],
-        }}
-      >
+  return <div className="min-h-screen w-full relative overflow-hidden">
+      <motion.div className="flex-1 p-6 space-y-6" animate={{
+      marginRight: showActionSidebar ? '480px' : '0px' // 480px pour le sidebar plus large
+    }} transition={{
+      duration: 0.35,
+      ease: [0.25, 0.46, 0.45, 0.94]
+    }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -399,43 +381,27 @@ const ProspectDetails: React.FC = () => {
               <h1 className="text-2xl font-bold">{prospect.email}</h1>
               <p className="text-muted-foreground">Contact CRM</p>
             </div>
-            {isProspectBoucle && (
-              <Badge 
-                variant="destructive" 
-                className="bg-red-100 text-red-800 border-red-200"
-              >
+            {isProspectBoucle && <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">
                 Prospect Bouclé
-              </Badge>
-            )}
+              </Badge>}
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
-            onClick={() => {
-              setDefaultActionTab('modifier');
-              setShowActionSidebar(true);
-            }}
-          >
+          <Button variant="outline" size="sm" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100" onClick={() => {
+            setDefaultActionTab('modifier');
+            setShowActionSidebar(true);
+          }}>
             <Edit className="h-4 w-4 mr-2" />
             Modifier
           </Button>
-          {!isProspectBoucle && (
-            <Button 
-              size="sm" 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => {
-                setDefaultActionTab('traiter');
-                setShowActionSidebar(true);
-              }}
-            >
+          {!isProspectBoucle && <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+            setDefaultActionTab('traiter');
+            setShowActionSidebar(true);
+          }}>
               <FileText className="h-4 w-4 mr-2" />
               Traiter
-            </Button>
-          )}
+            </Button>}
         </div>
       </div>
 
@@ -511,23 +477,23 @@ const ProspectDetails: React.FC = () => {
                       {prospect.mobile || prospect.crm_mobile || prospect.mobile_phone}
                     </a>
                   </div>}
-                {(prospect.mobile_2) && <div className="flex justify-between">
+                {prospect.mobile_2 && <div className="flex justify-between">
                     <span className="text-muted-foreground text-sm">Mobile 2:</span>
                     <a href={`tel:${prospect.mobile_2}`} className="text-blue-600 hover:underline text-sm">
                       {prospect.mobile_2}
                     </a>
                   </div>}
-                {(prospect.tel_pro) && <div className="flex justify-between">
+                {prospect.tel_pro && <div className="flex justify-between">
                     <span className="text-muted-foreground text-sm">Tél. pro:</span>
                     <a href={`tel:${prospect.tel_pro}`} className="text-blue-600 hover:underline text-sm">
                       {prospect.tel_pro}
                     </a>
                   </div>}
-                {(prospect.address) && <div className="flex justify-between">
+                {prospect.address && <div className="flex justify-between">
                     <span className="text-muted-foreground text-sm">Adresse:</span>
                     <span className="text-sm">{prospect.address}</span>
                   </div>}
-                {(prospect.departement) && <div className="flex justify-between">
+                {prospect.departement && <div className="flex justify-between">
                     <span className="text-muted-foreground text-sm">Département:</span>
                     <span className="text-sm">{prospect.departement}</span>
                   </div>}
@@ -555,7 +521,7 @@ const ProspectDetails: React.FC = () => {
                     <span className="text-muted-foreground text-sm">Nb employés:</span>
                     <span className="text-sm">{prospect.nb_employees || prospect.apollo_nb_employees}</span>
                   </div>}
-                {(prospect.linkedin_function) && <div className="flex justify-between">
+                {prospect.linkedin_function && <div className="flex justify-between">
                     <span className="text-muted-foreground text-sm">Fonction LinkedIn:</span>
                     <span className="text-sm">{prospect.linkedin_function}</span>
                   </div>}
@@ -791,112 +757,86 @@ const ProspectDetails: React.FC = () => {
             <div>
               <span className="text-muted-foreground text-sm block mb-3">Technologies:</span>
               <div className="flex flex-wrap gap-2">
-                {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.technologies
-                  .split(',')
-                  .map((tech: string, index: number) => {
-                    const TechIcon = getTechIcon(tech);
-                    return (
-                      <Badge key={index} variant="secondary" className="text-xs flex items-center gap-1">
+                {prospect.sources?.find(s => s.source_table === 'apollo_contacts')?.data.technologies.split(',').map((tech: string, index: number) => {
+                const TechIcon = getTechIcon(tech);
+                return <Badge key={index} variant="secondary" className="text-xs flex items-center gap-1">
                         <TechIcon className="h-3 w-3" />
                         {tech.trim()}
-                      </Badge>
-                    );
-                  })}
+                      </Badge>;
+              })}
               </div>
             </div>
           </CardContent>
         </Card>}
 
       {/* Historique des traitements */}
-      {treatmentHistory.length > 0 && (
-        <Card>
+      {treatmentHistory.length > 0 && <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm bg-blue-500/10 px-3 py-1.5 rounded-full w-fit text-blue-500">
                 <FileText className="h-4 w-4" />
                 Historique des traitements ({treatmentHistory.length})
               </div>
-              {treatmentHistory.length > 3 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setShowAllHistory(!showAllHistory)}
-                  className="text-blue-500 hover:text-blue-600"
-                >
+              {treatmentHistory.length > 3 && <Button variant="ghost" size="sm" onClick={() => setShowAllHistory(!showAllHistory)} className="text-blue-500 hover:text-blue-600">
                   {showAllHistory ? 'Voir moins' : 'Voir plus'}
-                </Button>
-              )}
+                </Button>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <AnimatePresence>
-              {(showAllHistory ? treatmentHistory : treatmentHistory.slice(0, 3)).map((treatment, index) => (
-                <motion.div
-                  key={treatment.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="border-l-2 border-blue-200 pl-4 pb-4 last:pb-0"
-                >
+              {(showAllHistory ? treatmentHistory : treatmentHistory.slice(0, 3)).map((treatment, index) => <motion.div key={treatment.id} initial={{
+              opacity: 0,
+              y: 20
+            }} animate={{
+              opacity: 1,
+              y: 0
+            }} exit={{
+              opacity: 0,
+              y: -20
+            }} transition={{
+              duration: 0.3,
+              delay: index * 0.1
+            }} className="border-l-2 border-blue-200 pl-4 pb-4 last:pb-0">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={treatment.status === 'active' ? 'default' : 'secondary'} 
-                          className="text-xs"
-                        >
+                        <Badge variant={treatment.status === 'active' ? 'default' : 'secondary'} className="text-xs">
                           {treatment.custom_data?.status || treatment.status}
                         </Badge>
-                        {treatment.boucle && (
-                          <Badge 
-                            variant="destructive" 
-                            className="text-xs bg-red-100 text-red-800 border-red-200"
-                          >
+                        {treatment.boucle && <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 border-red-200">
                             Bouclé
-                          </Badge>
-                        )}
+                          </Badge>}
                         <span className="text-xs text-muted-foreground">
                           {moment(treatment.created_at).format('DD MMM YYYY, HH:mm')}
                         </span>
                       </div>
                       
-                      {treatment.custom_data?.sales_note && (
-                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                      {treatment.custom_data?.sales_note && <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
                           <strong>Note :</strong> {treatment.custom_data.sales_note}
-                        </p>
-                      )}
+                        </p>}
                       
                       <div className="text-xs text-muted-foreground space-y-1">
-                        {treatment.custom_data?.action_date && (
-                          <div>
+                        {treatment.custom_data?.action_date && <div>
                             <strong>Date d'action :</strong> {' '}
                             {moment(treatment.custom_data.action_date).fromNow()}
-                          </div>
-                        )}
-                        {treatment.custom_data?.callback_date && (
-                          <div>
+                          </div>}
+                        {treatment.custom_data?.callback_date && <div>
                             <strong>Date de rappel :</strong> {' '}
                             {moment(treatment.custom_data.callback_date).fromNow()}
-                          </div>
-                        )}
-                        {treatment.profiles && (
-                          <div>
+                          </div>}
+                        {treatment.profiles && <div>
                             <strong>Traité par :</strong> {' '}
                             {treatment.profiles.first_name} {treatment.profiles.last_name} 
                             ({treatment.profiles.email})
-                          </div>
-                        )}
+                          </div>}
                       </div>
                     </div>
                   </div>
                   {index < (showAllHistory ? treatmentHistory : treatmentHistory.slice(0, 3)).length - 1 && <hr className="mt-4 border-gray-200" />}
-                </motion.div>
-              ))}
+                </motion.div>)}
             </AnimatePresence>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
       {/* Dates importantes */}
 
@@ -923,21 +863,12 @@ const ProspectDetails: React.FC = () => {
       
       {/* Sidebar Actions Prospect */}
       <AnimatePresence>
-        {showActionSidebar && (
-          <ProspectActionSidebar
-            prospect={prospect}
-            prospectEmail={prospect.email}
-            defaultTab={defaultActionTab}
-            onSuccess={() => {
-              fetchProspectDetails();
-              fetchTreatmentHistory();
-              setShowActionSidebar(false);
-            }}
-            onClose={() => setShowActionSidebar(false)}
-          />
-        )}
+        {showActionSidebar && <ProspectActionSidebar prospect={prospect} prospectEmail={prospect.email} defaultTab={defaultActionTab} onSuccess={() => {
+        fetchProspectDetails();
+        fetchTreatmentHistory();
+        setShowActionSidebar(false);
+      }} onClose={() => setShowActionSidebar(false)} />}
       </AnimatePresence>
-    </div>
-  );
+    </div>;
 };
 export default ProspectDetails;
