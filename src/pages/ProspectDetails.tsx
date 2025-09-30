@@ -146,23 +146,48 @@ const ProspectDetails: React.FC = () => {
     if (!email) return;
 
     try {
-      const { data, error } = await supabase
+      // D'abord récupérer les assignments
+      const { data: assignments, error } = await supabase
         .from('sales_assignments')
-        .select(`
-          *,
-          profiles!sales_assignments_sales_user_id_fkey (
-            first_name,
-            last_name,
-            email
-          )
-        `)
+        .select('*')
         .eq('lead_email', email)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTreatmentHistory(data || []);
+
+      // Ensuite récupérer les profiles séparément pour chaque assignment
+      const enrichedAssignments = await Promise.all(
+        (assignments || []).map(async (assignment) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, email')
+            .eq('id', assignment.sales_user_id)
+            .single();
+
+          return {
+            ...assignment,
+            profiles: profile
+          };
+        })
+      );
+
+      setTreatmentHistory(enrichedAssignments);
     } catch (error) {
       console.error('Error fetching treatment history:', error);
+      // En cas d'erreur, essayer de récupérer juste les assignments sans les profiles
+      try {
+        const { data: fallbackAssignments, error: fallbackError } = await supabase
+          .from('sales_assignments')
+          .select('*')
+          .eq('lead_email', email)
+          .order('created_at', { ascending: false });
+
+        if (!fallbackError) {
+          setTreatmentHistory(fallbackAssignments || []);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback error:', fallbackError);
+      }
     }
   };
 
