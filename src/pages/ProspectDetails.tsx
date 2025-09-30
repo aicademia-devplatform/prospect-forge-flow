@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { extractEmailFromUrl } from '@/lib/emailCrypto';
+import moment from 'moment';
 interface ProspectData {
   // CRM Data
   crm_id?: string;
@@ -825,13 +826,7 @@ const ProspectDetails: React.FC = () => {
                           {treatment.custom_data?.status || treatment.status}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(treatment.created_at).toLocaleDateString('fr-FR', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {moment(treatment.created_at).format('DD MMM YYYY, HH:mm')}
                         </span>
                       </div>
                       
@@ -845,13 +840,13 @@ const ProspectDetails: React.FC = () => {
                         {treatment.custom_data?.action_date && (
                           <div>
                             <strong>Date d'action :</strong> {' '}
-                            {new Date(treatment.custom_data.action_date).toLocaleDateString('fr-FR')}
+                            {moment(treatment.custom_data.action_date).format('DD/MM/YYYY')}
                           </div>
                         )}
                         {treatment.custom_data?.callback_date && (
                           <div>
                             <strong>Date de rappel :</strong> {' '}
-                            {new Date(treatment.custom_data.callback_date).toLocaleDateString('fr-FR')}
+                            {moment(treatment.custom_data.callback_date).format('DD/MM/YYYY')}
                           </div>
                         )}
                         {treatment.profiles && (
@@ -885,11 +880,11 @@ const ProspectDetails: React.FC = () => {
         <CardContent className="space-y-3">
           {prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.created_at && <div className="flex justify-between">
               <span className="text-muted-foreground text-sm">Date de création:</span>
-              <span className="text-sm">{new Date(prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.created_at).toLocaleDateString('fr-FR')}</span>
+              <span className="text-sm">{moment(prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.created_at).format('DD/MM/YYYY')}</span>
             </div>}
           {prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.updated_at && <div className="flex justify-between">
               <span className="text-muted-foreground text-sm">Mise à jour il y a:</span>
-              <span className="text-sm">{new Date(prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.updated_at).toLocaleDateString('fr-FR')}</span>
+              <span className="text-sm">{moment(prospect.sources?.find(s => s.source_table === 'crm_contacts')?.data.updated_at).format('DD/MM/YYYY')}</span>
             </div>}
         </CardContent>
       </Card>
