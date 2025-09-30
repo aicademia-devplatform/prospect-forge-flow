@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, MoreHorizontal, ArrowLeft } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import MySalesLeads from '@/pages/MySalesLeads';
+import { MigrateProspectsButton } from '@/components/MigrateProspectsButton';
 
 interface CreatedTable {
   id: string;
@@ -94,6 +95,9 @@ const Prospects = () => {
           </TabsContent>
 
           <TabsContent value="traites" className="space-y-4 mt-6">
+            <div className="mb-4">
+              <MigrateProspectsButton />
+            </div>
             <MySalesLeads filterMode="traites" />
           </TabsContent>
         </Tabs>
