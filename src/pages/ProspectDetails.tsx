@@ -124,6 +124,7 @@ const ProspectDetails: React.FC = () => {
   } = useToast();
   const [prospect, setProspect] = useState<ProspectData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [treatmentHistory, setTreatmentHistory] = useState<any[]>([]);
   const [showTraiterSidebar, setShowTraiterSidebar] = useState(false);
   const [showModifierSidebar, setShowModifierSidebar] = useState(false);
   const [showActionSidebar, setShowActionSidebar] = useState(false);
@@ -137,8 +138,34 @@ const ProspectDetails: React.FC = () => {
   useEffect(() => {
     if (email) {
       fetchProspectDetails();
+      fetchTreatmentHistory();
     }
   }, [email]);
+  
+  const fetchTreatmentHistory = async () => {
+    if (!email) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('sales_assignments')
+        .select(`
+          *,
+          profiles!sales_assignments_sales_user_id_fkey (
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('lead_email', email)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTreatmentHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching treatment history:', error);
+    }
+  };
+
   const fetchProspectDetails = async () => {
     if (!email) {
       console.error('No email found from encrypted URL');
@@ -161,7 +188,31 @@ const ProspectDetails: React.FC = () => {
         const combinedProspect: any = {
           email: email, // Utiliser l'email décrypté
           sources: data.data
-        };
+  };
+
+  const fetchTreatmentHistory = async () => {
+    if (!email) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('sales_assignments')
+        .select(`
+          *,
+          profiles!sales_assignments_sales_user_id_fkey (
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('lead_email', email)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTreatmentHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching treatment history:', error);
+    }
+  };
 
         // Fusionner les données des différentes sources
         data.data.forEach((contact: any) => {
@@ -706,6 +757,76 @@ const ProspectDetails: React.FC = () => {
           </CardContent>
         </Card>}
 
+      {/* Historique des traitements */}
+      {treatmentHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm bg-blue-500/10 px-3 py-1.5 rounded-full w-fit text-blue-500">
+              <FileText className="h-4 w-4" />
+              Historique des traitements ({treatmentHistory.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {treatmentHistory.map((treatment, index) => (
+              <div key={treatment.id} className="border-l-2 border-blue-200 pl-4 pb-4 last:pb-0">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={treatment.status === 'active' ? 'default' : 'secondary'} 
+                        className="text-xs"
+                      >
+                        {treatment.custom_data?.status || treatment.status}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(treatment.created_at).toLocaleDateString('fr-FR', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    
+                    {treatment.custom_data?.sales_note && (
+                      <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                        <strong>Note :</strong> {treatment.custom_data.sales_note}
+                      </p>
+                    )}
+                    
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      {treatment.custom_data?.action_date && (
+                        <div>
+                          <strong>Date d'action :</strong> {' '}
+                          {new Date(treatment.custom_data.action_date).toLocaleDateString('fr-FR')}
+                        </div>
+                      )}
+                      {treatment.custom_data?.callback_date && (
+                        <div>
+                          <strong>Date de rappel :</strong> {' '}
+                          {new Date(treatment.custom_data.callback_date).toLocaleDateString('fr-FR')}
+                        </div>
+                      )}
+                      {treatment.profiles && (
+                        <div>
+                          <strong>Traité par :</strong> {' '}
+                          {treatment.profiles.first_name} {treatment.profiles.last_name} 
+                          ({treatment.profiles.email})
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {index < treatmentHistory.length - 1 && <hr className="mt-4 border-gray-200" />}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dates importantes */}
+
       {/* Dates importantes */}
       <Card>
         <CardHeader>
@@ -736,6 +857,7 @@ const ProspectDetails: React.FC = () => {
             defaultTab={defaultActionTab}
             onSuccess={() => {
               fetchProspectDetails();
+              fetchTreatmentHistory();
               setShowActionSidebar(false);
             }}
             onClose={() => setShowActionSidebar(false)}
