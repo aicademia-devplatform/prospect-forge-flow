@@ -117,12 +117,31 @@ export const TraiterProspectDialog: React.FC<TraiterProspectDialogProps> = ({
         .update({
           zoho_status: data.status,
           updated_at: new Date().toISOString(),
+          // Ajouter les champs de traitement
+          zoho_last_activity: new Date().toISOString(),
+          apollo_status: data.status, // Synchroniser avec apollo_status aussi
         })
         .eq('email', prospectEmail);
 
       if (crmError) throw crmError;
 
-      // Créer un assignment pour le sales
+      // Mettre à jour aussi apollo_contacts si le contact existe
+      const { error: apolloError } = await supabase
+        .from('apollo_contacts')
+        .update({
+          stage: data.status,
+          last_contacted: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          last_sync_at: new Date().toISOString(),
+        })
+        .eq('email', prospectEmail);
+
+      // Ne pas lever d'erreur si le contact n'existe pas dans apollo_contacts
+      if (apolloError && !apolloError.message.includes('No rows')) {
+        console.warn('Apollo update error (non-critical):', apolloError);
+      }
+
+      // Créer un assignment pour le sales avec plus de détails
       const { error: assignmentError } = await supabase
         .from('sales_assignments')
         .insert({
@@ -138,6 +157,8 @@ export const TraiterProspectDialog: React.FC<TraiterProspectDialogProps> = ({
             action_date: data.actionDate.toISOString(),
             callback_date: data.callbackDate?.toISOString(),
             processed_at: new Date().toISOString(),
+            processed_by: user.email || user.id,
+            requires_callback: needsCallbackDate,
           },
         });
 
@@ -145,7 +166,7 @@ export const TraiterProspectDialog: React.FC<TraiterProspectDialogProps> = ({
 
       toast({
         title: 'Succès',
-        description: 'Le prospect a été traité avec succès',
+        description: 'Le prospect a été traité avec succès dans CRM et Apollo',
       });
 
       form.reset();
