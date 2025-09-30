@@ -1999,6 +1999,7 @@ export type Database = {
         Row: {
           assigned_at: string
           assigned_by: string | null
+          boucle: boolean
           created_at: string
           custom_data: Json | null
           custom_table_name: string | null
@@ -2013,6 +2014,7 @@ export type Database = {
         Insert: {
           assigned_at?: string
           assigned_by?: string | null
+          boucle?: boolean
           created_at?: string
           custom_data?: Json | null
           custom_table_name?: string | null
@@ -2027,6 +2029,7 @@ export type Database = {
         Update: {
           assigned_at?: string
           assigned_by?: string | null
+          boucle?: boolean
           created_at?: string
           custom_data?: Json | null
           custom_table_name?: string | null

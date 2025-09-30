@@ -133,6 +133,13 @@ const ProspectDetails: React.FC = () => {
   const [defaultActionTab, setDefaultActionTab] = useState<'modifier' | 'traiter'>('modifier');
   const [showAllHistory, setShowAllHistory] = useState(false);
 
+  // Vérifier si le prospect est bouclé (dernière entrée avec boucle = true)
+  const isProspectBoucle = React.useMemo(() => {
+    if (!treatmentHistory || treatmentHistory.length === 0) return false;
+    const latestTreatment = treatmentHistory[0]; // Le plus récent en premier
+    return latestTreatment?.boucle === true;
+  }, [treatmentHistory]);
+
   // Décrypter l'email depuis l'URL
   const email = React.useMemo(() => {
     if (!encryptedEmail) return '';
@@ -387,9 +394,19 @@ const ProspectDetails: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
             Retour
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{prospect.email}</h1>
-            <p className="text-muted-foreground">Contact CRM</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-2xl font-bold">{prospect.email}</h1>
+              <p className="text-muted-foreground">Contact CRM</p>
+            </div>
+            {isProspectBoucle && (
+              <Badge 
+                variant="destructive" 
+                className="bg-red-100 text-red-800 border-red-200"
+              >
+                Prospect Bouclé
+              </Badge>
+            )}
           </div>
         </div>
         
@@ -406,17 +423,19 @@ const ProspectDetails: React.FC = () => {
             <Edit className="h-4 w-4 mr-2" />
             Modifier
           </Button>
-          <Button 
-            size="sm" 
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => {
-              setDefaultActionTab('traiter');
-              setShowActionSidebar(true);
-            }}
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Traiter
-          </Button>
+          {!isProspectBoucle && (
+            <Button 
+              size="sm" 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                setDefaultActionTab('traiter');
+                setShowActionSidebar(true);
+              }}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Traiter
+            </Button>
+          )}
         </div>
       </div>
 
@@ -829,6 +848,14 @@ const ProspectDetails: React.FC = () => {
                         >
                           {treatment.custom_data?.status || treatment.status}
                         </Badge>
+                        {treatment.boucle && (
+                          <Badge 
+                            variant="destructive" 
+                            className="text-xs bg-red-100 text-red-800 border-red-200"
+                          >
+                            Bouclé
+                          </Badge>
+                        )}
                         <span className="text-xs text-muted-foreground">
                           {moment(treatment.created_at).format('DD MMM YYYY, HH:mm')}
                         </span>

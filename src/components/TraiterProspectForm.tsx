@@ -44,6 +44,7 @@ const formSchema = z.object({
     message: 'Veuillez sélectionner une date valide',
   }),
   callbackDate: z.date().optional(),
+  boucle: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -202,6 +203,7 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
             processed_by: user.email || user.id,
             requires_callback: needsCallbackDate,
           },
+          boucle: data.boucle,
         });
 
       if (assignmentError) throw assignmentError;
@@ -365,6 +367,31 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
             )}
           />
         )}
+
+        <FormField
+          control={form.control}
+          name="boucle"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  Prospect bouclé
+                </FormLabel>
+                <div className="text-sm text-muted-foreground">
+                  Marquer ce prospect comme terminé (plus de traitement nécessaire)
+                </div>
+              </div>
+              <FormControl>
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
         <div className="flex gap-2 pt-4">
           <Button type="submit" disabled={isSubmitting} className="flex-1">
