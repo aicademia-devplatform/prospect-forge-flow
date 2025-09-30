@@ -840,13 +840,13 @@ const ProspectDetails: React.FC = () => {
                         {treatment.custom_data?.action_date && (
                           <div>
                             <strong>Date d'action :</strong> {' '}
-                            {moment(treatment.custom_data.action_date).format('DD/MM/YYYY')}
+                            {moment(treatment.custom_data.action_date).fromNow()}
                           </div>
                         )}
                         {treatment.custom_data?.callback_date && (
                           <div>
                             <strong>Date de rappel :</strong> {' '}
-                            {moment(treatment.custom_data.callback_date).format('DD/MM/YYYY')}
+                            {moment(treatment.custom_data.callback_date).fromNow()}
                           </div>
                         )}
                         {treatment.profiles && (
