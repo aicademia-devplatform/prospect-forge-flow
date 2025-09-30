@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { extractEmailFromUrl } from '@/lib/emailCrypto';
 import moment from 'moment';
+import 'moment/locale/fr';
 interface ProspectData {
   // CRM Data
   crm_id?: string;
@@ -138,6 +139,9 @@ const ProspectDetails: React.FC = () => {
     return extractEmailFromUrl(encryptedEmail);
   }, [encryptedEmail]);
   useEffect(() => {
+    // Configuration de la locale française pour moment.js
+    moment.locale('fr');
+    
     if (email) {
       fetchProspectDetails();
       fetchTreatmentHistory();
