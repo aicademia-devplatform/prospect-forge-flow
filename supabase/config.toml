@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.table-sections]
 verify_jwt = false
+
+[functions.assigned-prospects]
+verify_jwt = true
+
+[functions.move-to-traites]
+verify_jwt = true

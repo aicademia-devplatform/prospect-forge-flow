@@ -141,33 +141,6 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
         })
         .eq('email', prospectEmail);
 
-      // Validation supplémentaire
-      if (!data.status) {
-        form.setError('status', {
-          type: 'required',
-          message: 'Le statut est obligatoire',
-        });
-        toast({
-          title: 'Validation échouée',
-          description: 'Veuillez sélectionner un statut',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (!data.actionDate) {
-        form.setError('actionDate', {
-          type: 'required',
-          message: 'La date d\'action est obligatoire',
-        });
-        toast({
-          title: 'Validation échouée',
-          description: 'Veuillez sélectionner une date d\'action',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       // Mettre à jour aussi apollo_contacts si le contact existe
       const { error: apolloError } = await supabase
         .from('apollo_contacts')
@@ -184,33 +157,93 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
         console.warn('Apollo update error (non-critical):', apolloError);
       }
 
-      // Créer un assignment pour le sales avec plus de détails
-      const { error: assignmentError } = await supabase
-        .from('sales_assignments')
-        .insert({
-          sales_user_id: user.id,
-          source_table: 'crm_contacts',
-          source_id: prospectEmail, // Using email as source_id
-          lead_email: prospectEmail,
-          status: 'active',
-          assigned_by: user.id,
-          custom_data: {
-            sales_note: data.salesNote || '',
-            status: data.status,
-            action_date: data.actionDate.toISOString(),
-            callback_date: data.callbackDate?.toISOString(),
-            processed_at: new Date().toISOString(),
-            processed_by: user.email || user.id,
-            requires_callback: needsCallbackDate,
-          },
-          boucle: data.boucle,
-        });
+      // Si le prospect est marqué comme bouclé, utiliser la nouvelle logique
+      if (data.boucle) {
+        // D'abord, trouver l'assignment existant pour ce prospect
+        const { data: existingAssignment, error: findError } = await supabase
+          .from('sales_assignments')
+          .select('*')
+          .eq('sales_user_id', user.id)
+          .eq('lead_email', prospectEmail)
+          .eq('status', 'active')
+          .order('assigned_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (assignmentError) throw assignmentError;
+        if (findError) {
+          console.warn('Error finding existing assignment:', findError);
+        }
+
+        if (existingAssignment) {
+          // Utiliser l'edge function pour déplacer vers prospects_traites
+          const { error: moveError } = await supabase.functions.invoke('move-to-traites', {
+            body: {
+              assignmentId: existingAssignment.id,
+              notes_sales: data.salesNote || '',
+              statut_prospect: data.status,
+              date_action: data.actionDate.toISOString(),
+            }
+          });
+
+          if (moveError) {
+            console.error('Error moving to traités:', moveError);
+            throw new Error('Erreur lors du déplacement vers prospects traités');
+          }
+        } else {
+          // Si pas d'assignment existant, créer directement dans prospects_traites
+          const { error: insertError } = await supabase
+            .from('prospects_traites')
+            .insert({
+              original_assignment_id: null, // Pas d'assignment original
+              sales_user_id: user.id,
+              source_table: 'crm_contacts',
+              source_id: prospectEmail,
+              lead_email: prospectEmail,
+              assigned_by: user.id,
+              assigned_at: new Date().toISOString(),
+              notes_sales: data.salesNote || '',
+              statut_prospect: data.status,
+              date_action: data.actionDate.toISOString(),
+            });
+
+          if (insertError) throw insertError;
+        }
+      } else {
+        // Créer ou mettre à jour un assignment normal dans sales_assignments
+        const { error: assignmentError } = await supabase
+          .from('sales_assignments')
+          .upsert({
+            sales_user_id: user.id,
+            source_table: 'crm_contacts',
+            source_id: prospectEmail,
+            lead_email: prospectEmail,
+            status: 'active',
+            assigned_by: user.id,
+            notes_sales: data.salesNote || '',
+            statut_prospect: data.status,
+            date_action: data.actionDate.toISOString(),
+            custom_data: {
+              sales_note: data.salesNote || '',
+              status: data.status,
+              action_date: data.actionDate.toISOString(),
+              callback_date: data.callbackDate?.toISOString(),
+              processed_at: new Date().toISOString(),
+              processed_by: user.email || user.id,
+              requires_callback: needsCallbackDate,
+            },
+          }, {
+            onConflict: 'sales_user_id,lead_email',
+            ignoreDuplicates: false
+          });
+
+        if (assignmentError) throw assignmentError;
+      }
 
       toast({
         title: 'Succès',
-        description: 'Le prospect a été traité avec succès dans CRM et Apollo',
+        description: data.boucle 
+          ? 'Le prospect a été traité et déplacé vers les prospects traités'
+          : 'Le prospect a été traité avec succès',
       });
 
       form.reset();
