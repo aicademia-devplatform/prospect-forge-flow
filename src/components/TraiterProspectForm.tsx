@@ -39,9 +39,9 @@ const STATUSES_NEEDING_CALLBACK = ['Prospect chaud', 'À RAPPELER', 'BESOIN DE S
 
 const formSchema = z.object({
   salesNote: z.string().optional().or(z.literal('')),
-  status: z.string().min(1, 'Le statut est requis'),
+  status: z.string().min(1, 'Veuillez sélectionner un statut'),
   actionDate: z.date({
-    message: 'La date d\'action est requise',
+    message: 'Veuillez sélectionner une date valide',
   }),
   callbackDate: z.date().optional(),
 });
@@ -80,13 +80,47 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
     if (needsCallbackDate && !data.callbackDate) {
       form.setError('callbackDate', {
         type: 'required',
-        message: 'La date de rappel est requise pour ce statut',
+        message: 'La date de rappel est obligatoire pour ce statut',
+      });
+      toast({
+        title: 'Validation échouée',
+        description: 'La date de rappel est obligatoire pour le statut sélectionné',
+        variant: 'destructive',
       });
       return;
     }
 
     try {
       setIsSubmitting(true);
+
+      // Validation supplémentaire
+      if (!data.status) {
+        form.setError('status', {
+          type: 'required',
+          message: 'Le statut est obligatoire',
+        });
+        toast({
+          title: 'Validation échouée',
+          description: 'Veuillez sélectionner un statut',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!data.actionDate) {
+        form.setError('actionDate', {
+          type: 'required',
+          message: 'La date d\'action est obligatoire',
+        });
+        toast({
+          title: 'Validation échouée',
+          description: 'Veuillez sélectionner une date d\'action',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
 
       // Obtenir l'utilisateur actuel
       const { data: { user } } = await supabase.auth.getUser();
@@ -106,7 +140,32 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
         })
         .eq('email', prospectEmail);
 
-      if (crmError) throw crmError;
+      // Validation supplémentaire
+      if (!data.status) {
+        form.setError('status', {
+          type: 'required',
+          message: 'Le statut est obligatoire',
+        });
+        toast({
+          title: 'Validation échouée',
+          description: 'Veuillez sélectionner un statut',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (!data.actionDate) {
+        form.setError('actionDate', {
+          type: 'required',
+          message: 'La date d\'action est obligatoire',
+        });
+        toast({
+          title: 'Validation échouée',
+          description: 'Veuillez sélectionner une date d\'action',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       // Mettre à jour aussi apollo_contacts si le contact existe
       const { error: apolloError } = await supabase
@@ -192,11 +251,14 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
           name="status"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Statut du prospect</FormLabel>
+              <FormLabel className="flex items-center gap-1">
+                Statut du prospect
+                <span className="text-destructive">*</span>
+              </FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez un statut" />
+                  <SelectTrigger className={form.formState.errors.status ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Sélectionnez un statut *" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -217,7 +279,10 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
           name="actionDate"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Date d'action</FormLabel>
+              <FormLabel className="flex items-center gap-1">
+                Date d'action
+                <span className="text-destructive">*</span>
+              </FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -225,13 +290,14 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
                       variant={'outline'}
                       className={cn(
                         'w-full pl-3 text-left font-normal',
-                        !field.value && 'text-muted-foreground'
+                        !field.value && 'text-muted-foreground',
+                        form.formState.errors.actionDate && 'border-destructive'
                       )}
                     >
                       {field.value ? (
                         format(field.value, 'PPP', { locale: fr })
                       ) : (
-                        <span>Sélectionnez une date</span>
+                        <span>Sélectionnez une date *</span>
                       )}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
@@ -259,22 +325,26 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
             name="callbackDate"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Date de rappel</FormLabel>
+                <FormLabel className="flex items-center gap-1">
+                  Date de rappel
+                  <span className="text-destructive">*</span>
+                </FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full pl-3 text-left font-normal',
-                          !field.value && 'text-muted-foreground'
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, 'PPP', { locale: fr })
-                        ) : (
-                          <span>Sélectionnez une date de rappel</span>
-                        )}
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground',
+                            form.formState.errors.callbackDate && 'border-destructive'
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, 'PPP', { locale: fr })
+                          ) : (
+                            <span>Sélectionnez une date de rappel *</span>
+                          )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
