@@ -91,6 +91,8 @@ Deno.serve(async (req) => {
       // Check if any assignment for this email is "bouclé"
       const hasBoucleAssignment = emailAssignments.some(a => a.boucle === true)
       
+      console.log(`Email: ${email}, hasBoucleAssignment: ${hasBoucleAssignment}, filterMode: ${filterMode}`)
+      
       let shouldInclude = false
       if (filterMode === 'traites') {
         // Include if any assignment is bouclé
@@ -102,6 +104,8 @@ Deno.serve(async (req) => {
         // Default 'assigned': include if no assignment is bouclé
         shouldInclude = !hasBoucleAssignment
       }
+      
+      console.log(`Email: ${email}, shouldInclude: ${shouldInclude}`)
 
       if (shouldInclude) {
         // For display, use the most recent assignment OR the bouclé one if we're in traites mode
@@ -124,8 +128,12 @@ Deno.serve(async (req) => {
 
     let allProspects: any[] = []
 
+    console.log(`Found ${assignments.length} assignments to process`)
+
     // Fetch prospect data from each assignment
     for (const assignment of assignments || []) {
+      console.log(`Processing assignment for email: ${assignment.lead_email}, source_table: ${assignment.source_table}, source_id: ${assignment.source_id}`)
+      
       let prospectData: any = null
       
       if (assignment.source_table === 'apollo_contacts') {
@@ -143,6 +151,8 @@ Deno.serve(async (req) => {
           .maybeSingle()
         prospectData = data
       }
+      
+      console.log(`Found prospectData for ${assignment.lead_email}:`, prospectData ? 'YES' : 'NO')
 
       if (prospectData) {
         // For "traites" mode, also check if contact has "barrage" or "déjà accompagné" status
