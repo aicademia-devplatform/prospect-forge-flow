@@ -129,6 +129,7 @@ const ProspectDetails: React.FC = () => {
   const [showModifierSidebar, setShowModifierSidebar] = useState(false);
   const [showActionSidebar, setShowActionSidebar] = useState(false);
   const [defaultActionTab, setDefaultActionTab] = useState<'modifier' | 'traiter'>('modifier');
+  const [showAllHistory, setShowAllHistory] = useState(false);
 
   // Décrypter l'email depuis l'URL
   const email = React.useMemo(() => {
@@ -786,66 +787,87 @@ const ProspectDetails: React.FC = () => {
       {treatmentHistory.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm bg-blue-500/10 px-3 py-1.5 rounded-full w-fit text-blue-500">
-              <FileText className="h-4 w-4" />
-              Historique des traitements ({treatmentHistory.length})
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm bg-blue-500/10 px-3 py-1.5 rounded-full w-fit text-blue-500">
+                <FileText className="h-4 w-4" />
+                Historique des traitements ({treatmentHistory.length})
+              </div>
+              {treatmentHistory.length > 3 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowAllHistory(!showAllHistory)}
+                  className="text-blue-500 hover:text-blue-600"
+                >
+                  {showAllHistory ? 'Voir moins' : 'Voir plus'}
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {treatmentHistory.map((treatment, index) => (
-              <div key={treatment.id} className="border-l-2 border-blue-200 pl-4 pb-4 last:pb-0">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        variant={treatment.status === 'active' ? 'default' : 'secondary'} 
-                        className="text-xs"
-                      >
-                        {treatment.custom_data?.status || treatment.status}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(treatment.created_at).toLocaleDateString('fr-FR', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    
-                    {treatment.custom_data?.sales_note && (
-                      <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                        <strong>Note :</strong> {treatment.custom_data.sales_note}
-                      </p>
-                    )}
-                    
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      {treatment.custom_data?.action_date && (
-                        <div>
-                          <strong>Date d'action :</strong> {' '}
-                          {new Date(treatment.custom_data.action_date).toLocaleDateString('fr-FR')}
-                        </div>
+            <AnimatePresence>
+              {(showAllHistory ? treatmentHistory : treatmentHistory.slice(0, 3)).map((treatment, index) => (
+                <motion.div
+                  key={treatment.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  className="border-l-2 border-blue-200 pl-4 pb-4 last:pb-0"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={treatment.status === 'active' ? 'default' : 'secondary'} 
+                          className="text-xs"
+                        >
+                          {treatment.custom_data?.status || treatment.status}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(treatment.created_at).toLocaleDateString('fr-FR', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      
+                      {treatment.custom_data?.sales_note && (
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                          <strong>Note :</strong> {treatment.custom_data.sales_note}
+                        </p>
                       )}
-                      {treatment.custom_data?.callback_date && (
-                        <div>
-                          <strong>Date de rappel :</strong> {' '}
-                          {new Date(treatment.custom_data.callback_date).toLocaleDateString('fr-FR')}
-                        </div>
-                      )}
-                      {treatment.profiles && (
-                        <div>
-                          <strong>Traité par :</strong> {' '}
-                          {treatment.profiles.first_name} {treatment.profiles.last_name} 
-                          ({treatment.profiles.email})
-                        </div>
-                      )}
+                      
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        {treatment.custom_data?.action_date && (
+                          <div>
+                            <strong>Date d'action :</strong> {' '}
+                            {new Date(treatment.custom_data.action_date).toLocaleDateString('fr-FR')}
+                          </div>
+                        )}
+                        {treatment.custom_data?.callback_date && (
+                          <div>
+                            <strong>Date de rappel :</strong> {' '}
+                            {new Date(treatment.custom_data.callback_date).toLocaleDateString('fr-FR')}
+                          </div>
+                        )}
+                        {treatment.profiles && (
+                          <div>
+                            <strong>Traité par :</strong> {' '}
+                            {treatment.profiles.first_name} {treatment.profiles.last_name} 
+                            ({treatment.profiles.email})
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                {index < treatmentHistory.length - 1 && <hr className="mt-4 border-gray-200" />}
-              </div>
-            ))}
+                  {index < (showAllHistory ? treatmentHistory : treatmentHistory.slice(0, 3)).length - 1 && <hr className="mt-4 border-gray-200" />}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </CardContent>
         </Card>
       )}
