@@ -38,7 +38,7 @@ const PROSPECT_STATUSES = [
 const STATUSES_NEEDING_CALLBACK = ['Prospect chaud', 'À RAPPELER', 'BESOIN DE SUIVI', 'RDV'];
 
 const formSchema = z.object({
-  salesNote: z.string().min(1, 'La note du sales est requise'),
+  salesNote: z.string().optional().or(z.literal('')),
   status: z.string().min(1, 'Le statut est requis'),
   actionDate: z.date({
     message: 'La date d\'action est requise',
@@ -135,7 +135,7 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
           status: 'active',
           assigned_by: user.id,
           custom_data: {
-            sales_note: data.salesNote,
+            sales_note: data.salesNote || '',
             status: data.status,
             action_date: data.actionDate.toISOString(),
             callback_date: data.callbackDate?.toISOString(),
@@ -174,10 +174,10 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
           name="salesNote"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Note du sales</FormLabel>
+              <FormLabel>Note du sales (optionnel)</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Ajoutez vos notes sur ce prospect..."
+                  placeholder="Ajoutez vos notes sur ce prospect (optionnel)..."
                   className="min-h-[100px]"
                   {...field}
                 />
