@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Database, CheckCircle, Bell, TrendingUp, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import DashboardLoader from './DashboardLoader';
 
 interface Stats {
   totalUsers: number;
@@ -66,15 +68,49 @@ const AdminDashboard = () => {
     }
   };
 
+  if (loading) {
+    return <DashboardLoader />;
+  }
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4
+      }
+    }
+  };
+
   return (
-    <div className="p-6 space-y-6">
-      <div>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="p-6 space-y-6"
+    >
+      <motion.div variants={itemVariants}>
         <h1 className="text-3xl font-bold">Tableau de bord Administrateur</h1>
         <p className="text-muted-foreground">Vue d'ensemble du système</p>
-      </div>
+      </motion.div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+      <motion.div
+        variants={itemVariants}
+        className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+      >
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Utilisateurs</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -99,8 +135,10 @@ const AdminDashboard = () => {
             </p>
           </CardContent>
         </Card>
+        </motion.div>
 
-        <Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Assignations</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -112,8 +150,10 @@ const AdminDashboard = () => {
             </p>
           </CardContent>
         </Card>
+        </motion.div>
 
-        <Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Notifications</CardTitle>
             <Bell className="h-4 w-4 text-muted-foreground" />
@@ -125,8 +165,10 @@ const AdminDashboard = () => {
             </p>
           </CardContent>
         </Card>
+        </motion.div>
 
-        <Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Activité récente</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
@@ -138,8 +180,10 @@ const AdminDashboard = () => {
             </p>
           </CardContent>
         </Card>
+        </motion.div>
 
-        <Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Taux d'assignation</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -155,9 +199,13 @@ const AdminDashboard = () => {
             </p>
           </CardContent>
         </Card>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <motion.div
+        variants={itemVariants}
+        className="grid gap-4 md:grid-cols-2"
+      >
         <Card>
           <CardHeader>
             <CardTitle>Actions rapides</CardTitle>
@@ -190,8 +238,10 @@ const AdminDashboard = () => {
             </Button>
           </CardContent>
         </Card>
+        </motion.div>
 
-        <Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card>
           <CardHeader>
             <CardTitle>Système</CardTitle>
             <CardDescription>État du système</CardDescription>
@@ -211,8 +261,8 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Target, CheckCircle2, Clock, Phone, TrendingUp, ListTodo } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import DashboardLoader from './DashboardLoader';
 
 interface SalesStats {
   assignedToMe: number;
@@ -70,14 +72,47 @@ const SalesDashboard = () => {
     }
   };
 
+  if (loading) {
+    return <DashboardLoader />;
+  }
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4
+      }
+    }
+  };
+
   return (
-    <div className="p-6 space-y-6">
-      <div>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="p-6 space-y-6"
+    >
+      <motion.div variants={itemVariants}>
         <h1 className="text-3xl font-bold">Tableau de bord Commercial</h1>
         <p className="text-muted-foreground">Suivez vos prospects et objectifs</p>
-      </div>
+      </motion.div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <motion.div
+        variants={itemVariants}
+        className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+      >
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Mes prospects</CardTitle>
@@ -155,9 +190,12 @@ const SalesDashboard = () => {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <motion.div
+        variants={itemVariants}
+        className="grid gap-4 md:grid-cols-2"
+      >
         <Card>
           <CardHeader>
             <CardTitle>Actions rapides</CardTitle>
@@ -227,8 +265,8 @@ const SalesDashboard = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
