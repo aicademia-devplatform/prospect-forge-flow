@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { UserPlus, Search, Mail, Shield, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 
 interface User {
   id: string;
@@ -19,6 +20,7 @@ interface User {
   last_name: string | null;
   created_at: string;
   role: string | null;
+  is_active: boolean;
 }
 
 const AdminUsersTab = () => {
@@ -104,6 +106,31 @@ const AdminUsersTab = () => {
       toast({
         title: 'Erreur',
         description: 'Impossible de mettre à jour le rôle',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleToggleActive = async (userId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: !currentStatus })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: `Utilisateur ${!currentStatus ? 'activé' : 'désactivé'} avec succès`
+      });
+
+      loadUsers();
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de modifier le statut',
         variant: 'destructive'
       });
     }
@@ -200,6 +227,7 @@ const AdminUsersTab = () => {
                 <TableHead>Utilisateur</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rôle</TableHead>
+                <TableHead>Statut</TableHead>
                 <TableHead>Date d'inscription</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -228,6 +256,17 @@ const AdminUsersTab = () => {
                     ) : (
                       <Badge variant="outline">Aucun rôle</Badge>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={user.is_active}
+                        onCheckedChange={() => handleToggleActive(user.id, user.is_active)}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {user.is_active ? 'Actif' : 'Inactif'}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     {new Date(user.created_at).toLocaleDateString('fr-FR')}
