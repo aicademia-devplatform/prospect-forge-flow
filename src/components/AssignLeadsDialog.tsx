@@ -34,12 +34,8 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
   onAssignmentComplete
 }) => {
   const [selectedSalesId, setSelectedSalesId] = useState<string>('');
-  const [customTableName, setCustomTableName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
-  const [existingTables, setExistingTables] = useState<string[]>([]);
-  const [useExistingTable, setUseExistingTable] = useState<boolean>(false);
-  const [selectedExistingTable, setSelectedExistingTable] = useState<string>('');
   const { toast } = useToast();
   const { user, userRole } = useAuth();
 
@@ -50,19 +46,6 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
     }
   }, [open]);
 
-  // Charger les tables existantes quand un utilisateur est sélectionné
-  React.useEffect(() => {
-    if (selectedSalesId) {
-      loadExistingTables(selectedSalesId);
-      // Par défaut, commencer avec "nouvelle table"
-      setUseExistingTable(false);
-      setSelectedExistingTable('');
-    } else {
-      setExistingTables([]);
-      setUseExistingTable(false);
-      setSelectedExistingTable('');
-    }
-  }, [selectedSalesId]);
 
   const loadSalesUsers = async () => {
     try {
@@ -115,24 +98,6 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
     }
   };
 
-  const loadExistingTables = async (salesUserId: string) => {
-    try {
-      // Récupérer les tables personnalisées existantes de cet utilisateur
-      const { data, error } = await supabase
-        .from('sales_table_config')
-        .select('table_name')
-        .eq('sales_user_id', salesUserId);
-
-      if (error) throw error;
-      
-      // Extraire les noms de tables uniques
-      const tableNames = data ? Array.from(new Set(data.map(item => item.table_name))) : [];
-      setExistingTables(tableNames);
-    } catch (error) {
-      console.error('Error loading existing tables:', error);
-      setExistingTables([]);
-    }
-  };
 
   const handleAssignLeads = async () => {
     if (!selectedSalesId) {
@@ -140,16 +105,6 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
         variant: "destructive",
         title: "Erreur",
         description: "Veuillez sélectionner un sales"
-      });
-      return;
-    }
-
-    // Validation pour table existante
-    if (useExistingTable && !selectedExistingTable) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Veuillez sélectionner une table existante"
       });
       return;
     }
@@ -178,7 +133,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
         lead_email: lead.email,
         source_table: tableName,
         source_id: String(lead.id),
-        custom_table_name: useExistingTable ? selectedExistingTable : (customTableName || `${selectedSalesId}_leads`),
+        custom_table_name: `${selectedSalesId}_leads`,
         assigned_by: currentUserId || null
       })) || [];
 
@@ -196,10 +151,6 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
       onAssignmentComplete();
       onOpenChange(false);
       setSelectedSalesId('');
-      setCustomTableName('');
-      setUseExistingTable(false);
-      setSelectedExistingTable('');
-      setExistingTables([]);
 
     } catch (error) {
       console.error('Error assigning leads:', error);
@@ -280,65 +231,6 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Sélection de table - tables existantes + option créer nouvelle */}
-          {selectedSalesId && (
-            <div>
-              <Label htmlFor="table-selection">Table de destination</Label>
-              <Select 
-                value={useExistingTable ? selectedExistingTable : 'new-table'} 
-                onValueChange={(value) => {
-                  if (value === 'new-table') {
-                    setUseExistingTable(false);
-                    setSelectedExistingTable('');
-                  } else {
-                    setUseExistingTable(true);
-                    setSelectedExistingTable(value);
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une table de destination" />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Tables existantes */}
-                  {existingTables.map((tableName) => (
-                    <SelectItem key={tableName} value={tableName}>
-                      📋 {tableName}
-                    </SelectItem>
-                  ))}
-                  
-                  {/* Séparateur si il y a des tables existantes */}
-                  {existingTables.length > 0 && (
-                    <div className="px-2 py-1">
-                      <div className="border-t border-border"></div>
-                    </div>
-                  )}
-                  
-                  {/* Option pour créer une nouvelle table */}
-                  <SelectItem value="new-table" className="font-medium text-primary">
-                    ➕ Ajouter une table
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Champ pour nouvelle table (seulement si "Ajouter une table" est sélectionné) */}
-          {selectedSalesId && !useExistingTable && (
-            <div>
-              <Label htmlFor="table-name">Nom de la nouvelle table</Label>
-              <Input
-                id="table-name"
-                value={customTableName}
-                onChange={(e) => setCustomTableName(e.target.value)}
-                placeholder="Nom de la nouvelle table"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Par défaut: {selectedSalesId ? `${selectedSalesId}_leads` : 'user_leads'}
-              </p>
-            </div>
-          )}
 
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
