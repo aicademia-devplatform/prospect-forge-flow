@@ -144,7 +144,7 @@ const App = () => (
             <Route 
               path="/admin" 
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="access_admin_panel">
                   <Layout>
                     <AdminPanel />
                   </Layout>
