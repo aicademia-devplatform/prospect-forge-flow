@@ -1163,113 +1163,64 @@ const TableView: React.FC<TableViewProps> = ({
         sortBy,
         sortOrder,
         visibleColumns: [],
-        // Récupérer toutes les colonnes pour l'export
         advancedFilters
       };
-      const {
-        data: exportData,
-        error
-      } = await supabase.functions.invoke('table-data', {
+      
+      const { data: exportData, error } = await supabase.functions.invoke('table-data', {
         body: exportParams
       });
+      
       if (error) throw error;
       const contacts = exportData.data || [];
+      
       if (contacts.length === 0) {
         toast({
           title: "Aucune donnée",
           description: "Aucun contact à exporter avec les filtres appliqués",
           variant: "destructive",
-          duration: 4000 // 4 secondes pour les erreurs
+          duration: 4000
         });
         return;
       }
 
-      // Créer le workbook Excel
-      const workbook = XLSX.utils.book_new();
+      // Filter columns based on user selection
+      const selectedColumns = options.columns.length > 0 
+        ? options.columns 
+        : Object.keys(contacts[0]);
 
-      // Préparer les données avec toutes les colonnes de la base de données
-      const allKeys = Object.keys(contacts[0]); // Toutes les colonnes disponibles
-      const headers = allKeys.map(key => translateColumnName(key));
-      const exportRows = contacts.map(contact => allKeys.map(key => {
-        const value = contact[key];
-        // Formater les valeurs pour Excel
-        if (value === null || value === undefined) return '';
-        if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
-        if (Array.isArray(value)) return value.join(', ');
-        if (typeof value === 'object' && value instanceof Date) {
-          // Configuration locale française pour moment.js
-          moment.locale('fr');
-          
-          const now = moment();
-          const dateValue = moment(value);
-          const daysDiff = now.diff(dateValue, 'days');
-          
-          // Si plus d'une semaine (7 jours), afficher la date formatée
-          if (daysDiff > 7) {
-            return dateValue.format('D MMM YYYY');
-          } else {
-            // Sinon, afficher la notation relative
-            return dateValue.fromNow();
-          }
-        }
-        return String(value);
-      }));
-
-      // Ajouter les en-têtes
-      const worksheetData = [headers, ...exportRows];
-
-      // Créer la feuille
-      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-
-      // Styliser les en-têtes (couleur de fond)
-      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-      for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellRef = XLSX.utils.encode_cell({
-          r: 0,
-          c: col
+      // Préparer les données filtrées
+      const filteredContacts = contacts.map(contact => {
+        const filtered: any = {};
+        selectedColumns.forEach(col => {
+          filtered[col] = contact[col];
         });
-        if (!worksheet[cellRef]) continue;
-        worksheet[cellRef].s = {
-          fill: {
-            fgColor: {
-              rgb: "3B82F6"
-            }
-          },
-          font: {
-            color: {
-              rgb: "FFFFFF"
-            },
-            bold: true
-          },
-          alignment: {
-            horizontal: "center"
-          }
-        };
+        return filtered;
+      });
+
+      // Export based on format
+      switch (options.format) {
+        case 'xlsx':
+          await exportAsExcel(filteredContacts, selectedColumns, options.filename);
+          break;
+        case 'csv':
+          await exportAsCSV(filteredContacts, selectedColumns, options.filename, options.csvOptions);
+          break;
+        case 'json':
+          await exportAsJSON(filteredContacts, options.filename);
+          break;
       }
 
-      // Ajuster les largeurs de colonnes
-      const colWidths = headers.map(() => ({
-        wch: 20
-      }));
-      worksheet['!cols'] = colWidths;
-
-      // Ajouter la feuille au workbook
-      const sheetName = tableName === 'apollo_contacts' ? 'Contacts Apollo' : 'Contacts CRM';
-      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-
-      // Générer et télécharger le fichier
-      const fileName = `${options.filename}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
       toast({
         title: "Export réussi",
-        description: `${contacts.length} contacts exportés dans ${fileName}`,
-        duration: 3000 // 3 secondes pour les succès importants
+        description: `${contacts.length} contacts exportés dans ${options.filename}.${options.format}`,
+        duration: 3000
       });
+
       if (options.includeGoogleSheets) {
         toast({
           title: "Google Sheets",
           description: "La synchronisation Google Sheets sera disponible prochainement",
-          duration: 3000 // 3 secondes pour les informations
+          duration: 3000
         });
       }
     } catch (error) {
@@ -1278,9 +1229,121 @@ const TableView: React.FC<TableViewProps> = ({
         title: "Erreur d'export",
         description: "Impossible d'exporter les données",
         variant: "destructive",
-        duration: 4000 // 4 secondes pour les erreurs
+        duration: 4000
       });
     }
+  };
+
+  const exportAsExcel = async (contacts: any[], columns: string[], filename: string) => {
+    const workbook = XLSX.utils.book_new();
+    const headers = columns.map(key => translateColumnName(key));
+    
+    const exportRows = contacts.map(contact => 
+      columns.map(key => {
+        const value = contact[key];
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
+        if (Array.isArray(value)) return value.join(', ');
+        if (typeof value === 'object' && value instanceof Date) {
+          moment.locale('fr');
+          const now = moment();
+          const dateValue = moment(value);
+          const daysDiff = now.diff(dateValue, 'days');
+          return daysDiff > 7 ? dateValue.format('D MMM YYYY') : dateValue.fromNow();
+        }
+        return String(value);
+      })
+    );
+
+    const worksheetData = [headers, ...exportRows];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Style headers
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!worksheet[cellRef]) continue;
+      worksheet[cellRef].s = {
+        fill: { fgColor: { rgb: "3B82F6" } },
+        font: { color: { rgb: "FFFFFF" }, bold: true },
+        alignment: { horizontal: "center" }
+      };
+    }
+
+    // Adjust column widths
+    worksheet['!cols'] = headers.map(() => ({ wch: 20 }));
+
+    const sheetName = tableName === 'apollo_contacts' ? 'Contacts Apollo' : 'Contacts CRM';
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    XLSX.writeFile(workbook, `${filename}.xlsx`);
+  };
+
+  const exportAsCSV = async (
+    contacts: any[], 
+    columns: string[], 
+    filename: string, 
+    csvOptions?: ExportOptions['csvOptions']
+  ) => {
+    const delimiter = csvOptions?.delimiter || ',';
+    const includeHeaders = csvOptions?.includeHeaders !== false;
+    const quoteStrings = csvOptions?.quoteStrings !== false;
+    
+    const escapeValue = (value: any) => {
+      if (value === null || value === undefined) return '';
+      let str = String(value);
+      
+      if (quoteStrings && (str.includes(delimiter) || str.includes('"') || str.includes('\n'))) {
+        str = `"${str.replace(/"/g, '""')}"`;
+      }
+      
+      return str;
+    };
+
+    let csvContent = '';
+    
+    if (includeHeaders) {
+      const headers = columns.map(col => escapeValue(translateColumnName(col)));
+      csvContent += headers.join(delimiter) + '\n';
+    }
+
+    contacts.forEach(contact => {
+      const row = columns.map(col => {
+        const value = contact[col];
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
+        if (Array.isArray(value)) return escapeValue(value.join(', '));
+        if (typeof value === 'object' && value instanceof Date) {
+          moment.locale('fr');
+          return escapeValue(moment(value).format('D MMM YYYY'));
+        }
+        return escapeValue(value);
+      });
+      csvContent += row.join(delimiter) + '\n';
+    });
+
+    // Handle encoding
+    let blob: Blob;
+    if (csvOptions?.encoding === 'UTF-8' || !csvOptions?.encoding) {
+      blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    } else {
+      blob = new Blob([csvContent], { type: 'text/csv' });
+    }
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const exportAsJSON = async (contacts: any[], filename: string) => {
+    const jsonContent = JSON.stringify(contacts, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   };
   const handleEmailWarningCancel = () => {
     if (pendingEmailEdit) {
