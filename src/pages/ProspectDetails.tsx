@@ -156,20 +156,15 @@ const ProspectDetails: React.FC = () => {
     if (!email) return;
     try {
       // Récupérer les assignments actifs et les prospects traités en parallèle
-      const [assignmentsResult, traitesResult] = await Promise.all([
-        supabase.from('sales_assignments').select('*').eq('lead_email', email),
-        supabase.from('prospects_traites').select('*').eq('lead_email', email)
-      ]);
-
+      const [assignmentsResult, traitesResult] = await Promise.all([supabase.from('sales_assignments').select('*').eq('lead_email', email), supabase.from('prospects_traites').select('*').eq('lead_email', email)]);
       if (assignmentsResult.error) throw assignmentsResult.error;
       if (traitesResult.error) throw traitesResult.error;
 
       // Enrichir les assignments actifs avec les profiles
       const enrichedAssignments = await Promise.all((assignmentsResult.data || []).map(async assignment => {
-        const { data: profile } = await supabase.from('profiles')
-          .select('first_name, last_name, email')
-          .eq('id', assignment.sales_user_id)
-          .single();
+        const {
+          data: profile
+        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', assignment.sales_user_id).single();
         return {
           ...assignment,
           profiles: profile,
@@ -180,10 +175,9 @@ const ProspectDetails: React.FC = () => {
 
       // Enrichir les prospects traités avec les profiles
       const enrichedTraites = await Promise.all((traitesResult.data || []).map(async traite => {
-        const { data: profile } = await supabase.from('profiles')
-          .select('first_name, last_name, email')
-          .eq('id', traite.sales_user_id)
-          .single();
+        const {
+          data: profile
+        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', traite.sales_user_id).single();
         return {
           ...traite,
           profiles: profile,
@@ -198,7 +192,6 @@ const ProspectDetails: React.FC = () => {
         const dateB = new Date(b.display_date).getTime();
         return dateB - dateA;
       });
-
       setTreatmentHistory(allHistory);
     } catch (error) {
       console.error('Error fetching treatment history:', error);
@@ -374,7 +367,7 @@ const ProspectDetails: React.FC = () => {
               <h1 className="text-2xl font-bold">{prospect.email}</h1>
               <p className="text-muted-foreground">Contact CRM</p>
             </div>
-            {isProspectTraite && <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+            {isProspectTraite && <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200/80">
                 Prospect Traité
               </Badge>}
           </div>
