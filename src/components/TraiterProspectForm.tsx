@@ -384,18 +384,19 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
         />
 
         {needsCallbackDate && (
-          <FormField
-            control={form.control}
-            name="callbackDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel className="flex items-center gap-1">
-                  Date de rappel
-                  <span className="text-destructive">*</span>
-                </FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
+          <>
+            <FormField
+              control={form.control}
+              name="callbackDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="flex items-center gap-1">
+                    Date de rappel
+                    <span className="text-destructive">*</span>
+                  </FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
                         <Button
                           variant={'outline'}
                           className={cn(
@@ -405,29 +406,87 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
                           )}
                         >
                           {field.value ? (
-                            format(field.value, 'PPP', { locale: fr })
+                            format(field.value, 'PPP à HH:mm', { locale: fr })
                           ) : (
                             <span>Sélectionnez une date de rappel *</span>
                           )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                      className={cn('p-3 pointer-events-auto')}
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(date) => {
+                          if (date) {
+                            // Conserver l'heure si elle existe déjà
+                            if (field.value) {
+                              date.setHours(field.value.getHours());
+                              date.setMinutes(field.value.getMinutes());
+                            } else {
+                              date.setHours(9, 0, 0, 0); // Défaut 9h00
+                            }
+                          }
+                          field.onChange(date);
+                        }}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        className={cn('p-3 pointer-events-auto')}
+                      />
+                      {field.value && (
+                        <div className="p-3 border-t">
+                          <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium">Heure:</label>
+                            <Select
+                              value={field.value.getHours().toString()}
+                              onValueChange={(hour) => {
+                                const newDate = new Date(field.value);
+                                newDate.setHours(parseInt(hour));
+                                field.onChange(newDate);
+                              }}
+                            >
+                              <SelectTrigger className="w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 24 }, (_, i) => (
+                                  <SelectItem key={i} value={i.toString()}>
+                                    {i.toString().padStart(2, '0')}h
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <span>:</span>
+                            <Select
+                              value={field.value.getMinutes().toString()}
+                              onValueChange={(minute) => {
+                                const newDate = new Date(field.value);
+                                newDate.setMinutes(parseInt(minute));
+                                field.onChange(newDate);
+                              }}
+                            >
+                              <SelectTrigger className="w-20">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Array.from({ length: 60 }, (_, i) => (
+                                  <SelectItem key={i} value={i.toString()}>
+                                    {i.toString().padStart(2, '0')}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
         )}
 
         <div className="flex gap-2 pt-4">
