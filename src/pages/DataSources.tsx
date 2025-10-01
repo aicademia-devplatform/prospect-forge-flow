@@ -39,14 +39,14 @@ const DataSources = () => {
         .select('updated_at')
         .order('updated_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       const { data: crmLatest } = await supabase
         .from('crm_contacts')
         .select('updated_at')
         .order('updated_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       const tableData: TableInfo[] = [
         {
