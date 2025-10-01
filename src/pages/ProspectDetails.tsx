@@ -144,6 +144,7 @@ const ProspectDetails: React.FC = () => {
     if (!encryptedEmail) return '';
     return extractEmailFromUrl(encryptedEmail);
   }, [encryptedEmail]);
+
   useEffect(() => {
     // Configuration de la locale française pour moment.js
     moment.locale('fr');
@@ -866,7 +867,7 @@ const ProspectDetails: React.FC = () => {
       
       {/* Sidebar Actions Prospect */}
       <AnimatePresence>
-        {showActionSidebar && <ProspectActionSidebar prospect={prospect} prospectEmail={prospect.email} defaultTab={defaultActionTab} onSuccess={() => {
+        {showActionSidebar && <ProspectActionSidebar prospect={prospect} prospectEmail={email} defaultTab={defaultActionTab} onSuccess={() => {
         fetchProspectDetails();
         fetchTreatmentHistory();
         setShowActionSidebar(false);

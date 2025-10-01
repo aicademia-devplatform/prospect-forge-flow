@@ -129,6 +129,27 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
         throw new Error('Utilisateur non connecté');
       }
 
+      // Vérifier d'abord si le prospect n'a pas déjà été traité
+      const { data: existingTraite, error: checkError } = await supabase
+        .from('prospects_traites')
+        .select('id')
+        .eq('lead_email', prospectEmail)
+        .maybeSingle();
+
+      if (checkError && !checkError.message.includes('No rows')) {
+        throw checkError;
+      }
+
+      if (existingTraite) {
+        toast({
+          title: 'Prospect déjà traité',
+          description: 'Ce prospect a déjà été traité et ne peut pas être traité à nouveau',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       // Mettre à jour le contact CRM
       const { error: crmError } = await supabase
         .from('crm_contacts')
@@ -157,93 +178,60 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
         console.warn('Apollo update error (non-critical):', apolloError);
       }
 
-      // Si le prospect est marqué comme bouclé, utiliser la nouvelle logique
-      if (data.boucle) {
-        // D'abord, trouver l'assignment existant pour ce prospect
-        const { data: existingAssignment, error: findError } = await supabase
-          .from('sales_assignments')
-          .select('*')
-          .eq('sales_user_id', user.id)
-          .eq('lead_email', prospectEmail)
-          .eq('status', 'active')
-          .order('assigned_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+      // TOUJOURS déplacer vers prospects_traites lors du traitement
+      // D'abord, trouver l'assignment existant pour ce prospect
+      const { data: existingAssignment, error: findError } = await supabase
+        .from('sales_assignments')
+        .select('*')
+        .eq('sales_user_id', user.id)
+        .eq('lead_email', prospectEmail)
+        .eq('status', 'active')
+        .order('assigned_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-        if (findError) {
-          console.warn('Error finding existing assignment:', findError);
-        }
+      if (findError && !findError.message.includes('No rows')) {
+        console.warn('Error finding existing assignment:', findError);
+      }
 
-        if (existingAssignment) {
-          // Utiliser l'edge function pour déplacer vers prospects_traites
-          const { error: moveError } = await supabase.functions.invoke('move-to-traites', {
-            body: {
-              assignmentId: existingAssignment.id,
-              notes_sales: data.salesNote || '',
-              statut_prospect: data.status,
-              date_action: data.actionDate.toISOString(),
-            }
-          });
-
-          if (moveError) {
-            console.error('Error moving to traités:', moveError);
-            throw new Error('Erreur lors du déplacement vers prospects traités');
+      if (existingAssignment) {
+        // Utiliser l'edge function pour déplacer vers prospects_traites
+        const { error: moveError } = await supabase.functions.invoke('move-to-traites', {
+          body: {
+            assignmentId: existingAssignment.id,
+            notes_sales: data.salesNote || '',
+            statut_prospect: data.status,
+            date_action: data.actionDate.toISOString(),
           }
-        } else {
-          // Si pas d'assignment existant, créer directement dans prospects_traites
-          const { error: insertError } = await supabase
-            .from('prospects_traites')
-            .insert({
-              original_assignment_id: null, // Pas d'assignment original
-              sales_user_id: user.id,
-              source_table: 'crm_contacts',
-              source_id: prospectEmail,
-              lead_email: prospectEmail,
-              assigned_by: user.id,
-              assigned_at: new Date().toISOString(),
-              notes_sales: data.salesNote || '',
-              statut_prospect: data.status,
-              date_action: data.actionDate.toISOString(),
-            });
+        });
 
-          if (insertError) throw insertError;
+        if (moveError) {
+          console.error('Error moving to traités:', moveError);
+          throw new Error('Erreur lors du déplacement vers prospects traités');
         }
       } else {
-        // Créer ou mettre à jour un assignment normal dans sales_assignments
-        const { error: assignmentError } = await supabase
-          .from('sales_assignments')
-          .upsert({
+        // Si pas d'assignment existant, créer directement dans prospects_traites
+        const { error: insertError } = await supabase
+          .from('prospects_traites')
+          .insert({
+            original_assignment_id: null, // Pas d'assignment original
             sales_user_id: user.id,
             source_table: 'crm_contacts',
             source_id: prospectEmail,
             lead_email: prospectEmail,
-            status: 'active',
             assigned_by: user.id,
+            assigned_at: new Date().toISOString(),
             notes_sales: data.salesNote || '',
             statut_prospect: data.status,
             date_action: data.actionDate.toISOString(),
-            custom_data: {
-              sales_note: data.salesNote || '',
-              status: data.status,
-              action_date: data.actionDate.toISOString(),
-              callback_date: data.callbackDate?.toISOString(),
-              processed_at: new Date().toISOString(),
-              processed_by: user.email || user.id,
-              requires_callback: needsCallbackDate,
-            },
-          }, {
-            onConflict: 'sales_user_id,lead_email',
-            ignoreDuplicates: false
           });
 
-        if (assignmentError) throw assignmentError;
+        if (insertError) throw insertError;
       }
 
       toast({
         title: 'Succès',
-        description: data.boucle 
-          ? 'Le prospect a été traité et déplacé vers les prospects traités'
-          : 'Le prospect a été traité avec succès',
+        description: 'Le prospect a été traité avec succès et ne peut plus être traité à nouveau',
       });
 
       form.reset();
@@ -400,31 +388,6 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
             )}
           />
         )}
-
-        <FormField
-          control={form.control}
-          name="boucle"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  Prospect bouclé
-                </FormLabel>
-                <div className="text-sm text-muted-foreground">
-                  Marquer ce prospect comme terminé (plus de traitement nécessaire)
-                </div>
-              </div>
-              <FormControl>
-                <input
-                  type="checkbox"
-                  checked={field.value}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
 
         <div className="flex gap-2 pt-4">
           <Button type="submit" disabled={isSubmitting} className="flex-1">
