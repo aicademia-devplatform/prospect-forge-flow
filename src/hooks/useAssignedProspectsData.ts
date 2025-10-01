@@ -72,6 +72,7 @@ export const useAssignedProspectsData = (params: UseAssignedProspectsDataParams)
     params.sortBy,
     params.sortOrder,
     params.sectionFilter,
+    params.filterMode,
     JSON.stringify(params.searchColumns),
     JSON.stringify(params.visibleColumns),
     JSON.stringify(params.advancedFilters)
