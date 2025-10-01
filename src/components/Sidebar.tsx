@@ -11,13 +11,13 @@ const navigation = [
   { name: 'Dashboard', icon: BarChart3, key: 'dashboard', path: '/', permission: 'view_prospects' },
   { name: 'Prospects', icon: Users, key: 'prospects', path: '/prospects', permission: 'view_prospects' },
   { name: 'Import Data', icon: Upload, key: 'import', path: '/import', permission: 'create_prospects' },
-  { name: 'Reports', icon: FileText, key: 'reports', path: '/reports', permission: 'view_prospects' },
+  { name: 'Reports', icon: FileText, key: 'reports', path: '/reports', permission: 'view_prospects', disabled: true },
 ];
 
 const adminNavigation = [
   { name: 'Data Sources', icon: Database, key: 'datasources', path: '/datasources', permission: 'manage_settings' },
   { name: 'Admin Panel', icon: ShieldCheck, key: 'admin', path: '/admin', permission: 'access_admin_panel' },
-  { name: 'Settings', icon: Settings, key: 'settings', path: '/settings', permission: 'manage_settings' },
+  { name: 'Settings', icon: Settings, key: 'settings', path: '/settings', permission: 'manage_settings', disabled: true },
 ];
 
 export const Sidebar = () => {
@@ -86,6 +86,28 @@ export const Sidebar = () => {
               const Icon = item.icon;
               const isActive = isItemActive(item.path);
               
+              if (item.disabled) {
+                return (
+                  <Tooltip key={item.name}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors cursor-not-allowed opacity-60",
+                          "text-sidebar-foreground",
+                          isCollapsed && "justify-center"
+                        )}
+                      >
+                        <Icon className="h-5 w-5 flex-shrink-0" />
+                        {!isCollapsed && <span className="text-sm font-medium">{item.name}</span>}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>Coming Soon</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+              
               return (
                 <Tooltip key={item.name} delayDuration={isCollapsed ? 0 : 9999}>
                   <TooltipTrigger asChild>
@@ -121,6 +143,28 @@ export const Sidebar = () => {
                 {filteredAdminNavigation.map((item) => {
                   const Icon = item.icon;
                   const isActive = isItemActive(item.path);
+                  
+                  if (item.disabled) {
+                    return (
+                      <Tooltip key={item.name}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={cn(
+                              "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors cursor-not-allowed opacity-60",
+                              "text-sidebar-foreground",
+                              isCollapsed && "justify-center"
+                            )}
+                          >
+                            <Icon className="h-5 w-5 flex-shrink-0" />
+                            {!isCollapsed && <span className="text-sm font-medium">{item.name}</span>}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>Coming Soon</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  }
                   
                   return (
                     <Tooltip key={item.name} delayDuration={isCollapsed ? 0 : 9999}>
