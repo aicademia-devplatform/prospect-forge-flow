@@ -155,42 +155,58 @@ const ProspectDetails: React.FC = () => {
   const fetchTreatmentHistory = async () => {
     if (!email) return;
     try {
-      // D'abord récupérer les assignments
-      const {
-        data: assignments,
-        error
-      } = await supabase.from('sales_assignments').select('*').eq('lead_email', email).order('created_at', {
-        ascending: false
-      });
-      if (error) throw error;
+      // Récupérer les assignments actifs et les prospects traités en parallèle
+      const [assignmentsResult, traitesResult] = await Promise.all([
+        supabase.from('sales_assignments').select('*').eq('lead_email', email),
+        supabase.from('prospects_traites').select('*').eq('lead_email', email)
+      ]);
 
-      // Ensuite récupérer les profiles séparément pour chaque assignment
-      const enrichedAssignments = await Promise.all((assignments || []).map(async assignment => {
-        const {
-          data: profile
-        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', assignment.sales_user_id).single();
+      if (assignmentsResult.error) throw assignmentsResult.error;
+      if (traitesResult.error) throw traitesResult.error;
+
+      // Enrichir les assignments actifs avec les profiles
+      const enrichedAssignments = await Promise.all((assignmentsResult.data || []).map(async assignment => {
+        const { data: profile } = await supabase.from('profiles')
+          .select('first_name, last_name, email')
+          .eq('id', assignment.sales_user_id)
+          .single();
         return {
           ...assignment,
-          profiles: profile
+          profiles: profile,
+          isFromTraites: false,
+          display_date: assignment.created_at
         };
       }));
-      setTreatmentHistory(enrichedAssignments);
+
+      // Enrichir les prospects traités avec les profiles
+      const enrichedTraites = await Promise.all((traitesResult.data || []).map(async traite => {
+        const { data: profile } = await supabase.from('profiles')
+          .select('first_name, last_name, email')
+          .eq('id', traite.sales_user_id)
+          .single();
+        return {
+          ...traite,
+          profiles: profile,
+          isFromTraites: true,
+          display_date: traite.completed_at
+        };
+      }));
+
+      // Combiner et trier par date (plus récent en premier)
+      const allHistory = [...enrichedAssignments, ...enrichedTraites].sort((a, b) => {
+        const dateA = new Date(a.display_date).getTime();
+        const dateB = new Date(b.display_date).getTime();
+        return dateB - dateA;
+      });
+
+      setTreatmentHistory(allHistory);
     } catch (error) {
       console.error('Error fetching treatment history:', error);
-      // En cas d'erreur, essayer de récupérer juste les assignments sans les profiles
-      try {
-        const {
-          data: fallbackAssignments,
-          error: fallbackError
-        } = await supabase.from('sales_assignments').select('*').eq('lead_email', email).order('created_at', {
-          ascending: false
-        });
-        if (!fallbackError) {
-          setTreatmentHistory(fallbackAssignments || []);
-        }
-      } catch (fallbackError) {
-        console.error('Fallback error:', fallbackError);
-      }
+      toast({
+        title: "Erreur",
+        description: "Impossible de récupérer l'historique des traitements",
+        variant: "destructive"
+      });
     }
   };
   const fetchProspectDetails = async () => {
@@ -217,29 +233,6 @@ const ProspectDetails: React.FC = () => {
           // Utiliser l'email décrypté
           sources: data.data
         };
-        const fetchTreatmentHistory = async () => {
-          if (!email) return;
-          try {
-            const {
-              data,
-              error
-            } = await supabase.from('sales_assignments').select(`
-          *,
-          profiles!sales_assignments_sales_user_id_fkey (
-            first_name,
-            last_name,
-            email
-          )
-        `).eq('lead_email', email).order('created_at', {
-              ascending: false
-            });
-            if (error) throw error;
-            setTreatmentHistory(data || []);
-          } catch (error) {
-            console.error('Error fetching treatment history:', error);
-          }
-        };
-
         // Fusionner les données des différentes sources
         data.data.forEach((contact: any) => {
           Object.keys(contact.data).forEach(key => {
@@ -800,27 +793,44 @@ const ProspectDetails: React.FC = () => {
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Badge variant={treatment.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                          {treatment.custom_data?.status || treatment.status}
+                        <Badge variant={treatment.isFromTraites ? 'default' : 'secondary'} className="text-xs">
+                          {treatment.isFromTraites ? 'Traité' : treatment.custom_data?.status || treatment.status}
                         </Badge>
                         {treatment.boucle && <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 border-red-200">
                             Bouclé
                           </Badge>}
                         <span className="text-xs text-muted-foreground">
-                          {moment(treatment.created_at).format('DD MMM YYYY, HH:mm')}
+                          {moment(treatment.display_date || treatment.created_at).format('DD MMM YYYY, HH:mm')}
                         </span>
                       </div>
                       
-                      {treatment.custom_data?.sales_note && <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                      {/* Notes pour les assignments actifs */}
+                      {treatment.custom_data?.sales_note && !treatment.isFromTraites && <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
                           <strong>Note :</strong> {treatment.custom_data.sales_note}
                         </p>}
                       
+                      {/* Notes pour les prospects traités */}
+                      {treatment.notes_sales && treatment.isFromTraites && <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                          <strong>Note :</strong> {treatment.notes_sales}
+                        </p>}
+                      
+                      {/* Statut pour les prospects traités */}
+                      {treatment.statut_prospect && treatment.isFromTraites && <div className="text-xs">
+                          <Badge variant="outline" className="text-xs">
+                            {treatment.statut_prospect}
+                          </Badge>
+                        </div>}
+                      
                       <div className="text-xs text-muted-foreground space-y-1">
-                        {treatment.custom_data?.action_date && <div>
+                        {treatment.custom_data?.action_date && !treatment.isFromTraites && <div>
                             <strong>Date d'action :</strong> {' '}
                             {moment(treatment.custom_data.action_date).fromNow()}
                           </div>}
-                        {treatment.custom_data?.callback_date && <div>
+                        {treatment.date_action && treatment.isFromTraites && <div>
+                            <strong>Date d'action :</strong> {' '}
+                            {moment(treatment.date_action).fromNow()}
+                          </div>}
+                        {treatment.custom_data?.callback_date && !treatment.isFromTraites && <div>
                             <strong>Date de rappel :</strong> {' '}
                             {moment(treatment.custom_data.callback_date).fromNow()}
                           </div>}
