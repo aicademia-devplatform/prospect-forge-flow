@@ -2,7 +2,6 @@ import React from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { NotificationBell } from '@/components/NotificationBell';
 import UserMenu from '@/components/UserMenu';
-
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -16,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({
           <NotificationBell />
           <UserMenu />
         </header>
-        <main className="flex-1 overflow-auto p-10">
+        <main className="flex-1 overflow-auto p-10 px-[10px] py-[10px]">
           {children}
         </main>
       </div>
