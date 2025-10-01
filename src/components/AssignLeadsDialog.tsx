@@ -36,6 +36,9 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
   const [selectedSalesId, setSelectedSalesId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [salesUsers, setSalesUsers] = useState<SalesUser[]>([]);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
   const { toast } = useToast();
   const { user, userRole } = useAuth();
 
@@ -98,6 +101,45 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
     }
   };
 
+
+  const handleInviteSales = async () => {
+    if (!inviteEmail) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez entrer un email"
+      });
+      return;
+    }
+
+    setIsInviting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('invite-sales-user', {
+        body: { email: inviteEmail }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Invitation envoyée",
+        description: `Une invitation a été envoyée à ${inviteEmail}`
+      });
+
+      setShowInviteDialog(false);
+      setInviteEmail('');
+      loadSalesUsers();
+    } catch (error) {
+      console.error('Error inviting user:', error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'envoyer l'invitation"
+      });
+    } finally {
+      setIsInviting(false);
+    }
+  };
 
   const handleAssignLeads = async () => {
     if (!selectedSalesId) {
@@ -228,6 +270,15 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
                     </div>
                   </SelectItem>
                 ))}
+                <div className="border-t mt-2 pt-2">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start" 
+                    onClick={() => setShowInviteDialog(true)}
+                  >
+                    <span className="text-primary">+ Inviter un nouveau sales</span>
+                  </Button>
+                </div>
               </SelectContent>
             </Select>
           </div>
@@ -245,6 +296,41 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
           </div>
         </div>
       </DialogContent>
+
+      {/* Dialog pour inviter un nouveau sales */}
+      {showInviteDialog && (
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Inviter un nouveau sales</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="invite-email">Email</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                placeholder="email@exemple.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => {
+                setShowInviteDialog(false);
+                setInviteEmail('');
+              }}>
+                Annuler
+              </Button>
+              <Button 
+                onClick={handleInviteSales} 
+                disabled={isInviting || !inviteEmail}
+              >
+                {isInviting ? 'Envoi...' : 'Envoyer l\'invitation'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      )}
     </Dialog>
   );
 };
