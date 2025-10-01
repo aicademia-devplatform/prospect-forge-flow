@@ -52,6 +52,36 @@ const App = () => (
               } 
             />
             <Route 
+              path="/prospects/assigned" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Prospects />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/prospects/rappeler" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Prospects />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/prospects/traites" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Prospects />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/import" 
               element={
                 <ProtectedRoute>

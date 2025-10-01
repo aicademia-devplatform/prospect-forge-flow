@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
 import 'moment/locale/fr';
+import { useNavigate, useLocation } from 'react-router-dom';
 import UserMenu from '@/components/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,7 +24,35 @@ interface CreatedTable {
 
 const Prospects = () => {
   const { userRole, user } = useAuth();
-  const [activeTab, setActiveTab] = useState('assigned');
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Déterminer l'onglet actif depuis l'URL
+  const getActiveTabFromPath = () => {
+    const path = location.pathname;
+    if (path.includes('/prospects/rappeler')) return 'rappeler';
+    if (path.includes('/prospects/traites')) return 'traites';
+    return 'assigned';
+  };
+  
+  const activeTab = getActiveTabFromPath();
+  
+  const handleTabChange = (value: string) => {
+    if (value === 'assigned') {
+      navigate('/prospects/assigned');
+    } else if (value === 'rappeler') {
+      navigate('/prospects/rappeler');
+    } else if (value === 'traites') {
+      navigate('/prospects/traites');
+    }
+  };
+  
+  // Rediriger vers /prospects/assigned si on est sur /prospects
+  useEffect(() => {
+    if (location.pathname === '/prospects') {
+      navigate('/prospects/assigned', { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   const formatDate = (dateString: string) => {
     moment.locale('fr');
@@ -70,7 +99,7 @@ const Prospects = () => {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="assigned">
               Prospects Assignés
