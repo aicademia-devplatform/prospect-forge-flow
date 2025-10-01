@@ -31,6 +31,7 @@ const AdminUsersTab = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [newRole, setNewRole] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -74,7 +75,44 @@ const AdminUsersTab = () => {
     }
   };
 
-  const handleUpdateRole = async () => {
+  const handleUpdateRole = async (userId: string, role: string) => {
+    if (!role) return;
+
+    try {
+      // Supprimer l'ancien rôle
+      await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId);
+
+      // Ajouter le nouveau rôle
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: role as 'admin' | 'manager' | 'sales'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Succès',
+        description: 'Rôle mis à jour avec succès'
+      });
+
+      setEditingUserId(null);
+      loadUsers();
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de mettre à jour le rôle',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleUpdateRoleFromDialog = async () => {
     if (!selectedUser || !newRole) return;
 
     try {
@@ -248,13 +286,38 @@ const AdminUsersTab = () => {
                       {user.email}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    {user.role ? (
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role}
-                      </Badge>
+                  <TableCell 
+                    onDoubleClick={() => setEditingUserId(user.id)}
+                    className="cursor-pointer"
+                  >
+                    {editingUserId === user.id ? (
+                      <Select 
+                        value={user.role || ''} 
+                        onValueChange={(value) => {
+                          handleUpdateRole(user.id, value);
+                        }}
+                        open={true}
+                        onOpenChange={(open) => {
+                          if (!open) setEditingUserId(null);
+                        }}
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue placeholder="Sélectionner un rôle" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="sales">Sales</SelectItem>
+                        </SelectContent>
+                      </Select>
                     ) : (
-                      <Badge variant="outline">Aucun rôle</Badge>
+                      user.role ? (
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {user.role}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Aucun rôle</Badge>
+                      )
                     )}
                   </TableCell>
                   <TableCell>
@@ -328,7 +391,7 @@ const AdminUsersTab = () => {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={handleUpdateRole}>
+            <Button onClick={handleUpdateRoleFromDialog}>
               Mettre à jour
             </Button>
           </DialogFooter>
