@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Users, Database, CheckCircle, Bell, TrendingUp, Activity, GripVertical, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import DashboardLoader from './DashboardLoader';
 import { useDashboardLayout, DashboardCard } from '@/hooks/useDashboardLayout';
@@ -304,15 +305,21 @@ const AdminDashboard = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Base de données</span>
-                <span className="text-sm font-medium text-green-600">Opérationnelle</span>
+                <Badge variant="default" className="bg-[hsl(var(--accent-green))] hover:bg-[hsl(var(--accent-green))]">
+                  Opérationnelle
+                </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm">Authentification</span>
-                <span className="text-sm font-medium text-green-600">Opérationnelle</span>
+                <Badge variant="default" className="bg-[hsl(var(--accent-green))] hover:bg-[hsl(var(--accent-green))]">
+                  Opérationnelle
+                </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm">API</span>
-                <span className="text-sm font-medium text-green-600">Opérationnelle</span>
+                <Badge variant="default" className="bg-[hsl(var(--accent-green))] hover:bg-[hsl(var(--accent-green))]">
+                  Opérationnelle
+                </Badge>
               </div>
             </CardContent>
           </Card>
