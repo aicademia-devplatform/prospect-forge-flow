@@ -645,6 +645,9 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
                             {filterMode === 'traites' && <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs bg-green-100 text-green-800 border-green-200 hover:bg-green-200/80">
                                 Traité
                               </Badge>}
+                            {filterMode === 'rappeler' && <Badge variant="default" className="bg-orange-100 text-orange-800 border-orange-200 text-xs hover:bg-orange-200/80">
+                                À rappeler
+                              </Badge>}
                           </div>
                         </TableCell>}
                       
