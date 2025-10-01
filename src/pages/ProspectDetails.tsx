@@ -132,11 +132,11 @@ const ProspectDetails: React.FC = () => {
   const [defaultActionTab, setDefaultActionTab] = useState<'modifier' | 'traiter'>('modifier');
   const [showAllHistory, setShowAllHistory] = useState(false);
 
-  // Vérifier si le prospect est bouclé (dernière entrée avec boucle = true)
-  const isProspectBoucle = React.useMemo(() => {
+  // Vérifier si le prospect est traité (existe dans prospects_traites)
+  const isProspectTraite = React.useMemo(() => {
     if (!treatmentHistory || treatmentHistory.length === 0) return false;
-    const latestTreatment = treatmentHistory[0]; // Le plus récent en premier
-    return latestTreatment?.boucle === true;
+    // Vérifier s'il y a au moins un traitement provenant de prospects_traites
+    return treatmentHistory.some(treatment => treatment.isFromTraites === true);
   }, [treatmentHistory]);
 
   // Décrypter l'email depuis l'URL
@@ -374,8 +374,8 @@ const ProspectDetails: React.FC = () => {
               <h1 className="text-2xl font-bold">{prospect.email}</h1>
               <p className="text-muted-foreground">Contact CRM</p>
             </div>
-            {isProspectBoucle && <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">
-                Prospect Bouclé
+            {isProspectTraite && <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                Prospect Traité
               </Badge>}
           </div>
         </div>
@@ -388,7 +388,7 @@ const ProspectDetails: React.FC = () => {
             <Edit className="h-4 w-4 mr-2" />
             Modifier
           </Button>
-          {!isProspectBoucle && <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+          {!isProspectTraite && <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => {
             setDefaultActionTab('traiter');
             setShowActionSidebar(true);
           }}>
