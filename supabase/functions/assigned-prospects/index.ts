@@ -77,8 +77,18 @@ Deno.serve(async (req) => {
 
       if (processedError) throw processedError
       assignments = processedProspects || []
+    } else if (filterMode === 'rappeler') {
+      // Get prospects from prospects_a_rappeler table
+      const { data: callbackProspects, error: callbackError } = await supabase
+        .from('prospects_a_rappeler')
+        .select('*')
+        .eq('sales_user_id', user.id)
+        .order('callback_date', { ascending: true })
+
+      if (callbackError) throw callbackError
+      assignments = callbackProspects || []
     } else {
-      // Get active assignments from sales_assignments table (assigned and rappeler modes)
+      // Get active assignments from sales_assignments table (assigned mode)
       const { data: activeAssignments, error: assignError } = await supabase
         .from('sales_assignments')
         .select('*')
@@ -126,6 +136,7 @@ Deno.serve(async (req) => {
           source_id: assignment.source_id,
           source_table: assignment.source_table,
           assigned_at: assignment.assigned_at,
+          callback_date: filterMode === 'rappeler' ? assignment.callback_date : null,
           boucle: filterMode === 'traites', // Set based on table
           notes_sales: assignment.notes_sales,
           statut_prospect: assignment.statut_prospect,

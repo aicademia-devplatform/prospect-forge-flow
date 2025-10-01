@@ -35,6 +35,7 @@ const translateColumnName = (columnName: string): string => {
     'created_at': 'Date de création',
     'updated_at': 'Date de mise à jour',
     'assigned_at': 'Date d\'assignation',
+    'callback_date': 'Date de rappel',
     'first_name': 'Prénom',
     'last_name': 'Nom',
     'company': 'Entreprise',
@@ -84,7 +85,15 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
   const [sortBy, setSortBy] = useState('assigned_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(filterMode === 'traites' ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions'] : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
+    new Set(
+      filterMode === 'traites' 
+        ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions'] 
+        : filterMode === 'rappeler'
+        ? ['email', 'company', 'last_name', 'first_name', 'callback_date', 'statut_prospect', 'notes_sales', 'actions']
+        : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']
+    )
+  );
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);

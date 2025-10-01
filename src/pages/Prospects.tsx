@@ -118,9 +118,7 @@ const Prospects = () => {
           </TabsContent>
 
           <TabsContent value="rappeler" className="space-y-4 mt-6">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Liste des prospects à rappeler</p>
-            </div>
+            <MySalesLeads filterMode="rappeler" />
           </TabsContent>
 
           <TabsContent value="traites" className="space-y-4 mt-6">
