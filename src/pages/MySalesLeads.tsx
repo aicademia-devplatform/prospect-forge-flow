@@ -18,7 +18,6 @@ import DataPagination from '@/components/DataPagination';
 import TableFilters, { FilterValues } from '@/components/TableFilters';
 import TableColumnHeader from '@/components/TableColumnHeader';
 import { useAssignedProspectsData } from '@/hooks/useAssignedProspectsData';
-import { useProspectsTraites } from '@/hooks/useProspectsTraites';
 import { createProspectUrl } from '@/lib/emailCrypto';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from '@/hooks/useAuth';
@@ -66,10 +65,10 @@ const translateColumnName = (columnName: string): string => {
   return translations[columnName] || columnName;
 };
 interface MySalesLeadsProps {
-  // Cette page affiche uniquement les prospects traités
+  filterMode?: 'assigned' | 'traites' | 'rappeler';
 }
 
-const MySalesLeads: React.FC<MySalesLeadsProps> = () => {
+const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) => {
   const {
     user
   } = useAuth();
@@ -86,7 +85,9 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(
-    ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
+    filterMode === 'traites' 
+      ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
+      : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']
   ));
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
@@ -239,14 +240,14 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = () => {
     }
   };
 
-  // Fetch data using prospects traités hook
+  // Fetch data using assigned prospects hook
   const {
     data,
     totalCount,
     totalPages,
     loading,
     refetch
-  } = useProspectsTraites({
+  } = useAssignedProspectsData({
     page: currentPage,
     pageSize,
     searchTerm: debouncedSearchTerm,
@@ -254,7 +255,8 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = () => {
     sortBy,
     sortOrder,
     visibleColumns: visibleColumnsArray,
-    advancedFilters
+    advancedFilters,
+    filterMode
   });
 
   const getAllColumns = (): ColumnInfo[] => {
@@ -283,26 +285,36 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = () => {
       type: 'string',
       nullable: false
     }, {
-      name: 'completed_at',
-      type: 'timestamp',
-      nullable: false
-    }, {
-      name: 'notes_sales',
-      type: 'string',
-      nullable: true
-    }, {
-      name: 'statut_prospect',
-      type: 'string',
-      nullable: true
-    }, {
-      name: 'date_action',
-      type: 'timestamp',
-      nullable: true
-    }, {
       name: 'actions',
       type: 'string',
       nullable: false
     }];
+
+    // Add treatment columns for traites mode
+    if (filterMode === 'traites') {
+      baseColumns.splice(-2, 0, ...[
+        {
+          name: 'completed_at',
+          type: 'timestamp',
+          nullable: false
+        },
+        {
+          name: 'notes_sales',
+          type: 'string',
+          nullable: true
+        },
+        {
+          name: 'statut_prospect',
+          type: 'string',
+          nullable: true
+        },
+        {
+          name: 'date_action',
+          type: 'date',
+          nullable: true
+        }
+      ]);
+    }
 
     return baseColumns;
   };
@@ -488,10 +500,16 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">
-            Prospects Traités
+            {filterMode === 'traites' ? 'Prospects Traités' : 
+             filterMode === 'rappeler' ? 'Prospects à Rappeler' : 
+             'Prospects Assignés'}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {totalCount} prospects bouclés ou avec statut "barrage" / "déjà accompagné"
+            {filterMode === 'traites' ? 
+              `${totalCount} prospects bouclés ou avec statut "barrage" / "déjà accompagné"` :
+             filterMode === 'rappeler' ? 
+              `${totalCount} prospects à rappeler` :
+              `${totalCount} prospects assignés depuis vos différentes sources`}
           </p>
         </div>
         
@@ -576,8 +594,8 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = () => {
               </TableHeader>
               <TableBody>
                 {data.length === 0 ? <TableRow>
-                     <TableCell colSpan={Array.from(visibleColumns).length + 2} className="text-center py-8 text-muted-foreground">
-                      Aucun prospect traité trouvé
+                    <TableCell colSpan={Array.from(visibleColumns).length + 2} className="text-center py-8 text-muted-foreground">
+                      Aucun prospect assigné trouvé
                     </TableCell>
                   </TableRow> : data.map(prospect => <TableRow key={prospect.id} className={selectedRows.has(prospect.id) ? 'bg-muted/50' : ''}>
                       {/* Colonne checkbox */}
