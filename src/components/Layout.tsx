@@ -1,8 +1,9 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { NotificationBell } from '@/components/NotificationBell';
 import UserMenu from '@/components/UserMenu';
-import { useLocation } from 'react-router-dom';
+
 interface LayoutProps {
   children: React.ReactNode;
 }
