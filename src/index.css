@@ -78,6 +78,27 @@
     --sidebar-accent-foreground: 215 25% 27%;
     --sidebar-border: 215 14% 89%;
     --sidebar-ring: 217 91% 60%;
+
+    /* Dashboard Card Colors */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 340 82% 52%;
+    
+    /* Card Accent Colors */
+    --accent-blue: 217 91% 60%;
+    --accent-blue-light: 217 91% 97%;
+    --accent-green: 142 71% 45%;
+    --accent-green-light: 142 71% 97%;
+    --accent-purple: 262 83% 58%;
+    --accent-purple-light: 262 83% 97%;
+    --accent-orange: 38 92% 50%;
+    --accent-orange-light: 38 92% 97%;
+    --accent-pink: 340 82% 52%;
+    --accent-pink-light: 340 82% 97%;
+    --accent-cyan: 189 94% 43%;
+    --accent-cyan-light: 189 94% 97%;
   }
 
   .dark {
@@ -133,6 +154,26 @@
     --sidebar-accent-foreground: 215 20% 98%;
     --sidebar-border: 215 25% 27%;
     --sidebar-ring: 217 91% 60%;
+
+    /* Dashboard Card Colors - Dark Mode */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 340 82% 52%;
+    
+    --accent-blue: 217 91% 60%;
+    --accent-blue-light: 217 91% 20%;
+    --accent-green: 142 71% 45%;
+    --accent-green-light: 142 71% 20%;
+    --accent-purple: 262 83% 58%;
+    --accent-purple-light: 262 83% 20%;
+    --accent-orange: 38 92% 50%;
+    --accent-orange-light: 38 92% 20%;
+    --accent-pink: 340 82% 52%;
+    --accent-pink-light: 340 82% 20%;
+    --accent-cyan: 189 94% 43%;
+    --accent-cyan-light: 189 94% 20%;
   }
 }
 

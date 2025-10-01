@@ -90,42 +90,70 @@ const AdminDashboard = () => {
   };
 
   const renderCard = (card: DashboardCard, index: number) => {
-    const cardConfig: Record<string, { title: string; icon: any; value: number | string; subtitle: string }> = {
+    const borderColors: Record<string, string> = {
+      users: 'border-l-[hsl(var(--accent-blue))]',
+      assignments: 'border-l-[hsl(var(--accent-green))]',
+      notifications: 'border-l-[hsl(var(--accent-orange))]',
+      prospects: 'border-l-[hsl(var(--accent-purple))]',
+      activity: 'border-l-[hsl(var(--accent-cyan))]',
+      rate: 'border-l-[hsl(var(--accent-pink))]'
+    };
+
+    const cardConfig: Record<string, { 
+      title: string; 
+      icon: any; 
+      value: number | string; 
+      subtitle: string;
+      iconColor: string;
+      bgColor: string;
+    }> = {
       users: {
         title: 'Utilisateurs',
         icon: Users,
         value: stats.totalUsers,
-        subtitle: `${stats.activeUsers} avec rôle actif`
+        subtitle: `${stats.activeUsers} avec rôle actif`,
+        iconColor: 'text-[hsl(var(--accent-blue))]',
+        bgColor: 'bg-[hsl(var(--accent-blue-light))]'
       },
       assignments: {
         title: 'Assignations',
         icon: CheckCircle,
         value: stats.totalAssignments,
-        subtitle: 'Prospects assignés'
+        subtitle: 'Prospects assignés',
+        iconColor: 'text-[hsl(var(--accent-green))]',
+        bgColor: 'bg-[hsl(var(--accent-green-light))]'
       },
       notifications: {
         title: 'Notifications',
         icon: Bell,
         value: stats.totalNotifications,
-        subtitle: 'Total des notifications'
+        subtitle: 'Total des notifications',
+        iconColor: 'text-[hsl(var(--accent-orange))]',
+        bgColor: 'bg-[hsl(var(--accent-orange-light))]'
       },
       prospects: {
         title: 'Prospects',
         icon: Database,
         value: stats.totalProspects,
-        subtitle: 'Dans la base de données'
+        subtitle: 'Dans la base de données',
+        iconColor: 'text-[hsl(var(--accent-purple))]',
+        bgColor: 'bg-[hsl(var(--accent-purple-light))]'
       },
       activity: {
         title: 'Activité récente',
         icon: Activity,
         value: stats.recentActivities,
-        subtitle: 'Actions (7 derniers jours)'
+        subtitle: 'Actions (7 derniers jours)',
+        iconColor: 'text-[hsl(var(--accent-cyan))]',
+        bgColor: 'bg-[hsl(var(--accent-cyan-light))]'
       },
       rate: {
         title: 'Taux d\'assignation',
         icon: TrendingUp,
         value: `${stats.totalProspects > 0 ? Math.round((stats.totalAssignments / stats.totalProspects) * 100) : 0}%`,
-        subtitle: `${stats.totalAssignments} / ${stats.totalProspects}`
+        subtitle: `${stats.totalAssignments} / ${stats.totalProspects}`,
+        iconColor: 'text-[hsl(var(--accent-pink))]',
+        bgColor: 'bg-[hsl(var(--accent-pink-light))]'
       }
     };
 
@@ -143,7 +171,7 @@ const AdminDashboard = () => {
             className={snapshot.isDragging ? 'opacity-50' : ''}
           >
             <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-              <Card className="relative group">
+              <Card className={`relative group border-l-4 ${borderColors[card.type]} transition-all duration-300 hover:shadow-lg`}>
                 <div
                   {...provided.dragHandleProps}
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
@@ -152,11 +180,13 @@ const AdminDashboard = () => {
                 </div>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">{config.title}</CardTitle>
-                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <div className={`${config.bgColor} p-2 rounded-lg transition-transform group-hover:scale-110`}>
+                    <Icon className={`h-5 w-5 ${config.iconColor}`} />
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{config.value}</div>
-                  <p className="text-xs text-muted-foreground">{config.subtitle}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{config.subtitle}</p>
                 </CardContent>
               </Card>
             </motion.div>
