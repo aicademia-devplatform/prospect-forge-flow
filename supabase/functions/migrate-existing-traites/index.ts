@@ -31,22 +31,23 @@ Deno.serve(async (req) => {
       throw new Error('Invalid user token')
     }
 
-    console.log('Starting migration of existing bouclé prospects for user:', user.id)
+    console.log('Starting migration of existing completed prospects for user:', user.id)
 
-    // Find all existing assignments with boucle = true
+    // Find all existing assignments that should be migrated to prospects_traites
+    // You can adjust the criteria based on your business logic (e.g., by statut_prospect)
     const { data: boucleAssignments, error: findError } = await supabase
       .from('sales_assignments')
       .select('*')
       .eq('sales_user_id', user.id)
-      .eq('boucle', true)
       .eq('status', 'active')
+      .in('statut_prospect', ['Bouclé', 'Terminé', 'Complété']) // Adjust these values based on your actual statuses
 
     if (findError) {
       console.error('Error finding bouclé assignments:', findError)
       throw findError
     }
 
-    console.log(`Found ${boucleAssignments?.length || 0} bouclé assignments to migrate`)
+    console.log(`Found ${boucleAssignments?.length || 0} completed assignments to migrate`)
 
     let migratedCount = 0
     let errors = []
