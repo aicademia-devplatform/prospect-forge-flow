@@ -119,12 +119,13 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
   // Colonnes épinglées fixes qui ne peuvent pas être cachées
   const pinnedColumns = new Set(['email', 'actions']);
 
-  // Charger la configuration des colonnes au montage
+  // Charger la configuration des colonnes au montage ou quand le filterMode change
   useEffect(() => {
-    if (user && !columnConfigLoaded) {
+    if (user) {
+      setColumnConfigLoaded(false);
       loadTableConfig();
     }
-  }, [user, columnConfigLoaded]);
+  }, [user, filterMode]);
 
   // Initialiser les états temporaires du dialog
   useEffect(() => {
@@ -176,10 +177,11 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
   const loadTableConfig = async () => {
     if (!user) return;
     try {
+      const tableName = `assigned_prospects_${filterMode}`;
       const {
         data,
         error
-      } = await supabase.from('sales_table_config').select('column_config, table_settings').eq('sales_user_id', user.id).eq('table_name', 'assigned_prospects').single();
+      } = await supabase.from('sales_table_config').select('column_config, table_settings').eq('sales_user_id', user.id).eq('table_name', tableName).single();
       if (error && error.code !== 'PGRST116') throw error;
       if (data?.column_config) {
         const config = Array.isArray(data.column_config) ? data.column_config : [];
@@ -210,6 +212,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
   const saveTableConfig = async () => {
     if (!user) return;
     try {
+      const tableName = `assigned_prospects_${filterMode}`;
       const columnConfig = availableColumns.map(column => ({
         name: column.name,
         visible: visibleColumns.has(column.name),
@@ -224,7 +227,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
         error
       } = await supabase.from('sales_table_config').upsert({
         sales_user_id: user.id,
-        table_name: 'assigned_prospects',
+        table_name: tableName,
         column_config: columnConfig,
         table_settings: tableSettings
       }, {
