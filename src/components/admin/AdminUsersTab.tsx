@@ -32,10 +32,19 @@ const AdminUsersTab = () => {
   const [newRole, setNewRole] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
+    getCurrentUser();
   }, []);
+
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+    }
+  };
 
   const loadUsers = async () => {
     try {
@@ -76,7 +85,7 @@ const AdminUsersTab = () => {
   };
 
   const handleUpdateRole = async (userId: string, role: string) => {
-    if (!role) return;
+    if (!role || userId === currentUserId) return;
 
     try {
       // Supprimer l'ancien rôle
@@ -113,7 +122,7 @@ const AdminUsersTab = () => {
   };
 
   const handleUpdateRoleFromDialog = async () => {
-    if (!selectedUser || !newRole) return;
+    if (!selectedUser || !newRole || selectedUser.id === currentUserId) return;
 
     try {
       // Supprimer l'ancien rôle
@@ -150,6 +159,15 @@ const AdminUsersTab = () => {
   };
 
   const handleToggleActive = async (userId: string, currentStatus: boolean) => {
+    if (userId === currentUserId) {
+      toast({
+        title: 'Action non autorisée',
+        description: 'Vous ne pouvez pas désactiver votre propre compte',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('profiles')
@@ -175,6 +193,15 @@ const AdminUsersTab = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
+    if (userId === currentUserId) {
+      toast({
+        title: 'Action non autorisée',
+        description: 'Vous ne pouvez pas supprimer votre propre compte',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return;
 
     try {
@@ -287,8 +314,8 @@ const AdminUsersTab = () => {
                     </div>
                   </TableCell>
                   <TableCell 
-                    onDoubleClick={() => setEditingUserId(user.id)}
-                    className="cursor-pointer"
+                    onDoubleClick={() => user.id !== currentUserId && setEditingUserId(user.id)}
+                    className={user.id !== currentUserId ? "cursor-pointer" : ""}
                   >
                     {editingUserId === user.id ? (
                       <Select 
@@ -325,6 +352,7 @@ const AdminUsersTab = () => {
                       <Switch
                         checked={user.is_active}
                         onCheckedChange={() => handleToggleActive(user.id, user.is_active)}
+                        disabled={user.id === currentUserId}
                       />
                       <span className="text-sm text-muted-foreground">
                         {user.is_active ? 'Actif' : 'Inactif'}
@@ -344,6 +372,7 @@ const AdminUsersTab = () => {
                           setNewRole(user.role || '');
                           setDialogOpen(true);
                         }}
+                        disabled={user.id === currentUserId}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -351,6 +380,7 @@ const AdminUsersTab = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteUser(user.id)}
+                        disabled={user.id === currentUserId}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -391,7 +421,10 @@ const AdminUsersTab = () => {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={handleUpdateRoleFromDialog}>
+            <Button 
+              onClick={handleUpdateRoleFromDialog}
+              disabled={selectedUser?.id === currentUserId}
+            >
               Mettre à jour
             </Button>
           </DialogFooter>
