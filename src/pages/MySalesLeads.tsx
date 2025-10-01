@@ -607,9 +607,14 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
                       {visibleColumns.has('email') && <TableCell className="w-[200px] px-4 py-3 sticky bg-background border-r z-20" style={{
                 left: '50px'
               }}>
-                          <a href={`mailto:${prospect.email}`} className="text-primary hover:underline">
-                            {prospect.email}
-                          </a>
+                          <div className="flex items-center gap-2">
+                            <a href={`mailto:${prospect.email}`} className="text-primary hover:underline">
+                              {prospect.email}
+                            </a>
+                            {filterMode === 'traites' && <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs">
+                                Traité
+                              </Badge>}
+                          </div>
                         </TableCell>}
                       
                       {/* Autres colonnes */}
