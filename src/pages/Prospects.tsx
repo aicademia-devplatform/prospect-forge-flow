@@ -84,8 +84,9 @@ const Prospects = () => {
           </TabsList>
           
           <TabsContent value="assigned" className="space-y-4 mt-6">
-            {/* Prospects assignés via MySalesLeads */}
-            <MySalesLeads />
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Liste des prospects assignés - Fonctionnalité à venir</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="rappeler" className="space-y-4 mt-6">
@@ -98,7 +99,7 @@ const Prospects = () => {
             <div className="mb-4">
               <MigrateProspectsButton />
             </div>
-            <MySalesLeads filterMode="traites" />
+            <MySalesLeads />
           </TabsContent>
         </Tabs>
       </div>
