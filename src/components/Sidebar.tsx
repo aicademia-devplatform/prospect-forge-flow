@@ -37,16 +37,9 @@ export const Sidebar = () => {
       return currentPath === '/';
     }
     
-    // Pour éviter que /prospects soit actif sur /prospects/assigned
-    // On vérifie d'abord les routes les plus spécifiques
-    if (itemPath === '/prospects/assigned') {
-      return currentPath.startsWith('/prospects/assigned');
-    }
-    
+    // Pour le menu Prospects, inclure toutes les sous-routes
     if (itemPath === '/prospects') {
-      return currentPath === '/prospects' || 
-             (currentPath.startsWith('/prospects/') && 
-              !currentPath.startsWith('/prospects/assigned'));
+      return currentPath === '/prospects' || currentPath.startsWith('/prospects/');
     }
     
     // Pour les autres routes
