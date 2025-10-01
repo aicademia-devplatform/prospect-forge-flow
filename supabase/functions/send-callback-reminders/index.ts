@@ -179,6 +179,26 @@ serve(async (req) => {
           console.error('Error creating notifications:', notifError);
         }
 
+        // Créer des entrées dans l'historique pour chaque prospect
+        const modifications = prospects.map(p => ({
+          lead_email: p.lead_email,
+          modified_by: userId,
+          notes: `Rappel automatique envoyé par email - Statut: ${p.statut_prospect}`,
+          modified_fields: {
+            action: 'email_reminder_sent',
+            callback_date: p.callback_date,
+            sent_at: now.toISOString()
+          }
+        }));
+
+        const { error: modifError } = await supabase
+          .from('prospect_modifications')
+          .insert(modifications);
+
+        if (modifError) {
+          console.error('Error creating modification history:', modifError);
+        }
+
         results.push({
           user: userProfile.email,
           prospects: prospects.length,
