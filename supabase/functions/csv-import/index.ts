@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -47,6 +48,13 @@ Deno.serve(async (req) => {
     console.log(`Starting import for user ${user.id} into ${targetTable}`);
     console.log(`File: ${fileName}, Rows: ${rows.length}`);
 
+    // Get user profile for email
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('email, first_name, last_name')
+      .eq('id', user.id)
+      .single();
+
     // Create import history record
     const { data: importRecord, error: historyError } = await supabaseClient
       .from('import_history')
@@ -84,60 +92,125 @@ Deno.serve(async (req) => {
 
     console.log(`Prepared ${dataToImport.length} rows for upsert`);
 
-    let successCount = 0;
-    let failedCount = 0;
-    const errors: any[] = [];
+    // Start background processing
+    const backgroundTask = async () => {
+      let successCount = 0;
+      let failedCount = 0;
+      const errors: any[] = [];
 
-    // Upsert data in batches of 100
-    const batchSize = 100;
-    for (let i = 0; i < dataToImport.length; i += batchSize) {
-      const batch = dataToImport.slice(i, i + batchSize);
-      
-      const { data, error } = await supabaseClient
-        .from(targetTable)
-        .upsert(batch, {
-          onConflict: 'email', // Use email as unique identifier
-          ignoreDuplicates: false, // Update existing records
-        });
+      // Upsert data in batches of 100
+      const batchSize = 100;
+      for (let i = 0; i < dataToImport.length; i += batchSize) {
+        const batch = dataToImport.slice(i, i + batchSize);
+        
+        const { data, error } = await supabaseClient
+          .from(targetTable)
+          .upsert(batch, {
+            onConflict: 'email',
+            ignoreDuplicates: false,
+          });
 
-      if (error) {
-        console.error(`Batch ${i / batchSize + 1} error:`, error);
-        failedCount += batch.length;
-        errors.push({
-          batch: i / batchSize + 1,
-          error: error.message,
-          rows: batch.length,
-        });
-      } else {
-        successCount += batch.length;
-        console.log(`Batch ${i / batchSize + 1} imported successfully`);
+        if (error) {
+          console.error(`Batch ${i / batchSize + 1} error:`, error);
+          failedCount += batch.length;
+          errors.push({
+            batch: i / batchSize + 1,
+            error: error.message,
+            rows: batch.length,
+          });
+        } else {
+          successCount += batch.length;
+          console.log(`Batch ${i / batchSize + 1} imported successfully`);
+        }
       }
-    }
 
-    // Update import history with results
-    const { error: updateError } = await supabaseClient
-      .from('import_history')
-      .update({
-        status: failedCount === dataToImport.length ? 'failed' : 'completed',
-        success_rows: successCount,
-        failed_rows: failedCount,
-        completed_at: new Date().toISOString(),
-        error_details: errors.length > 0 ? errors : null,
-      })
-      .eq('id', importRecord.id);
+      // Update import history with results
+      const finalStatus = failedCount === dataToImport.length ? 'failed' : 'completed';
+      await supabaseClient
+        .from('import_history')
+        .update({
+          status: finalStatus,
+          success_rows: successCount,
+          failed_rows: failedCount,
+          completed_at: new Date().toISOString(),
+          error_details: errors.length > 0 ? errors : null,
+        })
+        .eq('id', importRecord.id);
 
-    if (updateError) {
-      console.error('Error updating import history:', updateError);
-    }
+      // Create in-app notification
+      await supabaseClient
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          type: finalStatus === 'completed' ? 'import_success' : 'import_failed',
+          title: finalStatus === 'completed' ? 'Import terminé' : 'Échec de l\'import',
+          message: `Import de ${fileName}: ${successCount} lignes importées${failedCount > 0 ? `, ${failedCount} échecs` : ''}`,
+          data: {
+            import_id: importRecord.id,
+            file_name: fileName,
+            success_rows: successCount,
+            failed_rows: failedCount,
+          },
+        });
 
+      // Send email notification
+      if (profile?.email) {
+        try {
+          const client = new SMTPClient({
+            connection: {
+              hostname: 'smtp.gmail.com',
+              port: 465,
+              tls: true,
+              auth: {
+                username: Deno.env.get('GMAIL_USER')!,
+                password: Deno.env.get('GMAIL_APP_PASSWORD')!,
+              },
+            },
+          });
+
+          const emailSubject = finalStatus === 'completed' 
+            ? `✅ Import terminé - ${fileName}` 
+            : `❌ Échec de l'import - ${fileName}`;
+
+          const emailBody = `
+            <h2>${emailSubject}</h2>
+            <p>Bonjour ${profile.first_name || ''},</p>
+            <p>Votre importation est terminée.</p>
+            <ul>
+              <li><strong>Fichier:</strong> ${fileName}</li>
+              <li><strong>Table cible:</strong> ${targetTable}</li>
+              <li><strong>Lignes importées:</strong> ${successCount}</li>
+              ${failedCount > 0 ? `<li><strong>Lignes échouées:</strong> ${failedCount}</li>` : ''}
+            </ul>
+            <p>Consultez votre tableau de bord pour plus de détails.</p>
+          `;
+
+          await client.send({
+            from: Deno.env.get('GMAIL_USER')!,
+            to: profile.email,
+            subject: emailSubject,
+            content: emailBody,
+            html: emailBody,
+          });
+
+          await client.close();
+          console.log('Email notification sent to:', profile.email);
+        } catch (emailError) {
+          console.error('Failed to send email notification:', emailError);
+        }
+      }
+    };
+
+    // Start background task
+    EdgeRuntime.waitUntil(backgroundTask());
+
+    // Return immediately
     return new Response(
       JSON.stringify({
         success: true,
         importId: importRecord.id,
-        totalRows: dataToImport.length,
-        successRows: successCount,
-        failedRows: failedCount,
-        errors: errors.length > 0 ? errors : undefined,
+        message: 'Import started in background',
+        status: 'pending',
       }),
       {
         status: 200,
