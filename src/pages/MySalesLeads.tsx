@@ -23,6 +23,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import ExportDialog, { ExportOptions } from '@/components/ExportDialog';
+import * as XLSX from 'xlsx';
 interface ColumnInfo {
   name: string;
   type: string;
@@ -97,6 +99,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // États pour le dialog de colonnes
   const [columnDialogOpen, setColumnDialogOpen] = useState(false);
@@ -518,6 +521,185 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
       return newFilters;
     });
   };
+
+  // Export functions
+  const handleExport = async (options: ExportOptions) => {
+    try {
+      const exportParams = {
+        page: options.scope === 'current' ? currentPage : 1,
+        pageSize: options.scope === 'current' ? pageSize : totalCount,
+        searchTerm: debouncedSearchTerm,
+        searchColumns: ['email', 'first_name', 'last_name', 'company'],
+        sortBy,
+        sortOrder,
+        visibleColumns: Array.from(visibleColumns),
+        advancedFilters,
+        filterMode
+      };
+      
+      const { data: exportData, error } = await supabase.functions.invoke('assigned-prospects', {
+        body: exportParams
+      });
+      
+      if (error) throw error;
+      const prospects = exportData.data || [];
+      
+      if (prospects.length === 0) {
+        toast({
+          title: "Aucune donnée",
+          description: "Aucun prospect à exporter avec les filtres appliqués",
+          variant: "destructive",
+          duration: 4000
+        });
+        return;
+      }
+
+      // Filter columns based on user selection
+      const selectedColumns = options.columns.length > 0 
+        ? options.columns 
+        : Object.keys(prospects[0]);
+
+      // Préparer les données filtrées
+      const filteredProspects = prospects.map((prospect: any) => {
+        const filtered: any = {};
+        selectedColumns.forEach(col => {
+          filtered[col] = prospect[col];
+        });
+        return filtered;
+      });
+
+      // Export based on format
+      switch (options.format) {
+        case 'xlsx':
+          await exportAsExcel(filteredProspects, selectedColumns, options.filename);
+          break;
+        case 'csv':
+          await exportAsCSV(filteredProspects, selectedColumns, options.filename, options.csvOptions);
+          break;
+        case 'json':
+          await exportAsJSON(filteredProspects, options.filename);
+          break;
+      }
+
+      toast({
+        title: "Export réussi",
+        description: `${prospects.length} prospects exportés dans ${options.filename}.${options.format}`,
+        duration: 3000
+      });
+
+      if (options.includeGoogleSheets) {
+        toast({
+          title: "Google Sheets",
+          description: "La synchronisation Google Sheets sera disponible prochainement",
+          duration: 3000
+        });
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Erreur d'export",
+        description: "Impossible d'exporter les données",
+        variant: "destructive",
+        duration: 4000
+      });
+    }
+  };
+
+  const exportAsExcel = async (prospects: any[], columns: string[], filename: string) => {
+    const workbook = XLSX.utils.book_new();
+    const headers = columns.map(key => translateColumnName(key));
+    
+    const exportRows = prospects.map(prospect => 
+      columns.map(key => {
+        const value = prospect[key];
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
+        if (Array.isArray(value)) return value.join(', ');
+        if (typeof value === 'object' && value instanceof Date) {
+          moment.locale('fr');
+          return moment(value).format('D MMM YYYY');
+        }
+        return String(value);
+      })
+    );
+
+    const worksheetData = [headers, ...exportRows];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Style headers
+    const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+    for (let col = range.s.c; col <= range.e.c; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+      if (!worksheet[cellRef]) continue;
+      worksheet[cellRef].s = {
+        fill: { fgColor: { rgb: "3B82F6" } },
+        font: { color: { rgb: "FFFFFF" }, bold: true },
+        alignment: { horizontal: "center" }
+      };
+    }
+
+    // Adjust column widths
+    worksheet['!cols'] = headers.map(() => ({ wch: 20 }));
+
+    const sheetName = 'Prospects Assignés';
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    XLSX.writeFile(workbook, `${filename}.xlsx`);
+  };
+
+  const exportAsCSV = async (
+    prospects: any[], 
+    columns: string[], 
+    filename: string, 
+    csvOptions?: ExportOptions['csvOptions']
+  ) => {
+    const delimiter = csvOptions?.delimiter || ',';
+    const includeHeaders = csvOptions?.includeHeaders !== false;
+    const quoteStrings = csvOptions?.quoteStrings !== false;
+    
+    const escapeValue = (value: any) => {
+      if (value === null || value === undefined) return '';
+      let str = String(value);
+      
+      if (quoteStrings && (str.includes(delimiter) || str.includes('"') || str.includes('\n'))) {
+        str = `"${str.replace(/"/g, '""')}"`;
+      }
+      
+      return str;
+    };
+    
+    const headers = columns.map(key => translateColumnName(key));
+    const rows = prospects.map(prospect => 
+      columns.map(key => {
+        const value = prospect[key];
+        if (typeof value === 'boolean') return value ? 'Oui' : 'Non';
+        if (Array.isArray(value)) return escapeValue(value.join(', '));
+        if (value instanceof Date) return escapeValue(moment(value).format('D MMM YYYY'));
+        return escapeValue(value);
+      }).join(delimiter)
+    );
+
+    let csvContent = '';
+    if (includeHeaders) {
+      csvContent = headers.map(h => escapeValue(h)).join(delimiter) + '\n';
+    }
+    csvContent += rows.join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}.csv`;
+    link.click();
+  };
+
+  const exportAsJSON = async (prospects: any[], filename: string) => {
+    const jsonContent = JSON.stringify(prospects, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}.json`;
+    link.click();
+  };
+
   const handleSort = (columnName: string, order?: 'asc' | 'desc') => {
     if (order) {
       setSortBy(columnName);
@@ -580,7 +762,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
             </Button>
           )}
           
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setExportDialogOpen(true)}>
             <Download className="h-4 w-4 mr-2" />
             Exporter
           </Button>
@@ -823,6 +1005,20 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Export Dialog */}
+      <ExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        tableName="crm_contacts"
+        totalCount={totalCount}
+        currentPageCount={data.length}
+        appliedFilters={{
+          searchTerm: debouncedSearchTerm,
+          ...advancedFilters
+        }}
+        onExport={handleExport}
+      />
     </div>;
 };
 export default MySalesLeads;
