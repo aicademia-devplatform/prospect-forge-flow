@@ -1,13 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { Resend } from "npm:resend@2.0.0";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -81,25 +79,52 @@ serve(async (req) => {
 
     const magicLink = resetData?.properties?.action_link || `${Deno.env.get("SUPABASE_URL")}/auth/v1/verify`;
 
-    // Envoyer l'email d'invitation via Resend
-    const emailResponse = await resend.emails.send({
-      from: "CRM <onboarding@resend.dev>",
-      to: [email],
+    // Configurer le client SMTP Gmail
+    const client = new SMTPClient({
+      connection: {
+        hostname: "smtp.gmail.com",
+        port: 465,
+        tls: true,
+        auth: {
+          username: Deno.env.get("GMAIL_USER") || "",
+          password: Deno.env.get("GMAIL_APP_PASSWORD") || "",
+        },
+      },
+    });
+
+    // Envoyer l'email d'invitation
+    await client.send({
+      from: Deno.env.get("GMAIL_USER") || "",
+      to: email,
       subject: "Invitation à rejoindre l'équipe Sales",
+      content: "text/html",
       html: `
-        <h1>Bienvenue !</h1>
-        <p>Vous avez été invité(e) à rejoindre l'équipe Sales.</p>
-        <p>Cliquez sur le lien ci-dessous pour configurer votre compte :</p>
-        <a href="${magicLink}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">
-          Configurer mon compte
-        </a>
-        <p>Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :</p>
-        <p>${magicLink}</p>
-        <p>Ce lien expirera dans 24 heures.</p>
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #4F46E5;">Bienvenue !</h1>
+            <p>Vous avez été invité(e) à rejoindre l'équipe Sales.</p>
+            <p>Cliquez sur le bouton ci-dessous pour configurer votre compte :</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${magicLink}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">
+                Configurer mon compte
+              </a>
+            </div>
+            <p>Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :</p>
+            <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">${magicLink}</p>
+            <p style="color: #666; font-size: 14px; margin-top: 30px;">Ce lien expirera dans 24 heures.</p>
+          </body>
+        </html>
       `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    await client.close();
+
+    console.log("Invitation email sent successfully to:", email);
 
     return new Response(
       JSON.stringify({ 
