@@ -12,6 +12,7 @@ import { UserPlus, Search, Mail, Shield, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { useAuth } from '@/hooks/useAuth';
 
 interface User {
   id: string;
@@ -25,6 +26,7 @@ interface User {
 
 const AdminUsersTab = () => {
   const { toast } = useToast();
+  const { userRole } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -376,14 +378,16 @@ const AdminUsersTab = () => {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteUser(user.id)}
-                        disabled={user.id === currentUserId}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {userRole === 'admin' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteUser(user.id)}
+                          disabled={user.id === currentUserId}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
