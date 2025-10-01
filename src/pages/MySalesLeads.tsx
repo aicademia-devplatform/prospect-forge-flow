@@ -90,7 +90,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
       filterMode === 'traites' 
         ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions'] 
         : filterMode === 'rappeler'
-        ? ['email', 'company', 'last_name', 'first_name', 'callback_date', 'statut_prospect', 'notes_sales', 'actions']
+        ? ['email', 'callback_date', 'company', 'last_name', 'first_name', 'statut_prospect', 'notes_sales', 'actions']
         : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']
     )
   );
