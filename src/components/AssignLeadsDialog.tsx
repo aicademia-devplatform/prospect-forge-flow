@@ -119,7 +119,11 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
         body: { email: inviteEmail }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Gérer les erreurs spécifiques
+        const errorMessage = data?.error || error.message || "Impossible d'envoyer l'invitation";
+        throw new Error(errorMessage);
+      }
 
       toast({
         title: "Invitation envoyée",
@@ -129,12 +133,12 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
       setShowInviteDialog(false);
       setInviteEmail('');
       loadSalesUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error inviting user:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible d'envoyer l'invitation"
+        description: error.message || "Impossible d'envoyer l'invitation"
       });
     } finally {
       setIsInviting(false);
