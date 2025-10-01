@@ -218,7 +218,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         'update_prospects',
         'assign_prospects',
         'manage_sales_team',
-        'view_team_data'
+        'view_team_data',
+        'manage_users',
+        'access_admin_panel',
+        'manage_settings'
       ],
       admin: [
         'view_prospects',

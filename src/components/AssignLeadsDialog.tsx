@@ -54,8 +54,8 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
     try {
       let userIds: string[] = [];
       
-      // Si l'utilisateur est admin, charger tous les utilisateurs
-      if (userRole === 'admin') {
+      // Si l'utilisateur est admin ou manager, charger tous les utilisateurs
+      if (userRole === 'admin' || userRole === 'manager') {
         const { data: allUsers, error: usersError } = await supabase
           .from('profiles')
           .select('id');
