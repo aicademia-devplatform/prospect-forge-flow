@@ -156,10 +156,15 @@ const ProspectDetails: React.FC = () => {
   const fetchTreatmentHistory = async () => {
     if (!email) return;
     try {
-      // Récupérer les assignments actifs et les prospects traités en parallèle
-      const [assignmentsResult, traitesResult] = await Promise.all([supabase.from('sales_assignments').select('*').eq('lead_email', email), supabase.from('prospects_traites').select('*').eq('lead_email', email)]);
+      // Récupérer les assignments actifs, les prospects traités et les prospects à rappeler en parallèle
+      const [assignmentsResult, traitesResult, rappelerResult] = await Promise.all([
+        supabase.from('sales_assignments').select('*').eq('lead_email', email), 
+        supabase.from('prospects_traites').select('*').eq('lead_email', email),
+        supabase.from('prospects_a_rappeler').select('*').eq('lead_email', email)
+      ]);
       if (assignmentsResult.error) throw assignmentsResult.error;
       if (traitesResult.error) throw traitesResult.error;
+      if (rappelerResult.error) throw rappelerResult.error;
 
       // Enrichir les assignments actifs avec les profiles
       const enrichedAssignments = await Promise.all((assignmentsResult.data || []).map(async assignment => {
@@ -170,6 +175,7 @@ const ProspectDetails: React.FC = () => {
           ...assignment,
           profiles: profile,
           isFromTraites: false,
+          isFromRappeler: false,
           display_date: assignment.created_at
         };
       }));
@@ -183,12 +189,27 @@ const ProspectDetails: React.FC = () => {
           ...traite,
           profiles: profile,
           isFromTraites: true,
+          isFromRappeler: false,
           display_date: traite.completed_at
         };
       }));
 
+      // Enrichir les prospects à rappeler avec les profiles
+      const enrichedRappeler = await Promise.all((rappelerResult.data || []).map(async rappel => {
+        const {
+          data: profile
+        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', rappel.sales_user_id).single();
+        return {
+          ...rappel,
+          profiles: profile,
+          isFromTraites: false,
+          isFromRappeler: true,
+          display_date: rappel.assigned_at
+        };
+      }));
+
       // Combiner et trier par date (plus récent en premier)
-      const allHistory = [...enrichedAssignments, ...enrichedTraites].sort((a, b) => {
+      const allHistory = [...enrichedAssignments, ...enrichedTraites, ...enrichedRappeler].sort((a, b) => {
         const dateA = new Date(a.display_date).getTime();
         const dateB = new Date(b.display_date).getTime();
         return dateB - dateA;
@@ -787,8 +808,11 @@ const ProspectDetails: React.FC = () => {
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <Badge variant={treatment.isFromTraites ? 'default' : 'secondary'} className="text-xs">
-                          {treatment.isFromTraites ? 'Traité' : treatment.custom_data?.status || treatment.status}
+                        <Badge 
+                          variant={treatment.isFromTraites ? 'default' : treatment.isFromRappeler ? 'outline' : 'secondary'} 
+                          className={treatment.isFromRappeler ? 'text-xs bg-orange-100 text-orange-800 border-orange-200' : 'text-xs'}
+                        >
+                          {treatment.isFromTraites ? 'Traité' : treatment.isFromRappeler ? 'À rappeler' : treatment.custom_data?.status || treatment.status}
                         </Badge>
                         {treatment.boucle && <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 border-red-200">
                             Bouclé
@@ -799,12 +823,17 @@ const ProspectDetails: React.FC = () => {
                       </div>
                       
                       {/* Notes pour les assignments actifs */}
-                      {treatment.custom_data?.sales_note && !treatment.isFromTraites && <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                      {treatment.custom_data?.sales_note && !treatment.isFromTraites && !treatment.isFromRappeler && <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
                           <strong>Note :</strong> {treatment.custom_data.sales_note}
                         </p>}
                       
                       {/* Notes pour les prospects traités */}
                       {treatment.notes_sales && treatment.isFromTraites && <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                          <strong>Note :</strong> {treatment.notes_sales}
+                        </p>}
+                      
+                      {/* Notes pour les prospects à rappeler */}
+                      {treatment.notes_sales && treatment.isFromRappeler && <p className="text-sm text-gray-700 bg-orange-50 p-2 rounded">
                           <strong>Note :</strong> {treatment.notes_sales}
                         </p>}
                       
@@ -815,8 +844,15 @@ const ProspectDetails: React.FC = () => {
                           </Badge>
                         </div>}
                       
+                      {/* Statut pour les prospects à rappeler */}
+                      {treatment.statut_prospect && treatment.isFromRappeler && <div className="text-xs">
+                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-800 border-orange-200">
+                            {treatment.statut_prospect}
+                          </Badge>
+                        </div>}
+                      
                       <div className="text-xs text-muted-foreground space-y-1">
-                        {treatment.custom_data?.action_date && !treatment.isFromTraites && <div>
+                        {treatment.custom_data?.action_date && !treatment.isFromTraites && !treatment.isFromRappeler && <div>
                             <strong>Date d'action :</strong> {' '}
                             {moment(treatment.custom_data.action_date).fromNow()}
                           </div>}
@@ -824,9 +860,17 @@ const ProspectDetails: React.FC = () => {
                             <strong>Date d'action :</strong> {' '}
                             {moment(treatment.date_action).fromNow()}
                           </div>}
-                        {treatment.custom_data?.callback_date && !treatment.isFromTraites && <div>
+                        {treatment.date_action && treatment.isFromRappeler && <div>
+                            <strong>Date d'action :</strong> {' '}
+                            {moment(treatment.date_action).fromNow()}
+                          </div>}
+                        {treatment.custom_data?.callback_date && !treatment.isFromTraites && !treatment.isFromRappeler && <div>
                             <strong>Date de rappel :</strong> {' '}
                             {moment(treatment.custom_data.callback_date).fromNow()}
+                          </div>}
+                        {treatment.callback_date && treatment.isFromRappeler && <div>
+                            <strong>Date de rappel :</strong> {' '}
+                            {moment(treatment.callback_date).fromNow()}
                           </div>}
                         {treatment.profiles && <div>
                             <strong>Traité par :</strong> {' '}
