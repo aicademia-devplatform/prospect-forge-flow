@@ -90,7 +90,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
       filterMode === 'traites' 
         ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions'] 
         : filterMode === 'rappeler'
-        ? ['email', 'callback_date', 'company', 'last_name', 'first_name', 'statut_prospect', 'notes_sales', 'actions']
+        ? ['email', 'callback_date', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
         : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']
     )
   );
@@ -443,8 +443,25 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
           return completedDate.fromNow();
         }
       }
+      if (columnName === 'callback_date') {
+        const now = moment();
+        const callbackDate = moment(value);
+        const daysDiff = now.diff(callbackDate, 'days');
+        if (Math.abs(daysDiff) > 7) {
+          return callbackDate.format('D MMM YYYY à HH:mm');
+        } else {
+          return callbackDate.fromNow();
+        }
+      }
       if (columnName === 'date_action') {
-        return moment(value).format('D MMM YYYY à HH:mm');
+        const now = moment();
+        const actionDate = moment(value);
+        const daysDiff = now.diff(actionDate, 'days');
+        if (Math.abs(daysDiff) > 7) {
+          return actionDate.format('D MMM YYYY à HH:mm');
+        } else {
+          return actionDate.fromNow();
+        }
       }
       return new Date(value).toLocaleDateString('fr-FR', {
         day: '2-digit',
