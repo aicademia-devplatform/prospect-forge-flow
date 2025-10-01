@@ -74,6 +74,13 @@ Deno.serve(async (req) => {
       throw new Error('Failed to create import history');
     }
 
+    // Define numeric fields that need special handling
+    const numericFields = [
+      'primary_intent_score', 'secondary_intent_score', 'annual_revenue',
+      'total_funding', 'latest_funding', 'latest_funding_amount',
+      'nb_employees', 'num_employees', 'number_of_retail_locations'
+    ];
+
     // Process data transformation
     const dataToImport = rows.map((row) => {
       const mappedRow: any = {};
@@ -81,9 +88,25 @@ Deno.serve(async (req) => {
       headers.forEach((header, index) => {
         const targetField = columnMapping[header];
         if (targetField && targetField !== 'ignore') {
-          const value = row[index];
+          let value = row[index];
+          
           // Convert empty strings to null
-          mappedRow[targetField] = value === '' ? null : value;
+          if (value === '' || value === null || value === undefined) {
+            mappedRow[targetField] = null;
+            return;
+          }
+
+          // Handle numeric fields - convert to number or null if invalid
+          if (numericFields.includes(targetField)) {
+            // Remove common non-numeric characters (currency symbols, commas, etc.)
+            const cleanedValue = String(value).replace(/[$,€£¥]/g, '').trim();
+            const numValue = Number(cleanedValue);
+            
+            // If it's a valid number, use it, otherwise set to null
+            mappedRow[targetField] = !isNaN(numValue) && cleanedValue !== '' ? numValue : null;
+          } else {
+            mappedRow[targetField] = value;
+          }
         }
       });
 
