@@ -545,6 +545,40 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
+          {filterMode === 'rappeler' && (
+            <Button 
+              variant="secondary" 
+              size="sm"
+              onClick={async () => {
+                try {
+                  toast({
+                    title: 'Test en cours',
+                    description: 'Envoi des emails de rappel...',
+                  });
+
+                  const { data, error } = await supabase.functions.invoke('send-callback-reminders', {
+                    body: {}
+                  });
+
+                  if (error) throw error;
+
+                  toast({
+                    title: 'Test réussi !',
+                    description: `${data?.total_prospects || 0} email(s) envoyé(s) à ${data?.total_users || 0} utilisateur(s)`,
+                  });
+                } catch (error) {
+                  console.error('Error testing reminders:', error);
+                  toast({
+                    title: 'Erreur',
+                    description: 'Impossible d\'envoyer les emails de test',
+                    variant: 'destructive',
+                  });
+                }
+              }}
+            >
+              📧 Tester l'envoi d'emails
+            </Button>
+          )}
           
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
