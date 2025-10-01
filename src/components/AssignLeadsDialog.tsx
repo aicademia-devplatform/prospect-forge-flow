@@ -66,40 +66,51 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
 
   const loadSalesUsers = async () => {
     try {
-      // D'abord, récupérer les IDs des utilisateurs avec le rôle 'sales'
-      const { data: salesRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'sales');
-
-      if (rolesError) throw rolesError;
-
-      let salesUserIds = salesRoles ? salesRoles.map(role => role.user_id) : [];
+      let userIds: string[] = [];
       
-      // Ajouter l'utilisateur connecté s'il n'est pas déjà dans la liste
-      if (user?.id && !salesUserIds.includes(user.id)) {
-        salesUserIds.push(user.id);
+      // Si l'utilisateur est admin, charger tous les utilisateurs
+      if (userRole === 'admin') {
+        const { data: allUsers, error: usersError } = await supabase
+          .from('profiles')
+          .select('id');
+        
+        if (usersError) throw usersError;
+        userIds = allUsers ? allUsers.map(u => u.id) : [];
+      } else {
+        // Sinon, récupérer uniquement les IDs des utilisateurs avec le rôle 'sales'
+        const { data: salesRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'sales');
+
+        if (rolesError) throw rolesError;
+        userIds = salesRoles ? salesRoles.map(role => role.user_id) : [];
+        
+        // Ajouter l'utilisateur connecté s'il n'est pas déjà dans la liste
+        if (user?.id && !userIds.includes(user.id)) {
+          userIds.push(user.id);
+        }
       }
 
-      if (salesUserIds.length === 0) {
+      if (userIds.length === 0) {
         setSalesUsers([]);
         return;
       }
 
-      // Ensuite, récupérer les profils de ces utilisateurs
+      // Récupérer les profils des utilisateurs
       const { data, error } = await supabase
         .from('profiles')
         .select('id, first_name, last_name, email, avatar_url')
-        .in('id', salesUserIds);
+        .in('id', userIds);
 
       if (error) throw error;
       setSalesUsers(data || []);
     } catch (error) {
-      console.error('Error loading sales users:', error);
+      console.error('Error loading users:', error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Impossible de charger la liste des sales"
+        description: "Impossible de charger la liste des utilisateurs"
       });
     }
   };
