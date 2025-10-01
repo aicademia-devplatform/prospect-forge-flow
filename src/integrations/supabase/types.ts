@@ -66,11 +66,17 @@ export type Database = {
           primary_email_catch_all_status: string | null
           primary_email_last_verified_at: string | null
           primary_email_source: string | null
+          primary_email_verification_source: string | null
+          primary_intent_score: number | null
+          primary_intent_topic: string | null
           region: string | null
           replied: boolean | null
           secondary_email: string | null
           secondary_email_source: string | null
           secondary_email_status: string | null
+          secondary_email_verification_source: string | null
+          secondary_intent_score: number | null
+          secondary_intent_topic: string | null
           secteur_activite: string | null
           seniority: string | null
           stage: string | null
@@ -81,6 +87,7 @@ export type Database = {
           tertiary_email: string | null
           tertiary_email_source: string | null
           tertiary_email_status: string | null
+          tertiary_email_verification_source: string | null
           title: string | null
           total_funding: number | null
           twitter_url: string | null
@@ -139,11 +146,17 @@ export type Database = {
           primary_email_catch_all_status?: string | null
           primary_email_last_verified_at?: string | null
           primary_email_source?: string | null
+          primary_email_verification_source?: string | null
+          primary_intent_score?: number | null
+          primary_intent_topic?: string | null
           region?: string | null
           replied?: boolean | null
           secondary_email?: string | null
           secondary_email_source?: string | null
           secondary_email_status?: string | null
+          secondary_email_verification_source?: string | null
+          secondary_intent_score?: number | null
+          secondary_intent_topic?: string | null
           secteur_activite?: string | null
           seniority?: string | null
           stage?: string | null
@@ -154,6 +167,7 @@ export type Database = {
           tertiary_email?: string | null
           tertiary_email_source?: string | null
           tertiary_email_status?: string | null
+          tertiary_email_verification_source?: string | null
           title?: string | null
           total_funding?: number | null
           twitter_url?: string | null
@@ -212,11 +226,17 @@ export type Database = {
           primary_email_catch_all_status?: string | null
           primary_email_last_verified_at?: string | null
           primary_email_source?: string | null
+          primary_email_verification_source?: string | null
+          primary_intent_score?: number | null
+          primary_intent_topic?: string | null
           region?: string | null
           replied?: boolean | null
           secondary_email?: string | null
           secondary_email_source?: string | null
           secondary_email_status?: string | null
+          secondary_email_verification_source?: string | null
+          secondary_intent_score?: number | null
+          secondary_intent_topic?: string | null
           secteur_activite?: string | null
           seniority?: string | null
           stage?: string | null
@@ -227,6 +247,7 @@ export type Database = {
           tertiary_email?: string | null
           tertiary_email_source?: string | null
           tertiary_email_status?: string | null
+          tertiary_email_verification_source?: string | null
           title?: string | null
           total_funding?: number | null
           twitter_url?: string | null
@@ -1964,6 +1985,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      import_history: {
+        Row: {
+          column_mapping: Json
+          completed_at: string | null
+          created_at: string
+          error_details: Json | null
+          failed_rows: number
+          file_name: string
+          id: string
+          status: string
+          success_rows: number
+          target_table: string
+          total_rows: number
+          user_id: string
+        }
+        Insert: {
+          column_mapping: Json
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          failed_rows?: number
+          file_name: string
+          id?: string
+          status?: string
+          success_rows?: number
+          target_table: string
+          total_rows: number
+          user_id: string
+        }
+        Update: {
+          column_mapping?: Json
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          failed_rows?: number
+          file_name?: string
+          id?: string
+          status?: string
+          success_rows?: number
+          target_table?: string
+          total_rows?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
