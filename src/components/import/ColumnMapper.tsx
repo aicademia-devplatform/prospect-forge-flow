@@ -32,10 +32,45 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ data, targetTable, onBack, 
       'zoho_status', 'apollo_status', 'data_section'
     ],
     apollo_contacts: [
-      'email', 'first_name', 'last_name', 'title', 'company', 'mobile_phone',
-      'work_direct_phone', 'home_phone', 'city', 'state', 'country',
-      'person_linkedin_url', 'company_linkedin_url', 'website', 'industry',
-      'nb_employees', 'seniority', 'departments', 'stage', 'email_status'
+      // Informations personnelles
+      'email', 'first_name', 'last_name', 'title',
+      // Informations entreprise
+      'company', 'company_name_for_emails', 'company_address', 'company_city', 
+      'company_state', 'company_country', 'company_phone', 'company_linkedin_url',
+      // Coordonnées
+      'work_direct_phone', 'home_phone', 'mobile_phone', 'corporate_phone', 'other_phone',
+      // Localisation personnelle
+      'city', 'state', 'country', 'region',
+      // Email statuses et sources
+      'email_status', 'email_confidence', 'primary_email_source', 
+      'primary_email_catch_all_status', 'primary_email_last_verified_at',
+      'primary_email_verification_source',
+      'secondary_email', 'secondary_email_source', 'secondary_email_status',
+      'secondary_email_verification_source',
+      'tertiary_email', 'tertiary_email_source', 'tertiary_email_status',
+      'tertiary_email_verification_source',
+      // Informations professionnelles
+      'seniority', 'departments', 'categorie_fonction',
+      // Liens sociaux
+      'person_linkedin_url', 'website', 'facebook_url', 'twitter_url',
+      // Informations commerciales
+      'stage', 'lifecycle_stage', 'lists', 'contact_owner', 'account_owner',
+      // Activité et engagement
+      'email_sent', 'email_open', 'email_bounced', 'replied', 'demoed',
+      'last_contacted', 'activity',
+      // Informations entreprise détaillées
+      'industry', 'secteur_activite', 'nb_employees', 'num_employees',
+      'number_of_retail_locations', 'technologies', 'keywords',
+      // Informations financières
+      'annual_revenue', 'total_funding', 'latest_funding', 'latest_funding_amount',
+      'last_raised_at', 'subsidiary_of',
+      // Identifiants Apollo
+      'apollo_contact_id', 'apollo_account_id',
+      // Statut et métadonnées
+      'statut',
+      // Intent tracking
+      'primary_intent_topic', 'primary_intent_score',
+      'secondary_intent_topic', 'secondary_intent_score'
     ]
   };
 
