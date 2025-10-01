@@ -28,7 +28,6 @@ interface ColumnInfo {
   type: string;
   nullable: boolean;
 }
-
 const translateColumnName = (columnName: string): string => {
   const translations: Record<string, string> = {
     'id': 'ID',
@@ -67,8 +66,9 @@ const translateColumnName = (columnName: string): string => {
 interface MySalesLeadsProps {
   filterMode?: 'assigned' | 'traites' | 'rappeler';
 }
-
-const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) => {
+const MySalesLeads: React.FC<MySalesLeadsProps> = ({
+  filterMode = 'assigned'
+}) => {
   const {
     user
   } = useAuth();
@@ -84,11 +84,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
   const [sortBy, setSortBy] = useState('assigned_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(
-    filterMode === 'traites' 
-      ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
-      : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']
-  ));
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set(filterMode === 'traites' ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions'] : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']));
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -258,7 +254,6 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
     advancedFilters,
     filterMode
   });
-
   const getAllColumns = (): ColumnInfo[] => {
     const baseColumns = [{
       name: 'email',
@@ -292,30 +287,24 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
 
     // Add treatment columns for traites mode
     if (filterMode === 'traites') {
-      baseColumns.splice(-2, 0, ...[
-        {
-          name: 'completed_at',
-          type: 'timestamp',
-          nullable: false
-        },
-        {
-          name: 'notes_sales',
-          type: 'string',
-          nullable: true
-        },
-        {
-          name: 'statut_prospect',
-          type: 'string',
-          nullable: true
-        },
-        {
-          name: 'date_action',
-          type: 'date',
-          nullable: true
-        }
-      ]);
+      baseColumns.splice(-2, 0, ...[{
+        name: 'completed_at',
+        type: 'timestamp',
+        nullable: false
+      }, {
+        name: 'notes_sales',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'statut_prospect',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'date_action',
+        type: 'date',
+        nullable: true
+      }]);
     }
-
     return baseColumns;
   };
   const allColumns = getAllColumns();
@@ -399,11 +388,9 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
   };
   const formatValue = (value: any, type: string, columnName?: string) => {
     if (value === null || value === undefined) return '—';
-    
     if (type === 'boolean' && columnName === 'boucle') {
       return value ? 'Bouclé' : 'Actif';
     }
-    
     if (type === 'date' || type === 'timestamp') {
       moment.locale('fr');
       if (columnName === 'assigned_at') {
@@ -500,16 +487,10 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">
-            {filterMode === 'traites' ? 'Prospects Traités' : 
-             filterMode === 'rappeler' ? 'Prospects à Rappeler' : 
-             'Prospects Assignés'}
+            {filterMode === 'traites' ? 'Prospects Traités' : filterMode === 'rappeler' ? 'Prospects à Rappeler' : 'Prospects Assignés'}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {filterMode === 'traites' ? 
-              `${totalCount} prospects bouclés ou avec statut "barrage" / "déjà accompagné"` :
-             filterMode === 'rappeler' ? 
-              `${totalCount} prospects à rappeler` :
-              `${totalCount} prospects assignés depuis vos différentes sources`}
+            {filterMode === 'traites' ? `${totalCount} prospects bouclés ou avec statut "barrage" / "déjà accompagné"` : filterMode === 'rappeler' ? `${totalCount} prospects à rappeler` : `${totalCount} prospects assignés depuis vos différentes sources`}
           </p>
         </div>
         
@@ -611,7 +592,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({ filterMode = 'assigned' }) 
                             <a href={`mailto:${prospect.email}`} className="text-primary hover:underline">
                               {prospect.email}
                             </a>
-                            {filterMode === 'traites' && <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs">
+                            {filterMode === 'traites' && <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 text-xs bg-green-100 text-green-800 border-green-200 hover:bg-green-200/80">
                                 Traité
                               </Badge>}
                           </div>
