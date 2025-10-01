@@ -156,15 +156,17 @@ const ProspectDetails: React.FC = () => {
   const fetchTreatmentHistory = async () => {
     if (!email) return;
     try {
-      // Récupérer les assignments actifs, les prospects traités et les prospects à rappeler en parallèle
-      const [assignmentsResult, traitesResult, rappelerResult] = await Promise.all([
+      // Récupérer les assignments actifs, les prospects traités, les prospects à rappeler et les modifications en parallèle
+      const [assignmentsResult, traitesResult, rappelerResult, modificationsResult] = await Promise.all([
         supabase.from('sales_assignments').select('*').eq('lead_email', email), 
         supabase.from('prospects_traites').select('*').eq('lead_email', email),
-        supabase.from('prospects_a_rappeler').select('*').eq('lead_email', email)
+        supabase.from('prospects_a_rappeler').select('*').eq('lead_email', email),
+        supabase.from('prospect_modifications').select('*').eq('lead_email', email)
       ]);
       if (assignmentsResult.error) throw assignmentsResult.error;
       if (traitesResult.error) throw traitesResult.error;
       if (rappelerResult.error) throw rappelerResult.error;
+      if (modificationsResult.error) throw modificationsResult.error;
 
       // Enrichir les assignments actifs avec les profiles
       const enrichedAssignments = await Promise.all((assignmentsResult.data || []).map(async assignment => {
@@ -176,6 +178,7 @@ const ProspectDetails: React.FC = () => {
           profiles: profile,
           isFromTraites: false,
           isFromRappeler: false,
+          isFromModification: false,
           display_date: assignment.created_at
         };
       }));
@@ -190,6 +193,7 @@ const ProspectDetails: React.FC = () => {
           profiles: profile,
           isFromTraites: true,
           isFromRappeler: false,
+          isFromModification: false,
           display_date: traite.completed_at
         };
       }));
@@ -204,12 +208,28 @@ const ProspectDetails: React.FC = () => {
           profiles: profile,
           isFromTraites: false,
           isFromRappeler: true,
+          isFromModification: false,
           display_date: rappel.assigned_at
         };
       }));
 
+      // Enrichir les modifications avec les profiles
+      const enrichedModifications = await Promise.all((modificationsResult.data || []).map(async modification => {
+        const {
+          data: profile
+        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', modification.modified_by).single();
+        return {
+          ...modification,
+          profiles: profile,
+          isFromTraites: false,
+          isFromRappeler: false,
+          isFromModification: true,
+          display_date: modification.modified_at
+        };
+      }));
+
       // Combiner et trier par date (plus récent en premier)
-      const allHistory = [...enrichedAssignments, ...enrichedTraites, ...enrichedRappeler].sort((a, b) => {
+      const allHistory = [...enrichedAssignments, ...enrichedTraites, ...enrichedRappeler, ...enrichedModifications].sort((a, b) => {
         const dateA = new Date(a.display_date).getTime();
         const dateB = new Date(b.display_date).getTime();
         return dateB - dateA;
@@ -809,10 +829,10 @@ const ProspectDetails: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Badge 
-                          variant={treatment.isFromTraites ? 'default' : treatment.isFromRappeler ? 'outline' : 'secondary'} 
-                          className={treatment.isFromRappeler ? 'text-xs bg-orange-100 text-orange-800 border-orange-200' : 'text-xs'}
+                          variant={treatment.isFromTraites ? 'default' : treatment.isFromRappeler ? 'outline' : treatment.isFromModification ? 'outline' : 'secondary'} 
+                          className={treatment.isFromRappeler ? 'text-xs bg-orange-100 text-orange-800 border-orange-200' : treatment.isFromModification ? 'text-xs bg-blue-100 text-blue-800 border-blue-200' : 'text-xs'}
                         >
-                          {treatment.isFromTraites ? 'Traité' : treatment.isFromRappeler ? 'À rappeler' : treatment.custom_data?.status || treatment.status}
+                          {treatment.isFromTraites ? 'Traité' : treatment.isFromRappeler ? 'À rappeler' : treatment.isFromModification ? 'Modification' : treatment.custom_data?.status || treatment.status}
                         </Badge>
                         {treatment.boucle && <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 border-red-200">
                             Bouclé
@@ -823,7 +843,7 @@ const ProspectDetails: React.FC = () => {
                       </div>
                       
                       {/* Notes pour les assignments actifs */}
-                      {treatment.custom_data?.sales_note && !treatment.isFromTraites && !treatment.isFromRappeler && <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                      {treatment.custom_data?.sales_note && !treatment.isFromTraites && !treatment.isFromRappeler && !treatment.isFromModification && <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
                           <strong>Note :</strong> {treatment.custom_data.sales_note}
                         </p>}
                       
@@ -836,6 +856,18 @@ const ProspectDetails: React.FC = () => {
                       {treatment.notes_sales && treatment.isFromRappeler && <p className="text-sm text-gray-700 bg-orange-50 p-2 rounded">
                           <strong>Note :</strong> {treatment.notes_sales}
                         </p>}
+                      
+                      {/* Champs modifiés */}
+                      {treatment.modified_fields && treatment.isFromModification && <div className="text-sm bg-blue-50 p-2 rounded">
+                          <strong className="block mb-1">Champs modifiés :</strong>
+                          <div className="space-y-1">
+                            {Object.entries(treatment.modified_fields).map(([key, value]) => (
+                              <div key={key} className="text-xs">
+                                <span className="font-medium">{key}:</span> {String(value)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>}
                       
                       {/* Statut pour les prospects traités */}
                       {treatment.statut_prospect && treatment.isFromTraites && <div className="text-xs">
@@ -852,7 +884,7 @@ const ProspectDetails: React.FC = () => {
                         </div>}
                       
                       <div className="text-xs text-muted-foreground space-y-1">
-                        {treatment.custom_data?.action_date && !treatment.isFromTraites && !treatment.isFromRappeler && <div>
+                        {treatment.custom_data?.action_date && !treatment.isFromTraites && !treatment.isFromRappeler && !treatment.isFromModification && <div>
                             <strong>Date d'action :</strong> {' '}
                             {moment(treatment.custom_data.action_date).fromNow()}
                           </div>}
@@ -864,7 +896,7 @@ const ProspectDetails: React.FC = () => {
                             <strong>Date d'action :</strong> {' '}
                             {moment(treatment.date_action).fromNow()}
                           </div>}
-                        {treatment.custom_data?.callback_date && !treatment.isFromTraites && !treatment.isFromRappeler && <div>
+                        {treatment.custom_data?.callback_date && !treatment.isFromTraites && !treatment.isFromRappeler && !treatment.isFromModification && <div>
                             <strong>Date de rappel :</strong> {' '}
                             {moment(treatment.custom_data.callback_date).fromNow()}
                           </div>}
@@ -873,7 +905,7 @@ const ProspectDetails: React.FC = () => {
                             {moment(treatment.callback_date).fromNow()}
                           </div>}
                         {treatment.profiles && <div>
-                            <strong>Traité par :</strong> {' '}
+                            <strong>{treatment.isFromModification ? 'Modifié par' : 'Traité par'} :</strong> {' '}
                             {treatment.profiles.first_name} {treatment.profiles.last_name} 
                             ({treatment.profiles.email})
                           </div>}

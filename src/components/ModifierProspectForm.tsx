@@ -146,10 +146,14 @@ export const ModifierProspectForm: React.FC<ModifierProspectFormProps> = ({
       // Construire les objets de mise à jour pour chaque table
       const crmUpdateData: any = {};
       const apolloUpdateData: any = {};
+      const modifiedFields: any = {};
       
       data.fields.forEach(field => {
         if (field.value && field.value.trim()) {
           const value = field.value.trim();
+          
+          // Enregistrer dans modifiedFields pour l'historique
+          modifiedFields[field.key] = value;
           
           // Mapping des champs pour crm_contacts
           switch (field.key) {
@@ -275,6 +279,23 @@ export const ModifierProspectForm: React.FC<ModifierProspectFormProps> = ({
           .eq('email', prospect.email);
 
         if (apolloError) throw apolloError;
+      }
+
+      // Enregistrer la modification dans l'historique
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        const { error: historyError } = await supabase
+          .from('prospect_modifications')
+          .insert({
+            lead_email: prospect.email,
+            modified_by: userData.user.id,
+            modified_fields: modifiedFields,
+            modified_at: new Date().toISOString(),
+          });
+
+        if (historyError) {
+          console.error('Error saving modification history:', historyError);
+        }
       }
 
       toast({

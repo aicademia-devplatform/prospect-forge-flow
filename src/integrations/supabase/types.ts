@@ -1995,6 +1995,36 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_modifications: {
+        Row: {
+          created_at: string
+          id: string
+          lead_email: string
+          modified_at: string
+          modified_by: string
+          modified_fields: Json | null
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_email: string
+          modified_at?: string
+          modified_by: string
+          modified_fields?: Json | null
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_email?: string
+          modified_at?: string
+          modified_by?: string
+          modified_fields?: Json | null
+          notes?: string | null
+        }
+        Relationships: []
+      }
       prospects_a_rappeler: {
         Row: {
           assigned_at: string
