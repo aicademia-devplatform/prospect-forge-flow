@@ -178,7 +178,7 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
         console.warn('Apollo update error (non-critical):', apolloError);
       }
 
-      // TOUJOURS déplacer vers prospects_traites lors du traitement
+      // Décider où placer le prospect en fonction de la présence d'une date de rappel
       // D'abord, trouver l'assignment existant pour ce prospect
       const { data: existingAssignment, error: findError } = await supabase
         .from('sales_assignments')
@@ -194,45 +194,86 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
         console.warn('Error finding existing assignment:', findError);
       }
 
-      if (existingAssignment) {
-        // Utiliser l'edge function pour déplacer vers prospects_traites
-        const { error: moveError } = await supabase.functions.invoke('move-to-traites', {
-          body: {
-            assignmentId: existingAssignment.id,
-            notes_sales: data.salesNote || '',
-            statut_prospect: data.status,
-            date_action: data.actionDate.toISOString(),
-          }
-        });
+      // Si une date de rappel est fournie, déplacer vers prospects_a_rappeler
+      if (needsCallbackDate && data.callbackDate) {
+        // Supprimer l'assignment existant s'il y en a un
+        if (existingAssignment) {
+          const { error: deleteError } = await supabase
+            .from('sales_assignments')
+            .delete()
+            .eq('id', existingAssignment.id);
 
-        if (moveError) {
-          console.error('Error moving to traités:', moveError);
-          throw new Error('Erreur lors du déplacement vers prospects traités');
+          if (deleteError) {
+            console.warn('Error deleting assignment:', deleteError);
+          }
         }
-      } else {
-        // Si pas d'assignment existant, créer directement dans prospects_traites
+
+        // Créer l'entrée dans prospects_a_rappeler
         const { error: insertError } = await supabase
-          .from('prospects_traites')
+          .from('prospects_a_rappeler')
           .insert({
-            original_assignment_id: null, // Pas d'assignment original
             sales_user_id: user.id,
-            source_table: 'crm_contacts',
-            source_id: prospectEmail,
+            source_table: existingAssignment?.source_table || 'crm_contacts',
+            source_id: existingAssignment?.source_id || prospectEmail,
             lead_email: prospectEmail,
-            assigned_by: user.id,
-            assigned_at: new Date().toISOString(),
-            notes_sales: data.salesNote || '',
+            assigned_by: existingAssignment?.assigned_by || user.id,
+            assigned_at: existingAssignment?.assigned_at || new Date().toISOString(),
+            callback_date: data.callbackDate.toISOString(),
             statut_prospect: data.status,
+            notes_sales: data.salesNote || '',
             date_action: data.actionDate.toISOString(),
+            custom_table_name: existingAssignment?.custom_table_name || null,
+            custom_data: existingAssignment?.custom_data || null,
           });
 
         if (insertError) throw insertError;
-      }
 
-      toast({
-        title: 'Succès',
-        description: 'Le prospect a été traité avec succès et ne peut plus être traité à nouveau',
-      });
+        toast({
+          title: 'Succès',
+          description: 'Le prospect a été ajouté aux prospects à rappeler',
+        });
+      } else {
+        // Sinon, déplacer vers prospects_traites
+        if (existingAssignment) {
+          // Utiliser l'edge function pour déplacer vers prospects_traites
+          const { error: moveError } = await supabase.functions.invoke('move-to-traites', {
+            body: {
+              assignmentId: existingAssignment.id,
+              notes_sales: data.salesNote || '',
+              statut_prospect: data.status,
+              date_action: data.actionDate.toISOString(),
+            }
+          });
+
+          if (moveError) {
+            console.error('Error moving to traités:', moveError);
+            throw new Error('Erreur lors du déplacement vers prospects traités');
+          }
+        } else {
+          // Si pas d'assignment existant, créer directement dans prospects_traites
+          const { error: insertError } = await supabase
+            .from('prospects_traites')
+            .insert({
+              original_assignment_id: null,
+              sales_user_id: user.id,
+              source_table: 'crm_contacts',
+              source_id: prospectEmail,
+              lead_email: prospectEmail,
+              assigned_by: user.id,
+              assigned_at: new Date().toISOString(),
+              notes_sales: data.salesNote || '',
+              statut_prospect: data.status,
+              date_action: data.actionDate.toISOString(),
+            });
+
+          if (insertError) throw insertError;
+        }
+
+        toast({
+          title: 'Succès',
+          description: 'Le prospect a été traité avec succès et ne peut plus être traité à nouveau',
+        });
+      }
 
       form.reset();
       onSuccess?.();
