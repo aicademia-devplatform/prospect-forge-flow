@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { Resend } from "npm:resend@4.0.0";
 import { renderAsync } from "npm:@react-email/components@0.0.22";
 import React from "npm:react@18.3.1";
 import { CallbackReminderEmail } from "./_templates/callback-reminder.tsx";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +22,25 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
+    const gmailUser = Deno.env.get('GMAIL_USER');
+    const gmailPassword = Deno.env.get('GMAIL_APP_PASSWORD');
+
+    if (!gmailUser || !gmailPassword) {
+      throw new Error('Gmail credentials not configured. Please set GMAIL_USER and GMAIL_APP_PASSWORD.');
+    }
+
+    // Configuration du client SMTP Gmail
+    const client = new SMTPClient({
+      connection: {
+        hostname: "smtp.gmail.com",
+        port: 465,
+        tls: true,
+        auth: {
+          username: gmailUser,
+          password: gmailPassword,
+        },
+      },
+    });
 
     // Récupérer la date actuelle
     const now = new Date();
@@ -120,19 +138,14 @@ serve(async (req) => {
           })
         );
 
-        const { data: emailData, error: emailError } = await resend.emails.send({
-          from: 'CRM Prospects <onboarding@resend.dev>',
-          to: [userProfile.email],
+        await client.send({
+          from: gmailUser,
+          to: userProfile.email,
           subject: `🔔 Rappel : ${prospects.length} prospect${prospects.length > 1 ? 's' : ''} à contacter aujourd'hui`,
-          html,
+          html: html,
         });
 
-        if (emailError) {
-          console.error(`Error sending email to ${userProfile.email}:`, emailError);
-          throw emailError;
-        }
-
-        console.log(`Email sent to ${userProfile.email}:`, emailData);
+        console.log(`Email sent to ${userProfile.email}`);
 
         // Marquer les prospects comme ayant reçu une notification
         const prospectIds = prospects.map(p => p.id);
@@ -181,6 +194,8 @@ serve(async (req) => {
         });
       }
     }
+
+    await client.close();
 
     return new Response(
       JSON.stringify({ 
