@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 import CSVPreview from './CSVPreview';
 import ColumnMapper from './ColumnMapper';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 interface ParsedData {
   headers: string[];
@@ -25,6 +27,7 @@ const CSVUploader = () => {
   const [targetTable, setTargetTable] = useState<'crm_contacts' | 'apollo_contacts'>('crm_contacts');
   const [step, setStep] = useState<'upload' | 'preview' | 'mapping' | 'confirm'>('upload');
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -102,6 +105,43 @@ const CSVUploader = () => {
     setParsedData(null);
     setStep('upload');
     setColumnMapping({});
+    setIsImporting(false);
+  };
+
+  const handleConfirmImport = async () => {
+    if (!parsedData) return;
+
+    setIsImporting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('csv-import', {
+        body: {
+          targetTable,
+          columnMapping,
+          rows: parsedData.rows,
+          headers: parsedData.headers,
+          fileName: parsedData.fileName,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Import réussi',
+        description: `${data.successRows} lignes importées avec succès${data.failedRows > 0 ? `, ${data.failedRows} échecs` : ''}`,
+      });
+
+      handleReset();
+    } catch (error: any) {
+      console.error('Import error:', error);
+      toast({
+        title: 'Erreur d\'importation',
+        description: error.message || 'Une erreur est survenue lors de l\'importation',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   return (
@@ -208,10 +248,52 @@ const CSVUploader = () => {
                 Vérifiez les paramètres avant l'importation finale
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-center text-muted-foreground py-8">
-                Fonctionnalité de confirmation à implémenter
-              </p>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex justify-between p-4 bg-muted rounded-lg">
+                  <span className="font-medium">Fichier :</span>
+                  <span>{parsedData.fileName}</span>
+                </div>
+                <div className="flex justify-between p-4 bg-muted rounded-lg">
+                  <span className="font-medium">Table cible :</span>
+                  <span>{targetTable}</span>
+                </div>
+                <div className="flex justify-between p-4 bg-muted rounded-lg">
+                  <span className="font-medium">Nombre de lignes :</span>
+                  <span>{parsedData.rows.length}</span>
+                </div>
+                <div className="flex justify-between p-4 bg-muted rounded-lg">
+                  <span className="font-medium">Colonnes mappées :</span>
+                  <span>{Object.values(columnMapping).filter(v => v !== 'ignore').length}</span>
+                </div>
+              </div>
+
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  L'import utilisera l'<strong>email</strong> comme identifiant unique. 
+                  Les contacts existants seront mis à jour avec les nouvelles données.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" onClick={handleReset} disabled={isImporting}>
+                  Annuler
+                </Button>
+                <Button onClick={handleConfirmImport} disabled={isImporting}>
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Importation en cours...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Confirmer l'import
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

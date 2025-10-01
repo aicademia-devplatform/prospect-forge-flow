@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.send-callback-reminders]
 verify_jwt = false
+
+[functions.csv-import]
+verify_jwt = true
