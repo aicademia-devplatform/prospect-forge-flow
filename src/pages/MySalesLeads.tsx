@@ -294,6 +294,27 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
       nullable: false
     }];
 
+    // Add callback columns for rappeler mode
+    if (filterMode === 'rappeler') {
+      baseColumns.splice(-2, 0, ...[{
+        name: 'callback_date',
+        type: 'timestamp',
+        nullable: false
+      }, {
+        name: 'notes_sales',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'statut_prospect',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'date_action',
+        type: 'date',
+        nullable: true
+      }]);
+    }
+
     // Add treatment columns for traites mode
     if (filterMode === 'traites') {
       baseColumns.splice(-2, 0, ...[{
