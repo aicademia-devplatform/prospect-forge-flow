@@ -32,14 +32,7 @@ serve(async (req) => {
     // et qui n'ont pas déjà reçu une notification aujourd'hui
     const { data: prospectsToRemind, error: prospectsError } = await supabase
       .from('prospects_a_rappeler')
-      .select(`
-        *,
-        profiles!prospects_a_rappeler_sales_user_id_fkey (
-          email,
-          first_name,
-          last_name
-        )
-      `)
+      .select('*')
       .lte('callback_date', now.toISOString())
       .is('reminder_sent_at', null);
 
@@ -71,13 +64,24 @@ serve(async (req) => {
       prospectsByUser.get(userId)!.push(prospect);
     }
 
+    // Récupérer les profils des utilisateurs
+    const userIds = Array.from(prospectsByUser.keys());
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, email, first_name, last_name')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+    }
+
     console.log(`Sending reminders to ${prospectsByUser.size} users`);
 
     const results = [];
     
     // Envoyer un email à chaque utilisateur avec ses prospects à rappeler
     for (const [userId, prospects] of prospectsByUser) {
-      const userProfile = prospects[0].profiles;
+      const userProfile = profiles?.find(p => p.id === userId);
       
       if (!userProfile?.email) {
         console.warn(`No email found for user ${userId}`);
