@@ -268,8 +268,8 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="general" className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Général
@@ -284,7 +284,8 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 pr-4">
+          <div className="flex-1 overflow-hidden min-h-0">
+            <ScrollArea className="h-full pr-4">
             <TabsContent value="general" className="space-y-6 mt-4">
               {/* Scope Selection */}
               <div className="space-y-3">
@@ -590,9 +591,10 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
               )}
             </TabsContent>
           </ScrollArea>
+          </div>
         </Tabs>
 
-        <DialogFooter className="flex items-center justify-between mt-4">
+        <DialogFooter className="flex items-center justify-between mt-4 flex-shrink-0 pt-4 border-t">
           <div className="text-xs text-muted-foreground">
             {scope === 'current' ? currentPageCount : totalCount} contacts • {selectedColumns.length} colonnes • {format.toUpperCase()}
           </div>
