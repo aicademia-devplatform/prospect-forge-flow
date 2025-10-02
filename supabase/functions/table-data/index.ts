@@ -111,33 +111,12 @@ Deno.serve(async (req) => {
           query = query.ilike('data_section', `%${advancedFilters.dataSection}%`)
         }
         if (advancedFilters.zohoStatus) {
-          // Mapping des statuts Zoho anglais-français
-          const zohoStatusTranslations: Record<string, string[]> = {
-            'Lead': ['Lead', 'Prospect', 'Piste'],
-            'Prospect': ['Prospect', 'Lead', 'Piste', 'Potentiel'],
-            'Customer': ['Customer', 'Client', 'Clientèle'],
-            'Partner': ['Partner', 'Partenaire', 'Associé'],
-            'Inactive': ['Inactive', 'Inactif', 'Désactivé'],
-            'Cold Lead': ['Cold Lead', 'Lead Froid', 'Piste Froide'],
-            'Warm Lead': ['Warm Lead', 'Lead Tiède', 'Piste Tiède'],
-            'Hot Lead': ['Hot Lead', 'Lead Chaud', 'Piste Chaude']
-          }
-          
-          const searchTerms = zohoStatusTranslations[advancedFilters.zohoStatus] || [advancedFilters.zohoStatus]
-          const zohoConditions = searchTerms.map(term => `zoho_status.ilike.%${term}%`)
-          query = query.or(zohoConditions.join(','))
+          // Utiliser une recherche directe avec ILIKE pour matcher les statuts exacts ou partiels
+          query = query.ilike('zoho_status', `%${advancedFilters.zohoStatus}%`)
         }
         if (advancedFilters.contactActive) {
-          // Mapping des statuts de contact actif français-français et variantes
-          const contactActiveTranslations: Record<string, string[]> = {
-            'Oui': ['Oui', 'Yes', 'True', 'Actif', 'Active', '1'],
-            'Non': ['Non', 'No', 'False', 'Inactif', 'Inactive', '0'],
-            'En cours': ['En cours', 'In Progress', 'Pending', 'En attente', 'Processing']
-          }
-          
-          const searchTerms = contactActiveTranslations[advancedFilters.contactActive] || [advancedFilters.contactActive]
-          const contactConditions = searchTerms.map(term => `contact_active.ilike.%${term}%`)
-          query = query.or(contactConditions.join(','))
+          // Utiliser une recherche directe avec ILIKE pour matcher les statuts exacts
+          query = query.ilike('contact_active', `%${advancedFilters.contactActive}%`)
         }
       }
 
@@ -196,41 +175,12 @@ Deno.serve(async (req) => {
 
       // Common filters for both tables
       if (advancedFilters.apolloStatus) {
-        // Mapping des statuts Apollo anglais-français
-        const apolloStatusTranslations: Record<string, string[]> = {
-          'Active': ['Active', 'Actif', 'En cours'],
-          'Inactive': ['Inactive', 'Inactif', 'Désactivé'],
-          'Engaged': ['Engaged', 'Engagé', 'Impliqué', 'Actif'],
-          'Not Contacted': ['Not Contacted', 'Non Contacté', 'Pas Contacté'],
-          'Replied': ['Replied', 'Répondu', 'A Répondu'],
-          'Bounced': ['Bounced', 'Rejeté', 'Bounce', 'Echec'],
-          'Unsubscribed': ['Unsubscribed', 'Désabonné', 'Désinscrit']
-        }
-        
-        const searchTerms = apolloStatusTranslations[advancedFilters.apolloStatus] || [advancedFilters.apolloStatus]
-        const apolloConditions = searchTerms.map(term => `apollo_status.ilike.%${term}%`)
-        query = query.or(apolloConditions.join(','))
+        // Utiliser une recherche directe avec ILIKE pour matcher les statuts exacts ou partiels
+        query = query.ilike('apollo_status', `%${advancedFilters.apolloStatus}%`)
       }
       if (advancedFilters.industrie) {
-        // Mapping des industries anglais-français pour une recherche plus flexible
-        const industryTranslations: Record<string, string[]> = {
-          'Technology': ['Technology', 'Technologie', 'Tech', 'IT', 'Informatique'],
-          'Healthcare': ['Healthcare', 'Santé', 'Médical', 'Pharmaceutique', 'Pharma'],
-          'Finance': ['Finance', 'Financier', 'Banque', 'Banking', 'Assurance', 'Insurance'],
-          'Education': ['Education', 'Éducation', 'Enseignement', 'Formation', 'Academic'],
-          'Manufacturing': ['Manufacturing', 'Industrie', 'Production', 'Fabrication', 'Manufacturier'],
-          'Retail': ['Retail', 'Commerce', 'Vente', 'Distribution', 'Magasin'],
-          'Real Estate': ['Real Estate', 'Immobilier', 'Property', 'Propriété', 'Foncier'],
-          'Consulting': ['Consulting', 'Conseil', 'Advisory', 'Consultancy', 'Expertise'],
-          'Other': ['Other', 'Autre', 'Divers', 'Various', 'Misc']
-        }
-        
-        // Chercher les termes correspondants ou utiliser le terme direct
-        const searchTerms = industryTranslations[advancedFilters.industrie] || [advancedFilters.industrie]
-        
-        // Créer une condition OR pour tous les termes possibles
-        const industryConditions = searchTerms.map(term => `industry.ilike.%${term}%`)
-        query = query.or(industryConditions.join(','))
+        // Utiliser une recherche directe avec ILIKE pour matcher les industries
+        query = query.ilike('industry', `%${advancedFilters.industrie}%`)
       }
       if (advancedFilters.company) {
         query = query.ilike('company', `%${advancedFilters.company}%`)

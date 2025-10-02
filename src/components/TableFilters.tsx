@@ -40,14 +40,17 @@ interface TableFiltersProps {
 }
 
 const ZOHO_STATUS_OPTIONS = [
+  'Client actif (12 mois)',
+  'Client inactif (12 mois)',
   'Lead',
   'Prospect',
   'Customer',
   'Partner',
-  'Inactive',
-  'Cold Lead',
+  'À RAPPELER',
+  'TRAITÉ',
+  'Hot Lead',
   'Warm Lead',
-  'Hot Lead'
+  'Cold Lead'
 ];
 
 const APOLLO_STATUS_OPTIONS = [
