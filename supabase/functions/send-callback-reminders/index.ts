@@ -134,7 +134,7 @@ serve(async (req) => {
           React.createElement(CallbackReminderEmail, {
             userName,
             prospects: enrichedProspects,
-            appUrl: Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || 'https://app.lovable.dev',
+            appUrl: 'https://sales.aicademia.fr',
           })
         );
 
