@@ -15,7 +15,7 @@ interface Profile {
 interface UserRole {
   id: string;
   user_id: string;
-  role: 'sales' | 'manager' | 'admin';
+  role: 'sdr' | 'sales' | 'marketing' | 'admin';
   assigned_by: string | null;
   assigned_at: string;
 }
@@ -24,13 +24,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
-  userRole: 'sales' | 'manager' | 'admin' | null;
+  userRole: 'sdr' | 'sales' | 'marketing' | 'admin' | null;
   loading: boolean;
   signInWithGoogle: () => Promise<{ data: any; error: AuthError | null }>;
   signInWithEmail: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
   signUpWithEmail: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
-  hasRole: (role: 'sales' | 'manager' | 'admin') => boolean;
+  hasRole: (role: 'sdr' | 'sales' | 'marketing' | 'admin') => boolean;
   hasPermission: (permission: string) => boolean;
 }
 
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [userRole, setUserRole] = useState<'sales' | 'manager' | 'admin' | null>(null);
+  const [userRole, setUserRole] = useState<'sdr' | 'sales' | 'marketing' | 'admin' | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -129,11 +129,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
 
       if (data && data.length > 0) {
-        const roleHierarchy = { admin: 3, manager: 2, sales: 1 };
+        const roleHierarchy = { admin: 4, sales: 3, marketing: 2, sdr: 1 };
         const sortedRoles = data.sort((a, b) => roleHierarchy[b.role] - roleHierarchy[a.role]);
         setUserRole(sortedRoles[0].role);
       } else {
-        setUserRole('sales'); // Default role
+        setUserRole('sdr'); // Default role
       }
     } catch (error) {
       console.error('Error fetching user role:', error);
@@ -192,10 +192,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return { error };
   };
 
-  const hasRole = (role: 'sales' | 'manager' | 'admin'): boolean => {
+  const hasRole = (role: 'sdr' | 'sales' | 'marketing' | 'admin'): boolean => {
     if (!userRole) return false;
     
-    const roleHierarchy = { admin: 3, manager: 2, sales: 1 };
+    const roleHierarchy = { admin: 4, sales: 3, marketing: 2, sdr: 1 };
     const userRoleLevel = roleHierarchy[userRole];
     const requiredRoleLevel = roleHierarchy[role];
     
@@ -206,19 +206,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (!userRole) return false;
     
     const permissions = {
-      sales: [
+      sdr: [
         'view_prospects',
         'create_prospects',
         'update_prospects',
         'view_own_data'
       ],
-      manager: [
+      sales: [
         'view_prospects',
         'create_prospects', 
         'update_prospects',
         'view_own_data',
         'assign_prospects',
-        'manage_settings'
+        'manage_settings',
+        'manage_sales_team',
+        'view_team_data'
+      ],
+      marketing: [
+        'view_prospects',
+        'create_prospects', 
+        'update_prospects',
+        'view_own_data',
+        'assign_prospects',
+        'manage_settings',
+        'view_team_data'
       ],
       admin: [
         'view_prospects',

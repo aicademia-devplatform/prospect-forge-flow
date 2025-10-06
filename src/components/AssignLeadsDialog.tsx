@@ -54,8 +54,8 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
     try {
       let userIds: string[] = [];
       
-      // Si l'utilisateur est admin ou manager, charger tous les utilisateurs
-      if (userRole === 'admin' || userRole === 'manager') {
+      // Si l'utilisateur est admin ou sales+, charger tous les utilisateurs
+      if (userRole === 'admin' || userRole === 'sales' || userRole === 'marketing') {
         const { data: allUsers, error: usersError } = await supabase
           .from('profiles')
           .select('id');
@@ -63,11 +63,11 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
         if (usersError) throw usersError;
         userIds = allUsers ? allUsers.map(u => u.id) : [];
       } else {
-        // Sinon, récupérer uniquement les IDs des utilisateurs avec le rôle 'sales'
+        // Sinon, récupérer uniquement les IDs des utilisateurs avec le rôle 'sdr'
         const { data: salesRoles, error: rolesError } = await supabase
           .from('user_roles')
           .select('user_id')
-          .eq('role', 'sales');
+          .eq('role', 'sdr');
 
         if (rolesError) throw rolesError;
         userIds = salesRoles ? salesRoles.map(role => role.user_id) : [];

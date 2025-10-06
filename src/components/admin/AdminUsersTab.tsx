@@ -99,10 +99,10 @@ const AdminUsersTab = () => {
       // Ajouter le nouveau rôle
       const { error } = await supabase
         .from('user_roles')
-        .insert({
+        .insert([{
           user_id: userId,
-          role: role as 'admin' | 'manager' | 'sales'
-        });
+          role: role as 'admin' | 'sales' | 'marketing' | 'sdr'
+        }]);
 
       if (error) throw error;
 
@@ -136,10 +136,10 @@ const AdminUsersTab = () => {
       // Ajouter le nouveau rôle
       const { error } = await supabase
         .from('user_roles')
-        .insert({
+        .insert([{
           user_id: selectedUser.id,
-          role: newRole as 'admin' | 'manager' | 'sales'
-        });
+          role: newRole as 'admin' | 'sales' | 'marketing' | 'sdr'
+        }]);
 
       if (error) throw error;
 

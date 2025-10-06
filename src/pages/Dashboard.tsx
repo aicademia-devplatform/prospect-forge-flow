@@ -20,7 +20,7 @@ const Dashboard = () => {
     return <AdminDashboard />;
   }
 
-  if (userRole === 'manager') {
+  if (userRole === 'sales' || userRole === 'marketing') {
     return <ManagerDashboard />;
   }
 
