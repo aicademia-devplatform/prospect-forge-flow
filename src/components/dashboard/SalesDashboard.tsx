@@ -113,83 +113,107 @@ const SalesDashboard = () => {
         variants={itemVariants}
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
       >
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mes prospects</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.assignedToMe}</div>
-            <p className="text-xs text-muted-foreground">
-              Assignés au total
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card className="border-l-4 border-l-[hsl(var(--accent-blue))] transition-all duration-300 hover:shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Mes prospects</CardTitle>
+              <div className="bg-[hsl(var(--accent-blue-light))] p-2 rounded-lg">
+                <Target className="h-5 w-5 text-[hsl(var(--accent-blue))]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.assignedToMe}</div>
+              <p className="text-xs text-muted-foreground">
+                Assignés au total
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">À traiter</CardTitle>
-            <ListTodo className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.toProcess}</div>
-            <p className="text-xs text-muted-foreground">
-              En attente d'action
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card className="border-l-4 border-l-[hsl(var(--accent-orange))] transition-all duration-300 hover:shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">À traiter</CardTitle>
+              <div className="bg-[hsl(var(--accent-orange-light))] p-2 rounded-lg">
+                <ListTodo className="h-5 w-5 text-[hsl(var(--accent-orange))]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.toProcess}</div>
+              <p className="text-xs text-muted-foreground">
+                En attente d'action
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Traités cette semaine</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedThisWeek}</div>
-            <p className="text-xs text-muted-foreground">
-              7 derniers jours
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card className="border-l-4 border-l-[hsl(var(--accent-green))] transition-all duration-300 hover:shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Traités cette semaine</CardTitle>
+              <div className="bg-[hsl(var(--accent-green-light))] p-2 rounded-lg">
+                <CheckCircle2 className="h-5 w-5 text-[hsl(var(--accent-green))]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.completedThisWeek}</div>
+              <p className="text-xs text-muted-foreground">
+                7 derniers jours
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rappels planifiés</CardTitle>
-            <Phone className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingCallbacks}</div>
-            <p className="text-xs text-muted-foreground">
-              À effectuer
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card className="border-l-4 border-l-[hsl(var(--accent-purple))] transition-all duration-300 hover:shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Rappels planifiés</CardTitle>
+              <div className="bg-[hsl(var(--accent-purple-light))] p-2 rounded-lg">
+                <Phone className="h-5 w-5 text-[hsl(var(--accent-purple))]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.pendingCallbacks}</div>
+              <p className="text-xs text-muted-foreground">
+                À effectuer
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de complétion</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completionRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              Cette semaine
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card className="border-l-4 border-l-[hsl(var(--accent-pink))] transition-all duration-300 hover:shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Taux de complétion</CardTitle>
+              <div className="bg-[hsl(var(--accent-pink-light))] p-2 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-[hsl(var(--accent-pink))]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.completionRate}%</div>
+              <p className="text-xs text-muted-foreground">
+                Cette semaine
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Mon activité</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.myActivity}</div>
-            <p className="text-xs text-muted-foreground">
-              Actions (7 derniers jours)
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
+          <Card className="border-l-4 border-l-[hsl(var(--accent-cyan))] transition-all duration-300 hover:shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Mon activité</CardTitle>
+              <div className="bg-[hsl(var(--accent-cyan-light))] p-2 rounded-lg">
+                <Clock className="h-5 w-5 text-[hsl(var(--accent-cyan))]" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.myActivity}</div>
+              <p className="text-xs text-muted-foreground">
+                Actions (7 derniers jours)
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
 
       <motion.div
