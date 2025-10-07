@@ -2276,6 +2276,7 @@ export type Database = {
           date_action: string | null
           id: string
           lead_email: string
+          manager_id: string | null
           notes_sales: string | null
           sales_user_id: string
           source_id: string
@@ -2293,6 +2294,7 @@ export type Database = {
           date_action?: string | null
           id?: string
           lead_email: string
+          manager_id?: string | null
           notes_sales?: string | null
           sales_user_id: string
           source_id: string
@@ -2310,6 +2312,7 @@ export type Database = {
           date_action?: string | null
           id?: string
           lead_email?: string
+          manager_id?: string | null
           notes_sales?: string | null
           sales_user_id?: string
           source_id?: string
@@ -2485,15 +2488,7 @@ export type Database = {
           sdr_id: string | null
           total_assigned_prospects: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_roles_manager_id_fkey"
-            columns: ["manager_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Functions: {
