@@ -76,62 +76,90 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Reset link generated, sending email to:", userEmail);
 
-    // Configure SMTP client
-    const smtpClient = new SMTPClient({
-      connection: {
-        hostname: "smtp.gmail.com",
-        port: 587,
-        tls: true,
-        auth: {
-          username: Deno.env.get("GMAIL_USER") || "",
-          password: Deno.env.get("GMAIL_APP_PASSWORD") || "",
-        },
-      },
-    });
+    try {
+      // Configure SMTP client
+      const gmailUser = Deno.env.get("GMAIL_USER");
+      const gmailPassword = Deno.env.get("GMAIL_APP_PASSWORD");
 
-    // Send email with reset link
-    await smtpClient.send({
-      from: Deno.env.get("GMAIL_USER") || "",
-      to: userEmail,
-      subject: "Réinitialisation de votre mot de passe",
-      content: "auto",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Réinitialisation de mot de passe</h1>
-          <p>Bonjour,</p>
-          <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
-          <p>Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetData.properties.action_link}" 
-               style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
-              Réinitialiser mon mot de passe
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email.</p>
-          <p style="color: #666; font-size: 14px;">Ce lien expirera dans 1 heure.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          <p style="color: #999; font-size: 12px;">Cordialement,<br>L'équipe Admin</p>
-        </div>
-      `,
-    });
-
-    await smtpClient.close();
-
-    console.log("Email sent successfully via SMTP");
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Email de réinitialisation envoyé avec succès" 
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
+      if (!gmailUser || !gmailPassword) {
+        throw new Error("GMAIL_USER or GMAIL_APP_PASSWORD not configured");
       }
-    );
+
+      console.log("Configuring SMTP client with user:", gmailUser);
+
+      const smtpClient = new SMTPClient({
+        connection: {
+          hostname: "smtp.gmail.com",
+          port: 587,
+          tls: true,
+          auth: {
+            username: gmailUser,
+            password: gmailPassword,
+          },
+        },
+      });
+
+      console.log("SMTP client configured, sending email...");
+
+      // Send email with reset link
+      await smtpClient.send({
+        from: gmailUser,
+        to: userEmail,
+        subject: "Réinitialisation de votre mot de passe",
+        content: "auto",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #333;">Réinitialisation de mot de passe</h1>
+            <p>Bonjour,</p>
+            <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
+            <p>Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetData.properties.action_link}" 
+                 style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                Réinitialiser mon mot de passe
+              </a>
+            </div>
+            <p style="color: #666; font-size: 14px;">Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email.</p>
+            <p style="color: #666; font-size: 14px;">Ce lien expirera dans 1 heure.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #999; font-size: 12px;">Cordialement,<br>L'équipe Admin</p>
+          </div>
+        `,
+      });
+
+      await smtpClient.close();
+
+      console.log("Email sent successfully via SMTP to:", userEmail);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Email de réinitialisation envoyé avec succès" 
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    } catch (emailError: any) {
+      console.error("Error sending email:", emailError);
+      return new Response(
+        JSON.stringify({ 
+          error: `Erreur lors de l'envoi de l'email: ${emailError.message}`,
+          success: false 
+        }),
+        {
+          status: 500,
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          },
+        }
+      );
+    }
   } catch (error: any) {
     console.error("Error in send-password-reset function:", error);
     return new Response(
