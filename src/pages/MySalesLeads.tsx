@@ -62,7 +62,8 @@ const translateColumnName = (columnName: string): string => {
     'completed_at': 'Date de finalisation',
     'notes_sales': 'Notes du commercial',
     'statut_prospect': 'Statut prospect',
-    'date_action': 'Date d\'action'
+    'date_action': 'Date d\'action',
+    'sdr_email': 'Email du SDR'
   };
   return translations[columnName] || columnName;
 };
@@ -73,7 +74,8 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
   filterMode = 'assigned'
 }) => {
   const {
-    user
+    user,
+    userRole
   } = useAuth();
   const {
     toast
@@ -90,9 +92,13 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(
       filterMode === 'traites' 
-        ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions'] 
+        ? (userRole === 'sales' || userRole === 'marketing' || userRole === 'admin')
+          ? ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'sdr_email', 'actions']
+          : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'completed_at', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
         : filterMode === 'rappeler'
-        ? ['email', 'callback_date', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
+        ? (userRole === 'sales' || userRole === 'marketing' || userRole === 'admin')
+          ? ['email', 'callback_date', 'notes_sales', 'statut_prospect', 'date_action', 'sdr_email', 'actions']
+          : ['email', 'callback_date', 'notes_sales', 'statut_prospect', 'date_action', 'actions']
         : ['email', 'company', 'last_name', 'first_name', 'assigned_at', 'actions']
     )
   );

@@ -65,6 +65,7 @@ Deno.serve(async (req) => {
       .insert({
         original_assignment_id: assignment.id,
         sales_user_id: assignment.sales_user_id,
+        sdr_id: user.id, // Enregistrer l'ID du SDR qui a traité le prospect
         source_table: assignment.source_table,
         source_id: assignment.source_id,
         lead_email: assignment.lead_email,

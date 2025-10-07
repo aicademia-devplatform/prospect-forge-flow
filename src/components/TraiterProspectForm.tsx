@@ -213,6 +213,7 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
           .from('prospects_a_rappeler')
           .insert({
             sales_user_id: user.id,
+            sdr_id: user.id, // Enregistrer l'ID du SDR
             source_table: existingAssignment?.source_table || 'crm_contacts',
             source_id: existingAssignment?.source_id || prospectEmail,
             lead_email: prospectEmail,
@@ -256,6 +257,7 @@ export const TraiterProspectForm: React.FC<TraiterProspectFormProps> = ({
             .insert({
               original_assignment_id: null,
               sales_user_id: user.id,
+              sdr_id: user.id, // Enregistrer l'ID du SDR
               source_table: 'crm_contacts',
               source_id: prospectEmail,
               lead_email: prospectEmail,

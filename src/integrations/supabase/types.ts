@@ -2144,6 +2144,7 @@ export type Database = {
           notes_sales: string | null
           reminder_sent_at: string | null
           sales_user_id: string
+          sdr_id: string | null
           source_id: string
           source_table: string
           statut_prospect: string | null
@@ -2162,6 +2163,7 @@ export type Database = {
           notes_sales?: string | null
           reminder_sent_at?: string | null
           sales_user_id: string
+          sdr_id?: string | null
           source_id: string
           source_table: string
           statut_prospect?: string | null
@@ -2180,12 +2182,21 @@ export type Database = {
           notes_sales?: string | null
           reminder_sent_at?: string | null
           sales_user_id?: string
+          sdr_id?: string | null
           source_id?: string
           source_table?: string
           statut_prospect?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prospects_a_rappeler_sdr_id_fkey"
+            columns: ["sdr_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prospects_traites: {
         Row: {
@@ -2201,6 +2212,7 @@ export type Database = {
           notes_sales: string | null
           original_assignment_id: string
           sales_user_id: string
+          sdr_id: string | null
           source_id: string
           source_table: string
           statut_prospect: string | null
@@ -2219,6 +2231,7 @@ export type Database = {
           notes_sales?: string | null
           original_assignment_id: string
           sales_user_id: string
+          sdr_id?: string | null
           source_id: string
           source_table: string
           statut_prospect?: string | null
@@ -2237,12 +2250,21 @@ export type Database = {
           notes_sales?: string | null
           original_assignment_id?: string
           sales_user_id?: string
+          sdr_id?: string | null
           source_id?: string
           source_table?: string
           statut_prospect?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prospects_traites_sdr_id_fkey"
+            columns: ["sdr_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales_assignments: {
         Row: {
@@ -2431,6 +2453,26 @@ export type Database = {
       }
     }
     Views: {
+      sales_sdr_prospects_view: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          date_action: string | null
+          id: string | null
+          lead_email: string | null
+          notes_sales: string | null
+          prospect_type: string | null
+          sales_user_id: string | null
+          sdr_email: string | null
+          sdr_first_name: string | null
+          sdr_id: string | null
+          sdr_last_name: string | null
+          source_id: string | null
+          source_table: string | null
+          statut_prospect: string | null
+        }
+        Relationships: []
+      }
       sdr_statistics: {
         Row: {
           first_name: string | null
