@@ -90,7 +90,7 @@ const handler = async (req: Request): Promise<Response> => {
       const smtpClient = new SMTPClient({
         connection: {
           hostname: "smtp.gmail.com",
-          port: 587,
+          port: 465,
           tls: true,
           auth: {
             username: gmailUser,
@@ -106,7 +106,6 @@ const handler = async (req: Request): Promise<Response> => {
         from: gmailUser,
         to: userEmail,
         subject: "Réinitialisation de votre mot de passe",
-        content: "auto",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #333;">Réinitialisation de mot de passe</h1>
