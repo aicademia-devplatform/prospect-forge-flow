@@ -18,6 +18,7 @@ import AdminPanel from "./pages/AdminPanel";
 import Settings from "./pages/Settings";
 import MySalesLeads from "./pages/MySalesLeads";
 import TeamStats from "./pages/TeamStats";
+import SalesProspects from "./pages/SalesProspects";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -168,6 +169,36 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <MySalesLeads />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sales-prospects" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <SalesProspects />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sales-prospects/rappeler" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <SalesProspects />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sales-prospects/traites" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <SalesProspects />
                   </Layout>
                 </ProtectedRoute>
               } 

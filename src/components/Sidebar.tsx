@@ -16,7 +16,15 @@ const navigation = [{
   icon: Users,
   key: 'prospects',
   path: '/prospects',
-  permission: 'view_prospects'
+  permission: 'view_prospects',
+  roles: ['sdr', 'admin', 'marketing'] // Visible seulement pour SDR, admin et marketing
+}, {
+  name: 'Prospects SDR',
+  icon: Users,
+  key: 'sales-prospects',
+  path: '/sales-prospects',
+  permission: 'view_prospects',
+  roles: ['sales', 'admin', 'marketing'] // Visible seulement pour Sales, admin et marketing
 }, {
   name: 'Import Data',
   icon: Upload,
@@ -54,11 +62,18 @@ const adminNavigation = [{
 export const Sidebar = () => {
   const {
     hasPermission,
-    hasRole
+    hasRole,
+    userRole
   } = useAuth();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const filteredNavigation = navigation.filter(item => hasPermission(item.permission));
+  
+  const filteredNavigation = navigation.filter(item => {
+    if (!hasPermission(item.permission)) return false;
+    if (item.roles && !item.roles.includes(userRole as string)) return false;
+    return true;
+  });
+  
   const filteredAdminNavigation = adminNavigation.filter(item => hasPermission(item.permission));
 
   // Fonction pour vérifier si un item est actif en fonction de la route
@@ -70,9 +85,9 @@ export const Sidebar = () => {
       return currentPath === '/';
     }
 
-    // Pour le menu Prospects, inclure toutes les sous-routes
-    if (itemPath === '/prospects') {
-      return currentPath === '/prospects' || currentPath.startsWith('/prospects/');
+    // Pour le menu Prospects et Prospects SDR, inclure toutes les sous-routes
+    if (itemPath === '/prospects' || itemPath === '/sales-prospects') {
+      return currentPath === itemPath || currentPath.startsWith(itemPath + '/');
     }
 
     // Pour les autres routes
