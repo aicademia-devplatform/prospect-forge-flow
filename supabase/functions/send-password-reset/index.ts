@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { Resend } from "npm:resend@2.0.0";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -76,14 +76,25 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Reset link generated, sending email to:", userEmail);
 
-    // Get the from email from env or use default
-    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
+    // Configure SMTP client
+    const smtpClient = new SMTPClient({
+      connection: {
+        hostname: "smtp.gmail.com",
+        port: 587,
+        tls: true,
+        auth: {
+          username: Deno.env.get("GMAIL_USER") || "",
+          password: Deno.env.get("GMAIL_APP_PASSWORD") || "",
+        },
+      },
+    });
 
     // Send email with reset link
-    const emailResponse = await resend.emails.send({
-      from: fromEmail,
-      to: [userEmail],
+    await smtpClient.send({
+      from: Deno.env.get("GMAIL_USER") || "",
+      to: userEmail,
       subject: "Réinitialisation de votre mot de passe",
+      content: "auto",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333;">Réinitialisation de mot de passe</h1>
@@ -104,7 +115,9 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    await smtpClient.close();
+
+    console.log("Email sent successfully via SMTP");
 
     return new Response(
       JSON.stringify({ 
