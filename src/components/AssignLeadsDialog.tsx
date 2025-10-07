@@ -180,19 +180,49 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
 
       if (leadError) throw leadError;
 
+      if (!leadData || leadData.length === 0) {
+        throw new Error('Aucun lead trouvé');
+      }
+
       // Obtenir l'ID de l'utilisateur actuel
       const { data: { user } } = await supabase.auth.getUser();
       const currentUserId = user?.id;
 
-      // Créer les assignations
-      const assignments = leadData?.map(lead => ({
+      // Vérifier quels leads sont déjà assignés à cet utilisateur
+      const emails = leadData.map(lead => lead.email);
+      const { data: existingAssignments, error: checkError } = await supabase
+        .from('sales_assignments')
+        .select('lead_email')
+        .eq('sales_user_id', selectedSalesId)
+        .eq('status', 'active')
+        .in('lead_email', emails);
+
+      if (checkError) throw checkError;
+
+      const existingEmails = new Set(existingAssignments?.map(a => a.lead_email) || []);
+      
+      // Filtrer les leads qui ne sont pas déjà assignés
+      const newLeads = leadData.filter(lead => !existingEmails.has(lead.email));
+
+      if (newLeads.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Aucune assignation",
+          description: `Tous les leads sélectionnés (${leadData.length}) sont déjà assignés à cet utilisateur`
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Créer les assignations uniquement pour les nouveaux leads
+      const assignments = newLeads.map(lead => ({
         sales_user_id: selectedSalesId,
         lead_email: lead.email,
         source_table: tableName,
         source_id: String(lead.id),
         custom_table_name: `${selectedSalesId}_leads`,
         assigned_by: currentUserId || null
-      })) || [];
+      }));
 
       const { error: assignError } = await supabase
         .from('sales_assignments')
@@ -200,9 +230,14 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
 
       if (assignError) throw assignError;
 
+      const skippedCount = existingEmails.size;
+      const message = skippedCount > 0 
+        ? `${newLeads.length} leads assignés avec succès. ${skippedCount} déjà assignés (ignorés).`
+        : `${newLeads.length} leads assignés avec succès`;
+
       toast({
         title: "Succès",
-        description: `${selectedRows.length} leads assignés avec succès`
+        description: message
       });
 
       onAssignmentComplete();
