@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Mail, Building, User } from 'lucide-react';
+import { ArrowLeft, Search, Mail, Building, User, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLoader from '@/components/dashboard/DashboardLoader';
+import { encryptEmail } from '@/lib/emailCrypto';
 
 interface AssignedProspect {
   id: string;
@@ -175,6 +176,11 @@ const AllAssignedProspects = () => {
     }
   };
 
+  const handleRowClick = (email: string) => {
+    const encryptedEmail = encryptEmail(email);
+    navigate(`/prospect/${encryptedEmail}`);
+  };
+
   if (loading) {
     return <DashboardLoader />;
   }
@@ -280,17 +286,24 @@ const AllAssignedProspects = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredProspects.map((prospect) => (
-                      <TableRow key={prospect.id}>
+                      <TableRow 
+                        key={prospect.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleRowClick(prospect.lead_email)}
+                      >
                         <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {prospect.first_name || prospect.last_name
-                                ? `${prospect.first_name || ''} ${prospect.last_name || ''}`.trim()
-                                : prospect.lead_email}
-                            </span>
-                            {prospect.title && (
-                              <span className="text-xs text-muted-foreground">{prospect.title}</span>
-                            )}
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {prospect.first_name || prospect.last_name
+                                  ? `${prospect.first_name || ''} ${prospect.last_name || ''}`.trim()
+                                  : prospect.lead_email}
+                              </span>
+                              {prospect.title && (
+                                <span className="text-xs text-muted-foreground">{prospect.title}</span>
+                              )}
+                            </div>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                         </TableCell>
                         <TableCell>
