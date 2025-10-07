@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { UserPlus, Search, Mail, Shield, Trash2, Edit } from 'lucide-react';
+import { UserPlus, Search, Mail, Shield, Trash2, Edit, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
@@ -231,6 +231,46 @@ const AdminUsersTab = () => {
     }
   };
 
+  const handleResetPassword = async (userId: string, userEmail: string) => {
+    if (!confirm('Envoyer un email de réinitialisation de mot de passe à cet utilisateur ?')) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { 
+          userId,
+          userEmail
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast({
+          title: 'Succès',
+          description: 'Email de réinitialisation envoyé avec succès'
+        });
+      } else {
+        throw new Error(data?.error || 'Erreur inconnue');
+      }
+    } catch (error: any) {
+      console.error('Error sending password reset:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible d\'envoyer l\'email de réinitialisation',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (user.first_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -381,14 +421,24 @@ const AdminUsersTab = () => {
                         <Edit className="h-4 w-4" />
                       </Button>
                       {userRole === 'admin' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteUser(user.id)}
-                          disabled={user.id === currentUserId}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleResetPassword(user.id, user.email)}
+                            title="Réinitialiser le mot de passe"
+                          >
+                            <KeyRound className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteUser(user.id)}
+                            disabled={user.id === currentUserId}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </TableCell>
