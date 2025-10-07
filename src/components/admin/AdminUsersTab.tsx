@@ -240,8 +240,9 @@ const AdminUsersTab = () => {
   const getRoleBadgeVariant = (role: string | null) => {
     switch (role) {
       case 'admin': return 'destructive';
-      case 'manager': return 'default';
-      case 'sales': return 'secondary';
+      case 'sales': return 'default';
+      case 'marketing': return 'secondary';
+      case 'sdr': return 'outline';
       default: return 'outline';
     }
   };
@@ -335,8 +336,9 @@ const AdminUsersTab = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
                           <SelectItem value="sales">Sales</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
+                          <SelectItem value="sdr">SDR</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (
@@ -415,8 +417,9 @@ const AdminUsersTab = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="sales">Sales</SelectItem>
+                  <SelectItem value="marketing">Marketing</SelectItem>
+                  <SelectItem value="sdr">SDR</SelectItem>
                 </SelectContent>
               </Select>
             </div>
