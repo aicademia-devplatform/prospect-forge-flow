@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLoader from './DashboardLoader';
+import { TeamStatsCard } from './TeamStatsCard';
 
 interface ManagerStats {
   totalSalesTeam: number;
@@ -211,6 +212,11 @@ const ManagerDashboard = () => {
             </CardContent>
           </Card>
         </motion.div>
+      </motion.div>
+
+      {/* Statistiques de l'équipe SDR */}
+      <motion.div variants={itemVariants}>
+        <TeamStatsCard />
       </motion.div>
 
       <motion.div

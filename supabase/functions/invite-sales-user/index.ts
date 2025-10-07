@@ -13,11 +13,22 @@ serve(async (req) => {
   }
 
   try {
-    const { email } = await req.json();
+    const { email, role } = await req.json();
 
     if (!email) {
       return new Response(
         JSON.stringify({ error: "Email requis" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Valider le rôle (sdr ou sales)
+    const validRoles = ['sdr', 'sales'];
+    const userRole = role || 'sdr'; // Par défaut SDR
+    
+    if (!validRoles.includes(userRole)) {
+      return new Response(
+        JSON.stringify({ error: "Rôle invalide. Doit être 'sdr' ou 'sales'" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -36,6 +47,20 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Vérifier l'utilisateur qui invite (pour le manager_id)
+    const authHeader = req.headers.get("Authorization");
+    let inviterId = null;
+    
+    if (authHeader) {
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+        inviterId = user?.id;
+      } catch (error) {
+        console.log("Could not get inviter user:", error);
+      }
+    }
 
     // Vérifier si l'utilisateur existe déjà
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
@@ -65,6 +90,19 @@ serve(async (req) => {
         JSON.stringify({ error: createError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Assigner le rôle avec manager_id si c'est un SDR invité par un sales
+    const { error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .insert({
+        user_id: newUser.user.id,
+        role: userRole,
+        assigned_by: inviterId
+      });
+
+    if (roleError) {
+      console.error("Error assigning role:", roleError);
     }
 
     // Générer un lien de réinitialisation de mot de passe

@@ -2399,6 +2399,7 @@ export type Database = {
           assigned_at: string
           assigned_by: string | null
           id: string
+          manager_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -2406,6 +2407,7 @@ export type Database = {
           assigned_at?: string
           assigned_by?: string | null
           id?: string
+          manager_id?: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -2413,14 +2415,44 @@ export type Database = {
           assigned_at?: string
           assigned_by?: string | null
           id?: string
+          manager_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
-      [_ in never]: never
+      sdr_statistics: {
+        Row: {
+          first_name: string | null
+          last_activity: string | null
+          last_name: string | null
+          manager_id: string | null
+          prospects_contacted_today: number | null
+          prospects_validated: number | null
+          sdr_email: string | null
+          sdr_id: string | null
+          total_assigned_prospects: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_apollo_contacts_only: {
@@ -2481,6 +2513,18 @@ export type Database = {
           email: string
           total_score: number
           zoho_status: string
+        }[]
+      }
+      get_manager_team_stats: {
+        Args: { manager_user_id: string }
+        Returns: {
+          last_activity: string
+          prospects_contacted_today: number
+          prospects_validated: number
+          sdr_email: string
+          sdr_id: string
+          sdr_name: string
+          total_assigned_prospects: number
         }[]
       }
       get_user_role: {
