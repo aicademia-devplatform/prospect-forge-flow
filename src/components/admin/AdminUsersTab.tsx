@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { UserPlus, Search, Mail, Shield, Trash2, Edit, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +36,7 @@ const AdminUsersTab = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<{ id: string; email: string } | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -232,8 +234,6 @@ const AdminUsersTab = () => {
   };
 
   const handleResetPassword = async (userId: string, userEmail: string) => {
-    if (!confirm('Envoyer un email de réinitialisation de mot de passe à cet utilisateur ?')) return;
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -258,6 +258,7 @@ const AdminUsersTab = () => {
           title: 'Succès',
           description: 'Email de réinitialisation envoyé avec succès'
         });
+        setResetPasswordUser(null);
       } else {
         throw new Error(data?.error || 'Erreur inconnue');
       }
@@ -425,7 +426,7 @@ const AdminUsersTab = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleResetPassword(user.id, user.email)}
+                            onClick={() => setResetPasswordUser({ id: user.id, email: user.email })}
                             title="Réinitialiser le mot de passe"
                           >
                             <KeyRound className="h-4 w-4 text-primary" />
@@ -487,6 +488,27 @@ const AdminUsersTab = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Password Reset Confirmation Dialog */}
+      <AlertDialog open={!!resetPasswordUser} onOpenChange={(open) => !open && setResetPasswordUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Réinitialiser le mot de passe</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir envoyer un email de réinitialisation de mot de passe à{' '}
+              <strong>{resetPasswordUser?.email}</strong> ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => resetPasswordUser && handleResetPassword(resetPasswordUser.id, resetPasswordUser.email)}
+            >
+              Envoyer l'email
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
