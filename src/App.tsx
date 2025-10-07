@@ -17,6 +17,7 @@ import ProspectDetails from "./pages/ProspectDetails";
 import AdminPanel from "./pages/AdminPanel";
 import Settings from "./pages/Settings";
 import MySalesLeads from "./pages/MySalesLeads";
+import TeamStats from "./pages/TeamStats";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -167,6 +168,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <MySalesLeads />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/team-stats" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <TeamStats />
                   </Layout>
                 </ProtectedRoute>
               } 

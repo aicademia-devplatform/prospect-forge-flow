@@ -112,7 +112,10 @@ const ManagerDashboard = () => {
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
       >
         <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-          <Card className="border-l-4 border-l-[hsl(var(--accent-blue))] transition-all duration-300 hover:shadow-lg">
+          <Card 
+            className="border-l-4 border-l-[hsl(var(--accent-blue))] transition-all duration-300 hover:shadow-lg cursor-pointer"
+            onClick={() => navigate('/team-stats?type=team')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Équipe commerciale</CardTitle>
               <div className="bg-[hsl(var(--accent-blue-light))] p-2 rounded-lg">
@@ -129,7 +132,10 @@ const ManagerDashboard = () => {
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-          <Card className="border-l-4 border-l-[hsl(var(--accent-green))] transition-all duration-300 hover:shadow-lg">
+          <Card 
+            className="border-l-4 border-l-[hsl(var(--accent-green))] transition-all duration-300 hover:shadow-lg cursor-pointer"
+            onClick={() => navigate('/team-stats?type=assigned')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Prospects assignés</CardTitle>
               <div className="bg-[hsl(var(--accent-green-light))] p-2 rounded-lg">
@@ -146,7 +152,10 @@ const ManagerDashboard = () => {
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-          <Card className="border-l-4 border-l-[hsl(var(--accent-purple))] transition-all duration-300 hover:shadow-lg">
+          <Card 
+            className="border-l-4 border-l-[hsl(var(--accent-purple))] transition-all duration-300 hover:shadow-lg cursor-pointer"
+            onClick={() => navigate('/team-stats?type=completed')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Traités cette semaine</CardTitle>
               <div className="bg-[hsl(var(--accent-purple-light))] p-2 rounded-lg">
@@ -163,7 +172,10 @@ const ManagerDashboard = () => {
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-          <Card className="border-l-4 border-l-[hsl(var(--accent-orange))] transition-all duration-300 hover:shadow-lg">
+          <Card 
+            className="border-l-4 border-l-[hsl(var(--accent-orange))] transition-all duration-300 hover:shadow-lg cursor-pointer"
+            onClick={() => navigate('/team-stats?type=callbacks')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Rappels planifiés</CardTitle>
               <div className="bg-[hsl(var(--accent-orange-light))] p-2 rounded-lg">
@@ -180,7 +192,10 @@ const ManagerDashboard = () => {
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-          <Card className="border-l-4 border-l-[hsl(var(--accent-pink))] transition-all duration-300 hover:shadow-lg">
+          <Card 
+            className="border-l-4 border-l-[hsl(var(--accent-pink))] transition-all duration-300 hover:shadow-lg cursor-pointer"
+            onClick={() => navigate('/team-stats?type=conversion')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Taux de conversion</CardTitle>
               <div className="bg-[hsl(var(--accent-pink-light))] p-2 rounded-lg">
@@ -197,7 +212,10 @@ const ManagerDashboard = () => {
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
-          <Card className="border-l-4 border-l-[hsl(var(--accent-cyan))] transition-all duration-300 hover:shadow-lg">
+          <Card 
+            className="border-l-4 border-l-[hsl(var(--accent-cyan))] transition-all duration-300 hover:shadow-lg cursor-pointer"
+            onClick={() => navigate('/team-stats?type=activity')}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Activité équipe</CardTitle>
               <div className="bg-[hsl(var(--accent-cyan-light))] p-2 rounded-lg">
