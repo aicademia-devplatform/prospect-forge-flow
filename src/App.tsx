@@ -19,6 +19,7 @@ import Settings from "./pages/Settings";
 import MySalesLeads from "./pages/MySalesLeads";
 import TeamStats from "./pages/TeamStats";
 import SalesProspects from "./pages/SalesProspects";
+import AllAssignedProspects from "./pages/AllAssignedProspects";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -209,6 +210,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <TeamStats />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/all-assigned-prospects" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <AllAssignedProspects />
                   </Layout>
                 </ProtectedRoute>
               } 

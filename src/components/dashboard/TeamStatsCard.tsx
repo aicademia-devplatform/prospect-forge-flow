@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, TrendingUp, CheckCircle, Clock } from 'lucide-react';
+import { Users, TrendingUp, CheckCircle, Clock, List } from 'lucide-react';
 
 interface TeamStats {
   sdr_id: string;
@@ -17,6 +19,7 @@ interface TeamStats {
 }
 
 export const TeamStatsCard = () => {
+  const navigate = useNavigate();
   const [teamStats, setTeamStats] = useState<TeamStats[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -107,10 +110,22 @@ export const TeamStatsCard = () => {
       {/* Tableau détaillé par SDR */}
       <Card>
         <CardHeader>
-          <CardTitle>Performances de l'équipe</CardTitle>
-          <CardDescription>
-            Statistiques détaillées de vos {teamStats.length} SDR
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Performances de l'équipe</CardTitle>
+              <CardDescription>
+                Statistiques détaillées de vos {teamStats.length} SDR
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/all-assigned-prospects')}
+              className="gap-2"
+            >
+              <List className="h-4 w-4" />
+              Voir tous les prospects
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {teamStats.length === 0 ? (
