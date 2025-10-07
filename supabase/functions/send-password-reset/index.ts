@@ -76,20 +76,31 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Reset link generated, sending email to:", userEmail);
 
+    // Get the from email from env or use default
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
+
     // Send email with reset link
     const emailResponse = await resend.emails.send({
-      from: "Admin <onboarding@resend.dev>",
+      from: fromEmail,
       to: [userEmail],
       subject: "Réinitialisation de votre mot de passe",
       html: `
-        <h1>Réinitialisation de mot de passe</h1>
-        <p>Bonjour,</p>
-        <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
-        <p>Cliquez sur le lien ci-dessous pour créer un nouveau mot de passe :</p>
-        <p><a href="${resetData.properties.action_link}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Réinitialiser mon mot de passe</a></p>
-        <p>Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email.</p>
-        <p>Ce lien expirera dans 1 heure.</p>
-        <p>Cordialement,<br>L'équipe Admin</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #333;">Réinitialisation de mot de passe</h1>
+          <p>Bonjour,</p>
+          <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
+          <p>Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetData.properties.action_link}" 
+               style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+              Réinitialiser mon mot de passe
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">Si vous n'avez pas demandé cette réinitialisation, vous pouvez ignorer cet email.</p>
+          <p style="color: #666; font-size: 14px;">Ce lien expirera dans 1 heure.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+          <p style="color: #999; font-size: 12px;">Cordialement,<br>L'équipe Admin</p>
+        </div>
       `,
     });
 
