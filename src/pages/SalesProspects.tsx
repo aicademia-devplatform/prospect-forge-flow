@@ -10,10 +10,10 @@ import { Eye, Search, User, Calendar, FileText, Mail, CheckCircle } from 'lucide
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { createProspectUrl } from '@/lib/emailCrypto';
+import { ValiderProspectDialog } from '@/components/ValiderProspectDialog';
 import moment from 'moment';
 import 'moment/locale/fr';
 import { motion } from 'framer-motion';
-import { ValiderProspectDialog } from '@/components/ValiderProspectDialog';
 
 interface SDRProspect {
   id: string;
