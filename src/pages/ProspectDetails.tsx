@@ -156,84 +156,185 @@ const ProspectDetails: React.FC = () => {
   const fetchTreatmentHistory = async () => {
     if (!email) return;
     try {
-      // Récupérer les assignments actifs, les prospects traités, les prospects à rappeler et les modifications en parallèle
-      const [assignmentsResult, traitesResult, rappelerResult, modificationsResult] = await Promise.all([
+      // Récupérer TOUS les historiques en parallèle
+      const [
+        assignmentsResult, 
+        traitesResult, 
+        rappelerResult, 
+        modificationsResult,
+        validesResult,
+        archivesResult
+      ] = await Promise.all([
         supabase.from('sales_assignments').select('*').eq('lead_email', email), 
         supabase.from('prospects_traites').select('*').eq('lead_email', email),
         supabase.from('prospects_a_rappeler').select('*').eq('lead_email', email),
-        supabase.from('prospect_modifications').select('*').eq('lead_email', email)
+        supabase.from('prospect_modifications').select('*').eq('lead_email', email),
+        supabase.from('prospects_valides').select('*').eq('lead_email', email),
+        supabase.from('prospects_archives').select('*').eq('lead_email', email)
       ]);
+
       if (assignmentsResult.error) throw assignmentsResult.error;
       if (traitesResult.error) throw traitesResult.error;
       if (rappelerResult.error) throw rappelerResult.error;
       if (modificationsResult.error) throw modificationsResult.error;
+      if (validesResult.error) throw validesResult.error;
+      if (archivesResult.error) throw archivesResult.error;
 
       // Enrichir les assignments actifs avec les profiles
       const enrichedAssignments = await Promise.all((assignmentsResult.data || []).map(async assignment => {
-        const {
-          data: profile
-        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', assignment.sales_user_id).single();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, email')
+          .eq('id', assignment.sales_user_id)
+          .single();
+        
+        const { data: sdrProfile } = assignment.assigned_by 
+          ? await supabase.from('profiles').select('first_name, last_name, email').eq('id', assignment.assigned_by).single()
+          : { data: null };
+
         return {
           ...assignment,
           profiles: profile,
+          sdr_profile: sdrProfile,
           isFromTraites: false,
           isFromRappeler: false,
           isFromModification: false,
-          display_date: assignment.created_at
+          isFromValides: false,
+          isFromArchives: false,
+          display_date: assignment.created_at,
+          type: 'assignment'
         };
       }));
 
-      // Enrichir les prospects traités avec les profiles
+      // Enrichir les prospects traités SDR avec les profiles
       const enrichedTraites = await Promise.all((traitesResult.data || []).map(async traite => {
-        const {
-          data: profile
-        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', traite.sales_user_id).single();
+        const { data: sdrProfile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, email')
+          .eq('id', traite.sdr_id)
+          .single();
+
         return {
           ...traite,
-          profiles: profile,
+          profiles: sdrProfile,
           isFromTraites: true,
           isFromRappeler: false,
           isFromModification: false,
-          display_date: traite.completed_at
+          isFromValides: false,
+          isFromArchives: false,
+          display_date: traite.completed_at,
+          type: 'traite_sdr'
         };
       }));
 
       // Enrichir les prospects à rappeler avec les profiles
       const enrichedRappeler = await Promise.all((rappelerResult.data || []).map(async rappel => {
-        const {
-          data: profile
-        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', rappel.sales_user_id).single();
+        const { data: sdrProfile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, email')
+          .eq('id', rappel.sdr_id)
+          .single();
+
         return {
           ...rappel,
-          profiles: profile,
+          profiles: sdrProfile,
           isFromTraites: false,
           isFromRappeler: true,
           isFromModification: false,
-          display_date: rappel.assigned_at
+          isFromValides: false,
+          isFromArchives: false,
+          display_date: rappel.assigned_at,
+          type: 'rappeler_sdr'
+        };
+      }));
+
+      // Enrichir les prospects validés SALES avec RDV
+      const enrichedValides = await Promise.all((validesResult.data || []).map(async valide => {
+        const { data: salesProfile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, email')
+          .eq('id', valide.validated_by)
+          .single();
+
+        const { data: sdrProfile } = valide.sdr_id
+          ? await supabase.from('profiles').select('first_name, last_name, email').eq('id', valide.sdr_id).single()
+          : { data: null };
+
+        return {
+          ...valide,
+          profiles: salesProfile,
+          sdr_profile: sdrProfile,
+          isFromTraites: false,
+          isFromRappeler: false,
+          isFromModification: false,
+          isFromValides: true,
+          isFromArchives: false,
+          display_date: valide.validated_at,
+          type: 'valide_sales'
+        };
+      }));
+
+      // Enrichir les prospects rejetés/archivés SALES
+      const enrichedArchives = await Promise.all((archivesResult.data || []).map(async archive => {
+        const { data: salesProfile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, email')
+          .eq('id', archive.rejected_by)
+          .single();
+
+        const { data: sdrProfile } = archive.sdr_id
+          ? await supabase.from('profiles').select('first_name, last_name, email').eq('id', archive.sdr_id).single()
+          : { data: null };
+
+        return {
+          ...archive,
+          profiles: salesProfile,
+          sdr_profile: sdrProfile,
+          isFromTraites: false,
+          isFromRappeler: false,
+          isFromModification: false,
+          isFromValides: false,
+          isFromArchives: true,
+          display_date: archive.rejected_at,
+          type: 'archive_sales'
         };
       }));
 
       // Enrichir les modifications avec les profiles
       const enrichedModifications = await Promise.all((modificationsResult.data || []).map(async modification => {
-        const {
-          data: profile
-        } = await supabase.from('profiles').select('first_name, last_name, email').eq('id', modification.modified_by).single();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, email')
+          .eq('id', modification.modified_by)
+          .single();
+
         return {
           ...modification,
           profiles: profile,
           isFromTraites: false,
           isFromRappeler: false,
           isFromModification: true,
-          display_date: modification.modified_at
+          isFromValides: false,
+          isFromArchives: false,
+          display_date: modification.modified_at,
+          type: 'modification'
         };
       }));
 
       // Combiner et trier par date (plus récent en premier)
-      const allHistory = [...enrichedAssignments, ...enrichedTraites, ...enrichedRappeler, ...enrichedModifications].sort((a, b) => {
+      const allHistory = [
+        ...enrichedAssignments, 
+        ...enrichedTraites, 
+        ...enrichedRappeler, 
+        ...enrichedValides,
+        ...enrichedArchives,
+        ...enrichedModifications
+      ].sort((a, b) => {
         const dateA = new Date(a.display_date).getTime();
         const dateB = new Date(b.display_date).getTime();
         return dateB - dateA;
       });
+
       setTreatmentHistory(allHistory);
     } catch (error) {
       console.error('Error fetching treatment history:', error);
@@ -827,12 +928,32 @@ const ProspectDetails: React.FC = () => {
             }} className="border-l-2 border-blue-200 pl-4 pb-4 last:pb-0">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge 
-                          variant={treatment.isFromTraites ? 'default' : treatment.isFromRappeler ? 'outline' : treatment.isFromModification ? 'outline' : 'secondary'} 
-                          className={treatment.isFromRappeler ? 'text-xs bg-orange-100 text-orange-800 border-orange-200' : treatment.isFromModification ? 'text-xs bg-blue-100 text-blue-800 border-blue-200' : 'text-xs'}
+                          variant={
+                            treatment.isFromValides ? 'default' : 
+                            treatment.isFromArchives ? 'destructive' :
+                            treatment.isFromTraites ? 'default' : 
+                            treatment.isFromRappeler ? 'outline' : 
+                            treatment.isFromModification ? 'outline' : 
+                            'secondary'
+                          } 
+                          className={
+                            treatment.isFromValides ? 'text-xs bg-green-600' :
+                            treatment.isFromArchives ? 'text-xs' :
+                            treatment.isFromRappeler ? 'text-xs bg-orange-100 text-orange-800 border-orange-200' : 
+                            treatment.isFromModification ? 'text-xs bg-blue-100 text-blue-800 border-blue-200' : 
+                            'text-xs'
+                          }
                         >
-                          {treatment.isFromTraites ? 'Traité' : treatment.isFromRappeler ? 'À rappeler' : treatment.isFromModification ? 'Modification' : treatment.custom_data?.status || treatment.status}
+                          {
+                            treatment.isFromValides ? 'Validé Sales - RDV Programmé' :
+                            treatment.isFromArchives ? 'Rejeté Sales' :
+                            treatment.isFromTraites ? 'Traité SDR' : 
+                            treatment.isFromRappeler ? 'À rappeler SDR' : 
+                            treatment.isFromModification ? 'Modification' : 
+                            treatment.custom_data?.status || treatment.status
+                          }
                         </Badge>
                         {treatment.boucle && <Badge variant="destructive" className="text-xs bg-red-100 text-red-800 border-red-200">
                             Bouclé
@@ -856,6 +977,66 @@ const ProspectDetails: React.FC = () => {
                       {treatment.notes_sales && treatment.isFromRappeler && <p className="text-sm text-gray-700 bg-orange-50 p-2 rounded">
                           <strong>Note :</strong> {treatment.notes_sales}
                         </p>}
+                      
+                      {/* Prospects validés SALES avec RDV */}
+                      {treatment.isFromValides && (
+                        <div className="space-y-2">
+                          <div className="text-sm bg-green-50 p-3 rounded border border-green-200">
+                            <div className="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              Validé par: {treatment.profiles?.first_name} {treatment.profiles?.last_name}
+                            </div>
+                            {treatment.commentaire_validation && (
+                              <p className="text-sm mb-2">
+                                <strong>Commentaire :</strong> {treatment.commentaire_validation}
+                              </p>
+                            )}
+                            {treatment.rdv_date && (
+                              <div className="flex items-center gap-2 text-sm font-medium text-green-700">
+                                <span>📅 RDV programmé le:</span>
+                                <span>{moment(treatment.rdv_date).format('DD MMM YYYY à HH:mm')}</span>
+                              </div>
+                            )}
+                            {treatment.rdv_notes && (
+                              <p className="text-sm mt-2 italic text-green-700">
+                                Notes RDV: {treatment.rdv_notes}
+                              </p>
+                            )}
+                            {treatment.sdr_profile && (
+                              <p className="text-xs mt-2 text-muted-foreground">
+                                Traité initialement par SDR: {treatment.sdr_profile.first_name} {treatment.sdr_profile.last_name}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Prospects rejetés SALES */}
+                      {treatment.isFromArchives && (
+                        <div className="space-y-2">
+                          <div className="text-sm bg-red-50 p-3 rounded border border-red-200">
+                            <div className="font-semibold text-red-800 mb-2 flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              Rejeté par: {treatment.profiles?.first_name} {treatment.profiles?.last_name}
+                            </div>
+                            {treatment.commentaire_rejet && (
+                              <p className="text-sm mb-2">
+                                <strong>Commentaire :</strong> {treatment.commentaire_rejet}
+                              </p>
+                            )}
+                            {treatment.raison_rejet && (
+                              <p className="text-sm text-red-700">
+                                <strong>Raison :</strong> {treatment.raison_rejet}
+                              </p>
+                            )}
+                            {treatment.sdr_profile && (
+                              <p className="text-xs mt-2 text-muted-foreground">
+                                Traité initialement par SDR: {treatment.sdr_profile.first_name} {treatment.sdr_profile.last_name}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Champs modifiés */}
                       {treatment.modified_fields && treatment.isFromModification && <div className="text-sm bg-blue-50 p-2 rounded">
