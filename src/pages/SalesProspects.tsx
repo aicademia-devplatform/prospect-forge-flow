@@ -33,6 +33,33 @@ interface SDRProspect {
   created_at: string;
 }
 
+interface ValidatedProspect {
+  id: string;
+  lead_email: string;
+  source_table: string;
+  source_id: string;
+  rdv_date: string;
+  rdv_notes: string | null;
+  commentaire_validation: string;
+  validated_at: string;
+  validated_by: string;
+  sales_user_id: string;
+  sdr_id: string;
+}
+
+interface ArchivedProspect {
+  id: string;
+  lead_email: string;
+  source_table: string;
+  source_id: string;
+  commentaire_rejet: string;
+  raison_rejet: string | null;
+  rejected_at: string;
+  rejected_by: string;
+  sales_user_id: string;
+  sdr_id: string | null;
+}
+
 interface ContactData {
   email: string;
   first_name?: string;
@@ -49,6 +76,8 @@ const SalesProspects = () => {
   const { user, userRole } = useAuth();
   
   const [prospects, setProspects] = useState<SDRProspect[]>([]);
+  const [validatedProspects, setValidatedProspects] = useState<ValidatedProspect[]>([]);
+  const [archivedProspects, setArchivedProspects] = useState<ArchivedProspect[]>([]);
   const [contactsData, setContactsData] = useState<Record<string, ContactData>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -83,27 +112,50 @@ const SalesProspects = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    fetchProspects();
+    fetchAllProspects();
   }, [user]);
 
-  const fetchProspects = async () => {
+  const fetchAllProspects = async () => {
     try {
       setLoading(true);
       if (!user) return;
 
-      // Récupérer tous les prospects des SDR via la vue
-      const { data, error } = await supabase
+      // Récupérer les prospects prévalidés (SDR)
+      const { data: prevalidatedData, error: prevalidatedError } = await supabase
         .from('sales_sdr_prospects_view')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (prevalidatedError) throw prevalidatedError;
+      setProspects((prevalidatedData || []) as SDRProspect[]);
 
-      setProspects((data || []) as SDRProspect[]);
+      // Récupérer les prospects validés avec RDV
+      const { data: validatedData, error: validatedError } = await supabase
+        .from('prospects_valides')
+        .select('*')
+        .order('validated_at', { ascending: false });
+
+      if (validatedError) throw validatedError;
+      setValidatedProspects((validatedData || []) as ValidatedProspect[]);
+
+      // Récupérer les prospects archivés/rejetés
+      const { data: archivedData, error: archivedError } = await supabase
+        .from('prospects_archives')
+        .select('*')
+        .order('rejected_at', { ascending: false });
+
+      if (archivedError) throw archivedError;
+      setArchivedProspects((archivedData || []) as ArchivedProspect[]);
 
       // Récupérer les informations des contacts
-      const emails = [...new Set((data || []).map(p => p.lead_email))];
-      await fetchContactsData(emails);
+      const allEmails = [
+        ...new Set([
+          ...(prevalidatedData || []).map(p => p.lead_email),
+          ...(validatedData || []).map(p => p.lead_email),
+          ...(archivedData || []).map(p => p.lead_email),
+        ])
+      ];
+      await fetchContactsData(allEmails);
     } catch (error) {
       console.error('Error fetching prospects:', error);
     } finally {
@@ -202,7 +254,7 @@ const SalesProspects = () => {
   };
 
   const handleValidationSuccess = () => {
-    fetchProspects(); // Rafraîchir la liste
+    fetchAllProspects(); // Rafraîchir la liste
   };
 
   const containerVariants = {
@@ -259,10 +311,10 @@ const SalesProspects = () => {
             Prospects prévalidés ({prospects.length})
           </TabsTrigger>
           <TabsTrigger value="rappeler">
-            À rappeler ({prospects.filter(p => p.prospect_type === 'rappeler').length})
+            Rendez-vous programmés ({validatedProspects.length})
           </TabsTrigger>
           <TabsTrigger value="traites">
-            Traités ({prospects.filter(p => p.prospect_type === 'traites').length})
+            Prospects traités ({validatedProspects.length + archivedProspects.length})
           </TabsTrigger>
         </TabsList>
 
@@ -390,9 +442,9 @@ const SalesProspects = () => {
           <motion.div variants={itemVariants}>
             <Card>
               <CardHeader>
-                <CardTitle>Prospects à rappeler</CardTitle>
+                <CardTitle>Rendez-vous programmés</CardTitle>
                 <CardDescription>
-                  Prospects identifiés par les SDR nécessitant un rappel
+                  Prospects validés avec rendez-vous planifiés
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -402,83 +454,75 @@ const SalesProspects = () => {
                       <TableRow>
                         <TableHead>Prospect</TableHead>
                         <TableHead>Entreprise</TableHead>
-                        <TableHead>SDR</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead>Date d'action</TableHead>
-                        <TableHead>Notes</TableHead>
+                        <TableHead>Date RDV</TableHead>
+                        <TableHead>Commentaire</TableHead>
+                        <TableHead>Notes RDV</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredProspects.length === 0 ? (
+                      {validatedProspects.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground">
-                            Aucun prospect à rappeler
+                          <TableCell colSpan={6} className="text-center text-muted-foreground">
+                            Aucun rendez-vous programmé
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredProspects.map((prospect) => {
-                          const contact = contactsData[prospect.lead_email];
-                          return (
-                            <TableRow key={prospect.id}>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {contact?.first_name} {contact?.last_name}
-                                  </span>
-                                  <span className="text-sm text-muted-foreground flex items-center gap-1">
-                                    <Mail className="h-3 w-3" />
-                                    {prospect.lead_email}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>{contact?.company || '-'}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-muted-foreground" />
+                        validatedProspects
+                          .filter(prospect => {
+                            const contact = contactsData[prospect.lead_email];
+                            const searchLower = searchTerm.toLowerCase();
+                            return !searchTerm || 
+                              prospect.lead_email.toLowerCase().includes(searchLower) ||
+                              (contact?.first_name?.toLowerCase().includes(searchLower)) ||
+                              (contact?.last_name?.toLowerCase().includes(searchLower)) ||
+                              (contact?.company?.toLowerCase().includes(searchLower));
+                          })
+                          .map((prospect) => {
+                            const contact = contactsData[prospect.lead_email];
+                            return (
+                              <TableRow key={prospect.id}>
+                                <TableCell>
                                   <div className="flex flex-col">
-                                    <span className="text-sm">
-                                      {prospect.sdr_first_name} {prospect.sdr_last_name}
+                                    <span className="font-medium">
+                                      {contact?.first_name} {contact?.last_name}
                                     </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {prospect.sdr_email}
+                                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                                      <Mail className="h-3 w-3" />
+                                      {prospect.lead_email}
                                     </span>
                                   </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {prospect.statut_prospect && (
-                                  <Badge variant="outline">{prospect.statut_prospect}</Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {prospect.date_action && (
+                                </TableCell>
+                                <TableCell>{contact?.company || '-'}</TableCell>
+                                <TableCell>
                                   <div className="flex items-center gap-1 text-sm">
                                     <Calendar className="h-3 w-3" />
-                                    {formatDate(prospect.date_action)}
+                                    {formatDate(prospect.rdv_date)}
                                   </div>
-                                )}
-                              </TableCell>
-                              <TableCell className="max-w-xs">
-                                {prospect.notes_sales && (
+                                </TableCell>
+                                <TableCell className="max-w-xs">
                                   <div className="flex items-start gap-1">
                                     <FileText className="h-3 w-3 mt-1 text-muted-foreground flex-shrink-0" />
-                                    <span className="text-sm line-clamp-2">{prospect.notes_sales}</span>
+                                    <span className="text-sm line-clamp-2">{prospect.commentaire_validation}</span>
                                   </div>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewProspect(prospect.lead_email)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
+                                </TableCell>
+                                <TableCell className="max-w-xs">
+                                  {prospect.rdv_notes && (
+                                    <span className="text-sm line-clamp-2">{prospect.rdv_notes}</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleViewProspect(prospect.lead_email)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
                       )}
                     </TableBody>
                   </Table>
@@ -494,7 +538,7 @@ const SalesProspects = () => {
               <CardHeader>
                 <CardTitle>Prospects traités</CardTitle>
                 <CardDescription>
-                  Liste des prospects finalisés par les SDR
+                  Tous les prospects validés ou rejetés par le sales
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -504,83 +548,128 @@ const SalesProspects = () => {
                       <TableRow>
                         <TableHead>Prospect</TableHead>
                         <TableHead>Entreprise</TableHead>
-                        <TableHead>SDR</TableHead>
                         <TableHead>Statut</TableHead>
-                        <TableHead>Date de finalisation</TableHead>
-                        <TableHead>Notes</TableHead>
+                        <TableHead>Date de traitement</TableHead>
+                        <TableHead>Commentaire</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredProspects.length === 0 ? (
+                      {validatedProspects.length === 0 && archivedProspects.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground">
+                          <TableCell colSpan={6} className="text-center text-muted-foreground">
                             Aucun prospect traité
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredProspects.map((prospect) => {
-                          const contact = contactsData[prospect.lead_email];
-                          return (
-                            <TableRow key={prospect.id}>
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {contact?.first_name} {contact?.last_name}
-                                  </span>
-                                  <span className="text-sm text-muted-foreground flex items-center gap-1">
-                                    <Mail className="h-3 w-3" />
-                                    {prospect.lead_email}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>{contact?.company || '-'}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-muted-foreground" />
-                                  <div className="flex flex-col">
-                                    <span className="text-sm">
-                                      {prospect.sdr_first_name} {prospect.sdr_last_name}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {prospect.sdr_email}
-                                    </span>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                {prospect.statut_prospect && (
-                                  <Badge variant="outline">{prospect.statut_prospect}</Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {prospect.completed_at && (
-                                  <div className="flex items-center gap-1 text-sm">
-                                    <Calendar className="h-3 w-3" />
-                                    {formatDate(prospect.completed_at)}
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell className="max-w-xs">
-                                {prospect.notes_sales && (
-                                  <div className="flex items-start gap-1">
-                                    <FileText className="h-3 w-3 mt-1 text-muted-foreground flex-shrink-0" />
-                                    <span className="text-sm line-clamp-2">{prospect.notes_sales}</span>
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewProspect(prospect.lead_email)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
+                        <>
+                          {validatedProspects
+                            .filter(prospect => {
+                              const contact = contactsData[prospect.lead_email];
+                              const searchLower = searchTerm.toLowerCase();
+                              return !searchTerm || 
+                                prospect.lead_email.toLowerCase().includes(searchLower) ||
+                                (contact?.first_name?.toLowerCase().includes(searchLower)) ||
+                                (contact?.last_name?.toLowerCase().includes(searchLower)) ||
+                                (contact?.company?.toLowerCase().includes(searchLower));
+                            })
+                            .map((prospect) => {
+                              const contact = contactsData[prospect.lead_email];
+                              return (
+                                <TableRow key={prospect.id}>
+                                  <TableCell>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">
+                                        {contact?.first_name} {contact?.last_name}
+                                      </span>
+                                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                                        <Mail className="h-3 w-3" />
+                                        {prospect.lead_email}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{contact?.company || '-'}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="default" className="bg-green-600">Validé</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-1 text-sm">
+                                      <Calendar className="h-3 w-3" />
+                                      {formatDate(prospect.validated_at)}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="max-w-xs">
+                                    <div className="flex items-start gap-1">
+                                      <FileText className="h-3 w-3 mt-1 text-muted-foreground flex-shrink-0" />
+                                      <span className="text-sm line-clamp-2">{prospect.commentaire_validation}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleViewProspect(prospect.lead_email)}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          {archivedProspects
+                            .filter(prospect => {
+                              const contact = contactsData[prospect.lead_email];
+                              const searchLower = searchTerm.toLowerCase();
+                              return !searchTerm || 
+                                prospect.lead_email.toLowerCase().includes(searchLower) ||
+                                (contact?.first_name?.toLowerCase().includes(searchLower)) ||
+                                (contact?.last_name?.toLowerCase().includes(searchLower)) ||
+                                (contact?.company?.toLowerCase().includes(searchLower));
+                            })
+                            .map((prospect) => {
+                              const contact = contactsData[prospect.lead_email];
+                              return (
+                                <TableRow key={prospect.id}>
+                                  <TableCell>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">
+                                        {contact?.first_name} {contact?.last_name}
+                                      </span>
+                                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                                        <Mail className="h-3 w-3" />
+                                        {prospect.lead_email}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{contact?.company || '-'}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="destructive">Rejeté</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-1 text-sm">
+                                      <Calendar className="h-3 w-3" />
+                                      {formatDate(prospect.rejected_at)}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="max-w-xs">
+                                    <div className="flex items-start gap-1">
+                                      <FileText className="h-3 w-3 mt-1 text-muted-foreground flex-shrink-0" />
+                                      <span className="text-sm line-clamp-2">{prospect.commentaire_rejet}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleViewProspect(prospect.lead_email)}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                        </>
                       )}
                     </TableBody>
                   </Table>
