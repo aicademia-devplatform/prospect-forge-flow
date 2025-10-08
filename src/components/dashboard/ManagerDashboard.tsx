@@ -10,10 +10,11 @@ import DashboardLoader from './DashboardLoader';
 import { TeamStatsCard } from './TeamStatsCard';
 
 interface ManagerStats {
-  totalSalesTeam: number;
+  totalSDRTeam: number;
   totalAssignedProspects: number;
-  completedThisWeek: number;
+  completedToday: number;
   pendingCallbacks: number;
+  validatedProspects: number;
   conversionRate: number;
   teamActivity: number;
 }
@@ -22,10 +23,11 @@ const ManagerDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [stats, setStats] = useState<ManagerStats>({
-    totalSalesTeam: 0,
+    totalSDRTeam: 0,
     totalAssignedProspects: 0,
-    completedThisWeek: 0,
+    completedToday: 0,
     pendingCallbacks: 0,
+    validatedProspects: 0,
     conversionRate: 0,
     teamActivity: 0,
   });
@@ -37,31 +39,61 @@ const ManagerDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
 
-      const salesResult = await supabase
+      // Récupérer le nombre de SDR dans l'équipe
+      const { count: sdrCount } = await supabase
         .from('user_roles')
         .select('*', { count: 'exact', head: true })
-        .eq('role', 'sales');
+        .eq('role', 'sdr');
 
-      const activityResult = await supabase
-        .from('prospect_modifications')
+      // Récupérer le total des prospects assignés actifs
+      const { count: assignedCount } = await supabase
+        .from('sales_assignments')
+        .select('*', { count: 'exact', head: true });
+
+      // Récupérer les prospects traités aujourd'hui
+      const { count: completedTodayCount } = await supabase
+        .from('prospects_traites')
         .select('*', { count: 'exact', head: true })
-        .gte('modified_at', weekAgo);
+        .gte('completed_at', todayISO);
 
-      const salesCount = salesResult.count || 0;
-      const assignedCount = 0; // À implémenter avec la table d'assignations
-      const activityCount = activityResult.count || 0;
-      const callbacksCount = 0; // À implémenter avec la table prospects_a_rappeler
-      const completedCount = activityCount;
+      // Récupérer les rappels planifiés
+      const { count: callbacksCount } = await supabase
+        .from('prospects_a_rappeler')
+        .select('*', { count: 'exact', head: true });
+
+      // Récupérer les prospects validés par les sales
+      const { count: validatedCount } = await supabase
+        .from('prospects_valides')
+        .select('*', { count: 'exact', head: true });
+
+      // Récupérer l'activité totale (traitements + rappels)
+      const { data: traitesData } = await supabase
+        .from('prospects_traites')
+        .select('id');
+      
+      const { data: rappelData } = await supabase
+        .from('prospects_a_rappeler')
+        .select('id');
+
+      const totalActivity = (traitesData?.length || 0) + (rappelData?.length || 0);
+
+      // Calculer le taux de conversion (validés / assignés)
+      const conversionRate = assignedCount && assignedCount > 0
+        ? Math.round((validatedCount || 0) / assignedCount * 100)
+        : 0;
 
       setStats({
-        totalSalesTeam: salesCount || 0,
+        totalSDRTeam: sdrCount || 0,
         totalAssignedProspects: assignedCount || 0,
-        completedThisWeek: completedCount || 0,
+        completedToday: completedTodayCount || 0,
         pendingCallbacks: callbacksCount || 0,
-        conversionRate: assignedCount ? Math.round(((completedCount || 0) / assignedCount) * 100) : 0,
-        teamActivity: activityCount || 0,
+        validatedProspects: validatedCount || 0,
+        conversionRate: conversionRate,
+        teamActivity: totalActivity,
       });
     } catch (error) {
       console.error('Error fetching manager stats:', error);
@@ -117,13 +149,13 @@ const ManagerDashboard = () => {
             onClick={() => navigate('/team-stats?type=team')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Équipe commerciale</CardTitle>
+              <CardTitle className="text-sm font-medium">Équipe SDR</CardTitle>
               <div className="bg-[hsl(var(--accent-blue-light))] p-2 rounded-lg">
                 <Users className="h-5 w-5 text-[hsl(var(--accent-blue))]" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalSalesTeam}</div>
+              <div className="text-2xl font-bold">{stats.totalSDRTeam}</div>
               <p className="text-xs text-muted-foreground">
                 Membres actifs
               </p>
@@ -157,15 +189,15 @@ const ManagerDashboard = () => {
             onClick={() => navigate('/team-stats?type=completed')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Traités cette semaine</CardTitle>
+              <CardTitle className="text-sm font-medium">Traités aujourd'hui</CardTitle>
               <div className="bg-[hsl(var(--accent-purple-light))] p-2 rounded-lg">
                 <CheckCircle2 className="h-5 w-5 text-[hsl(var(--accent-purple))]" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.completedThisWeek}</div>
+              <div className="text-2xl font-bold">{stats.completedToday}</div>
               <p className="text-xs text-muted-foreground">
-                7 derniers jours
+                Prospects contactés
               </p>
             </CardContent>
           </Card>
@@ -194,18 +226,18 @@ const ManagerDashboard = () => {
         <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
           <Card 
             className="border-l-4 border-l-[hsl(var(--accent-pink))] transition-all duration-300 hover:shadow-lg cursor-pointer"
-            onClick={() => navigate('/team-stats?type=conversion')}
+            onClick={() => navigate('/team-stats?type=validated')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taux de conversion</CardTitle>
+              <CardTitle className="text-sm font-medium">Prospects validés</CardTitle>
               <div className="bg-[hsl(var(--accent-pink-light))] p-2 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-[hsl(var(--accent-pink))]" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.conversionRate}%</div>
+              <div className="text-2xl font-bold">{stats.validatedProspects}</div>
               <p className="text-xs text-muted-foreground">
-                Cette semaine
+                RDV planifiés
               </p>
             </CardContent>
           </Card>
@@ -214,18 +246,18 @@ const ManagerDashboard = () => {
         <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.2 }}>
           <Card 
             className="border-l-4 border-l-[hsl(var(--accent-cyan))] transition-all duration-300 hover:shadow-lg cursor-pointer"
-            onClick={() => navigate('/team-stats?type=activity')}
+            onClick={() => navigate('/team-stats?type=conversion')}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Activité équipe</CardTitle>
+              <CardTitle className="text-sm font-medium">Taux de conversion</CardTitle>
               <div className="bg-[hsl(var(--accent-cyan-light))] p-2 rounded-lg">
                 <Clock className="h-5 w-5 text-[hsl(var(--accent-cyan))]" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.teamActivity}</div>
+              <div className="text-2xl font-bold">{stats.conversionRate}%</div>
               <p className="text-xs text-muted-foreground">
-                Actions (7 derniers jours)
+                Assignés → Validés
               </p>
             </CardContent>
           </Card>
@@ -281,25 +313,31 @@ const ManagerDashboard = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Taux d'activité</span>
+              <span className="text-sm">Activité par SDR</span>
               <span className="text-sm font-medium">
-                {stats.totalSalesTeam > 0 
-                  ? Math.round((stats.teamActivity / stats.totalSalesTeam) * 10) / 10
+                {stats.totalSDRTeam > 0 
+                  ? Math.round((stats.teamActivity / stats.totalSDRTeam) * 10) / 10
                   : 0} actions/membre
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Prospects par membre</span>
+              <span className="text-sm">Prospects par SDR</span>
               <span className="text-sm font-medium">
-                {stats.totalSalesTeam > 0
-                  ? Math.round(stats.totalAssignedProspects / stats.totalSalesTeam)
+                {stats.totalSDRTeam > 0
+                  ? Math.round(stats.totalAssignedProspects / stats.totalSDRTeam)
                   : 0}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Objectif hebdomadaire</span>
+              <span className="text-sm">Prospects validés</span>
               <span className="text-sm font-medium text-green-600">
-                {stats.completedThisWeek >= 50 ? 'Atteint' : 'En cours'}
+                {stats.validatedProspects} RDV
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Performance</span>
+              <span className="text-sm font-medium">
+                {stats.conversionRate >= 30 ? '🔥 Excellent' : stats.conversionRate >= 15 ? '✅ Bon' : '⚠️ À améliorer'}
               </span>
             </div>
           </CardContent>
