@@ -400,7 +400,7 @@ const ProspectDetails: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/prospects')} className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             Retour
           </Button>
