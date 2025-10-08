@@ -24,6 +24,7 @@ const TeamStats = () => {
   const { user } = useAuth();
   const statType = searchParams.get('type') || 'conversion';
   const [stats, setStats] = useState<SDRStats[]>([]);
+  const [totalSDRCount, setTotalSDRCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +35,15 @@ const TeamStats = () => {
     try {
       if (!user) return;
 
+      // Récupérer le nombre total de SDR
+      const { count: sdrCount } = await supabase
+        .from('user_roles')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'sdr');
+
+      setTotalSDRCount(sdrCount || 0);
+
+      // Récupérer les statistiques par SDR
       const { data, error } = await supabase.rpc('get_manager_team_stats', {
         manager_user_id: user.id
       });
@@ -161,7 +171,7 @@ const TeamStats = () => {
               <Users className="h-5 w-5 text-[hsl(var(--accent-blue))]" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{stats.length}</div>
+              <div className="text-3xl font-bold">{totalSDRCount}</div>
               <p className="text-xs text-muted-foreground">SDR dans l'équipe</p>
             </CardContent>
           </Card>
