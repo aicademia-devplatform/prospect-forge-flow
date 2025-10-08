@@ -6,13 +6,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Eye, Search, User, Calendar, FileText, Mail } from 'lucide-react';
+import { Eye, Search, User, Calendar, FileText, Mail, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { createProspectUrl } from '@/lib/emailCrypto';
 import moment from 'moment';
 import 'moment/locale/fr';
 import { motion } from 'framer-motion';
+import { ValiderProspectDialog } from '@/components/ValiderProspectDialog';
 
 interface SDRProspect {
   id: string;
@@ -51,6 +52,8 @@ const SalesProspects = () => {
   const [contactsData, setContactsData] = useState<Record<string, ContactData>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProspect, setSelectedProspect] = useState<SDRProspect | null>(null);
+  const [isValidationDialogOpen, setIsValidationDialogOpen] = useState(false);
 
   // Déterminer l'onglet actif depuis l'URL
   const getActiveTabFromPath = () => {
@@ -191,6 +194,15 @@ const SalesProspects = () => {
   const handleViewProspect = (email: string) => {
     const encryptedEmail = createProspectUrl(email);
     navigate(`/prospect/${encryptedEmail}`);
+  };
+
+  const handleTraiterProspect = (prospect: SDRProspect) => {
+    setSelectedProspect(prospect);
+    setIsValidationDialogOpen(true);
+  };
+
+  const handleValidationSuccess = () => {
+    fetchProspects(); // Rafraîchir la liste
   };
 
   const containerVariants = {
@@ -344,13 +356,23 @@ const SalesProspects = () => {
                                 )}
                               </TableCell>
                               <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewProspect(prospect.lead_email)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
+                                <div className="flex gap-2 justify-end">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleViewProspect(prospect.lead_email)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={() => handleTraiterProspect(prospect)}
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Traiter
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
@@ -568,6 +590,15 @@ const SalesProspects = () => {
           </motion.div>
         </TabsContent>
       </Tabs>
+
+      {selectedProspect && (
+        <ValiderProspectDialog
+          open={isValidationDialogOpen}
+          onOpenChange={setIsValidationDialogOpen}
+          prospect={selectedProspect}
+          onSuccess={handleValidationSuccess}
+        />
+      )}
     </motion.div>
   );
 };

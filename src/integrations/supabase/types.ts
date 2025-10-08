@@ -2198,6 +2198,72 @@ export type Database = {
           },
         ]
       }
+      prospects_archives: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          commentaire_rejet: string
+          created_at: string
+          custom_data: Json | null
+          custom_table_name: string | null
+          date_action: string | null
+          id: string
+          lead_email: string
+          notes_sales: string | null
+          original_traite_id: string | null
+          raison_rejet: string | null
+          rejected_at: string
+          rejected_by: string
+          sales_user_id: string
+          sdr_id: string | null
+          source_id: string
+          source_table: string
+          statut_prospect: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          commentaire_rejet: string
+          created_at?: string
+          custom_data?: Json | null
+          custom_table_name?: string | null
+          date_action?: string | null
+          id?: string
+          lead_email: string
+          notes_sales?: string | null
+          original_traite_id?: string | null
+          raison_rejet?: string | null
+          rejected_at?: string
+          rejected_by: string
+          sales_user_id: string
+          sdr_id?: string | null
+          source_id: string
+          source_table: string
+          statut_prospect?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          commentaire_rejet?: string
+          created_at?: string
+          custom_data?: Json | null
+          custom_table_name?: string | null
+          date_action?: string | null
+          id?: string
+          lead_email?: string
+          notes_sales?: string | null
+          original_traite_id?: string | null
+          raison_rejet?: string | null
+          rejected_at?: string
+          rejected_by?: string
+          sales_user_id?: string
+          sdr_id?: string | null
+          source_id?: string
+          source_table?: string
+          statut_prospect?: string | null
+        }
+        Relationships: []
+      }
       prospects_traites: {
         Row: {
           assigned_at: string
@@ -2265,6 +2331,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      prospects_valides: {
+        Row: {
+          assigned_at: string | null
+          assigned_by: string | null
+          commentaire_validation: string | null
+          created_at: string
+          custom_data: Json | null
+          custom_table_name: string | null
+          date_action: string | null
+          id: string
+          lead_email: string
+          notes_sales: string | null
+          original_traite_id: string
+          rdv_date: string
+          rdv_notes: string | null
+          sales_user_id: string
+          sdr_id: string
+          source_id: string
+          source_table: string
+          statut_prospect: string | null
+          validated_at: string
+          validated_by: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          commentaire_validation?: string | null
+          created_at?: string
+          custom_data?: Json | null
+          custom_table_name?: string | null
+          date_action?: string | null
+          id?: string
+          lead_email: string
+          notes_sales?: string | null
+          original_traite_id: string
+          rdv_date: string
+          rdv_notes?: string | null
+          sales_user_id: string
+          sdr_id: string
+          source_id: string
+          source_table: string
+          statut_prospect?: string | null
+          validated_at?: string
+          validated_by: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_by?: string | null
+          commentaire_validation?: string | null
+          created_at?: string
+          custom_data?: Json | null
+          custom_table_name?: string | null
+          date_action?: string | null
+          id?: string
+          lead_email?: string
+          notes_sales?: string | null
+          original_traite_id?: string
+          rdv_date?: string
+          rdv_notes?: string | null
+          sales_user_id?: string
+          sdr_id?: string
+          source_id?: string
+          source_table?: string
+          statut_prospect?: string | null
+          validated_at?: string
+          validated_by?: string
+        }
+        Relationships: []
       }
       sales_assignments: {
         Row: {
