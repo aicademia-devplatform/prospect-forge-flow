@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Eye, Search, User, Calendar, FileText, Mail, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { createProspectUrl } from '@/lib/emailCrypto';
+import { encryptEmail } from '@/lib/emailCrypto';
 import { ValiderProspectDialog } from '@/components/ValiderProspectDialog';
 import moment from 'moment';
 import 'moment/locale/fr';
@@ -244,7 +244,7 @@ const SalesProspects = () => {
   });
 
   const handleViewProspect = (email: string) => {
-    const encryptedEmail = createProspectUrl(email);
+    const encryptedEmail = encryptEmail(email);
     navigate(`/prospect/${encryptedEmail}`);
   };
 
