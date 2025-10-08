@@ -99,6 +99,38 @@ Deno.serve(async (req) => {
 
     console.log('Successfully moved prospect to traités')
 
+    // Envoyer une notification au manager
+    if (assignment.manager_id) {
+      // Récupérer les infos du SDR
+      const { data: sdrProfile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email')
+        .eq('id', user.id)
+        .single()
+
+      const sdrName = sdrProfile 
+        ? `${sdrProfile.first_name || ''} ${sdrProfile.last_name || ''}`.trim() || sdrProfile.email
+        : 'Un SDR'
+
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: assignment.manager_id,
+          type: 'prospect_treated',
+          title: 'Prospect traité',
+          message: `${sdrName} a traité le prospect ${assignment.lead_email}`,
+          data: {
+            prospect_email: assignment.lead_email,
+            sdr_id: user.id,
+            sdr_name: sdrName,
+            assignment_id: assignmentId,
+            statut_prospect: statut_prospect || assignment.statut_prospect
+          }
+        })
+
+      console.log('Notification sent to manager:', assignment.manager_id)
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
