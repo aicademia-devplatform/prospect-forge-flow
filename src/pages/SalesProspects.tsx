@@ -120,16 +120,7 @@ const SalesProspects = () => {
       setLoading(true);
       if (!user) return;
 
-      // Récupérer les prospects prévalidés (SDR)
-      const { data: prevalidatedData, error: prevalidatedError } = await supabase
-        .from('sales_sdr_prospects_view')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (prevalidatedError) throw prevalidatedError;
-      setProspects((prevalidatedData || []) as SDRProspect[]);
-
-      // Récupérer les prospects validés avec RDV
+      // Récupérer d'abord les prospects validés avec RDV
       const { data: validatedData, error: validatedError } = await supabase
         .from('prospects_valides')
         .select('*')
@@ -147,10 +138,31 @@ const SalesProspects = () => {
       if (archivedError) throw archivedError;
       setArchivedProspects((archivedData || []) as ArchivedProspect[]);
 
+      // Créer un Set des emails déjà traités (validés ou archivés)
+      const treatedEmails = new Set([
+        ...(validatedData || []).map(p => p.lead_email),
+        ...(archivedData || []).map(p => p.lead_email),
+      ]);
+
+      // Récupérer les prospects prévalidés (SDR) en excluant ceux déjà traités
+      const { data: prevalidatedData, error: prevalidatedError } = await supabase
+        .from('sales_sdr_prospects_view')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (prevalidatedError) throw prevalidatedError;
+      
+      // Filtrer les prospects déjà traités
+      const filteredPrevalidated = (prevalidatedData || []).filter(
+        (p: SDRProspect) => !treatedEmails.has(p.lead_email)
+      );
+      
+      setProspects(filteredPrevalidated as SDRProspect[]);
+
       // Récupérer les informations des contacts
       const allEmails = [
         ...new Set([
-          ...(prevalidatedData || []).map(p => p.lead_email),
+          ...filteredPrevalidated.map(p => p.lead_email),
           ...(validatedData || []).map(p => p.lead_email),
           ...(archivedData || []).map(p => p.lead_email),
         ])
