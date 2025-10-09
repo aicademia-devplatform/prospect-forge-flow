@@ -276,6 +276,32 @@ const ContactDetails: React.FC = () => {
       return <span className="text-muted-foreground italic">Non renseigné</span>;
     }
     
+    // Handle objects (JSONB fields like hubspot_owner_raw, properties_raw, etc.)
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      return (
+        <details className="cursor-pointer">
+          <summary className="text-primary hover:underline">Voir les détails</summary>
+          <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-40">
+            {JSON.stringify(value, null, 2)}
+          </pre>
+        </details>
+      );
+    }
+    
+    // Handle arrays
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return <span className="text-muted-foreground italic">Vide</span>;
+      }
+      return (
+        <div className="flex flex-wrap gap-1">
+          {value.map((item, index) => (
+            <Badge key={index} variant="secondary">{String(item)}</Badge>
+          ))}
+        </div>
+      );
+    }
+    
     if (typeof value === 'boolean') {
       return <Badge variant={value ? 'default' : 'secondary'}>{value ? 'Oui' : 'Non'}</Badge>;
     }
@@ -310,15 +336,15 @@ const ContactDetails: React.FC = () => {
         const date = new Date(value);
         return <span>{date.toLocaleString('fr-FR')}</span>;
       } catch {
-        return <span>{value}</span>;
+        return <span>{String(value)}</span>;
       }
     }
 
     if (columnName.includes('url') && value) {
       return (
-        <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+        <a href={String(value)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
           <Globe className="h-3 w-3" />
-          {value}
+          {String(value)}
         </a>
       );
     }
@@ -327,7 +353,7 @@ const ContactDetails: React.FC = () => {
       return (
         <a href={`mailto:${value}`} className="text-primary hover:underline flex items-center gap-1">
           <Mail className="h-3 w-3" />
-          {value}
+          {String(value)}
         </a>
       );
     }
@@ -336,12 +362,12 @@ const ContactDetails: React.FC = () => {
       return (
         <a href={`tel:${value}`} className="text-primary hover:underline flex items-center gap-1">
           <Phone className="h-3 w-3" />
-          {value}
+          {String(value)}
         </a>
       );
     }
 
-    return <span>{value}</span>;
+    return <span>{String(value)}</span>;
   };
 
   const getDisplayName = () => {
@@ -359,23 +385,43 @@ const ContactDetails: React.FC = () => {
   // Organiser tous les champs disponibles par catégories
   const getAllAvailableFields = () => {
     if (!contact) return [];
-    return Object.keys(contact).filter(field => 
-      contact[field] !== null && 
-      contact[field] !== undefined && 
-      contact[field] !== '' &&
-      field !== 'id' // Exclure l'ID car déjà affiché
-    );
+    return Object.keys(contact).filter(field => {
+      const value = contact[field];
+      // Exclure les champs vides, null, undefined et l'ID
+      if (value === null || value === undefined || value === '' || field === 'id') {
+        return false;
+      }
+      // Exclure les objets vides
+      if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) {
+        return false;
+      }
+      // Exclure les tableaux vides
+      if (Array.isArray(value) && value.length === 0) {
+        return false;
+      }
+      return true;
+    });
   };
 
   // Fonction pour obtenir les champs disponibles pour un contact spécifique
   const getAllAvailableFieldsForContact = (contactData: any) => {
     if (!contactData) return [];
-    return Object.keys(contactData).filter(field => 
-      contactData[field] !== null && 
-      contactData[field] !== undefined && 
-      contactData[field] !== '' &&
-      field !== 'id' // Exclure l'ID car déjà affiché
-    );
+    return Object.keys(contactData).filter(field => {
+      const value = contactData[field];
+      // Exclure les champs vides, null, undefined et l'ID
+      if (value === null || value === undefined || value === '' || field === 'id') {
+        return false;
+      }
+      // Exclure les objets vides
+      if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) {
+        return false;
+      }
+      // Exclure les tableaux vides
+      if (Array.isArray(value) && value.length === 0) {
+        return false;
+      }
+      return true;
+    });
   };
 
   const categorizeFields = (fields: string[]) => {
