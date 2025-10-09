@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Target, TrendingUp, CheckCircle2, Clock, Phone } from 'lucide-react';
+import { Users, Target, TrendingUp, CheckCircle2, Clock, Phone, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import DashboardLoader from './DashboardLoader';
 import { TeamStatsCard } from './TeamStatsCard';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 interface ManagerStats {
   totalSDRTeam: number;
@@ -17,6 +18,13 @@ interface ManagerStats {
   validatedProspects: number;
   conversionRate: number;
   teamActivity: number;
+}
+
+interface EmailStats {
+  emailsSent: number;
+  emailsOpened: number;
+  emailsReplied: number;
+  emailsBounced: number;
 }
 
 const ManagerDashboard = () => {
@@ -30,6 +38,12 @@ const ManagerDashboard = () => {
     validatedProspects: 0,
     conversionRate: 0,
     teamActivity: 0,
+  });
+  const [emailStats, setEmailStats] = useState<EmailStats>({
+    emailsSent: 0,
+    emailsOpened: 0,
+    emailsReplied: 0,
+    emailsBounced: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -86,6 +100,27 @@ const ManagerDashboard = () => {
         ? Math.round((validatedCount || 0) / assignedCount * 100)
         : 0;
 
+      // Récupérer les statistiques d'email depuis apollo_contacts
+      const { count: emailSentCount } = await supabase
+        .from('apollo_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('email_sent', true);
+
+      const { count: emailOpenCount } = await supabase
+        .from('apollo_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('email_open', true);
+
+      const { count: emailRepliedCount } = await supabase
+        .from('apollo_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('replied', true);
+
+      const { count: emailBouncedCount } = await supabase
+        .from('apollo_contacts')
+        .select('*', { count: 'exact', head: true })
+        .eq('email_bounced', true);
+
       setStats({
         totalSDRTeam: sdrCount || 0,
         totalAssignedProspects: assignedCount || 0,
@@ -94,6 +129,13 @@ const ManagerDashboard = () => {
         validatedProspects: validatedCount || 0,
         conversionRate: conversionRate,
         teamActivity: totalActivity,
+      });
+
+      setEmailStats({
+        emailsSent: emailSentCount || 0,
+        emailsOpened: emailOpenCount || 0,
+        emailsReplied: emailRepliedCount || 0,
+        emailsBounced: emailBouncedCount || 0,
       });
     } catch (error) {
       console.error('Error fetching manager stats:', error);
@@ -267,6 +309,71 @@ const ManagerDashboard = () => {
       {/* Statistiques de l'équipe SDR */}
       <motion.div variants={itemVariants}>
         <TeamStatsCard />
+      </motion.div>
+
+      {/* Statistiques des emails */}
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Statistiques des emails
+            </CardTitle>
+            <CardDescription>État des campagnes d'emailing</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Envoyés', value: emailStats.emailsSent, color: 'hsl(var(--accent-blue))' },
+                      { name: 'Ouverts', value: emailStats.emailsOpened, color: 'hsl(var(--accent-green))' },
+                      { name: 'Répondus', value: emailStats.emailsReplied, color: 'hsl(var(--accent-purple))' },
+                      { name: 'Rebondis', value: emailStats.emailsBounced, color: 'hsl(var(--accent-orange))' },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {[
+                      { name: 'Envoyés', value: emailStats.emailsSent, color: 'hsl(var(--accent-blue))' },
+                      { name: 'Ouverts', value: emailStats.emailsOpened, color: 'hsl(var(--accent-green))' },
+                      { name: 'Répondus', value: emailStats.emailsReplied, color: 'hsl(var(--accent-purple))' },
+                      { name: 'Rebondis', value: emailStats.emailsBounced, color: 'hsl(var(--accent-orange))' },
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div className="flex items-center justify-between p-3 bg-[hsl(var(--accent-blue-light))] rounded-lg">
+                <span className="text-sm font-medium">Envoyés</span>
+                <span className="text-lg font-bold text-[hsl(var(--accent-blue))]">{emailStats.emailsSent}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-[hsl(var(--accent-green-light))] rounded-lg">
+                <span className="text-sm font-medium">Ouverts</span>
+                <span className="text-lg font-bold text-[hsl(var(--accent-green))]">{emailStats.emailsOpened}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-[hsl(var(--accent-purple-light))] rounded-lg">
+                <span className="text-sm font-medium">Répondus</span>
+                <span className="text-lg font-bold text-[hsl(var(--accent-purple))]">{emailStats.emailsReplied}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-[hsl(var(--accent-orange-light))] rounded-lg">
+                <span className="text-sm font-medium">Rebondis</span>
+                <span className="text-lg font-bold text-[hsl(var(--accent-orange))]">{emailStats.emailsBounced}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       <motion.div
