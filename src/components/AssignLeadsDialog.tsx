@@ -14,7 +14,7 @@ interface AssignLeadsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedRows: string[];
-  tableName: 'apollo_contacts' | 'crm_contacts';
+  tableName: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts';
   onAssignmentComplete: () => void;
 }
 
@@ -174,7 +174,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
       const selectFields = tableName === 'apollo_contacts' ? 'id, email' : 'id, email';
       
       const { data: leadData, error: leadError } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select(selectFields)
         .in(idColumn, selectedRows);
 
@@ -189,7 +189,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
       const currentUserId = user?.id;
 
       // Vérifier quels leads sont déjà assignés à cet utilisateur
-      const emails = leadData.map(lead => lead.email);
+      const emails = leadData.map(lead => (lead as any).email);
       const { data: existingAssignments, error: checkError } = await supabase
         .from('sales_assignments')
         .select('lead_email')
@@ -202,7 +202,7 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
       const existingEmails = new Set(existingAssignments?.map(a => a.lead_email) || []);
       
       // Filtrer les leads qui ne sont pas déjà assignés
-      const newLeads = leadData.filter(lead => !existingEmails.has(lead.email));
+      const newLeads = leadData.filter(lead => !existingEmails.has((lead as any).email));
 
       if (newLeads.length === 0) {
         toast({
@@ -217,9 +217,9 @@ export const AssignLeadsDialog: React.FC<AssignLeadsDialogProps> = ({
       // Créer les assignations uniquement pour les nouveaux leads
       const assignments = newLeads.map(lead => ({
         sales_user_id: selectedSalesId,
-        lead_email: lead.email,
+        lead_email: (lead as any).email,
         source_table: tableName,
-        source_id: String(lead.id),
+        source_id: String((lead as any).id),
         custom_table_name: `${selectedSalesId}_leads`,
         assigned_by: currentUserId || null
       }));

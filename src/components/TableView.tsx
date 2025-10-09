@@ -30,7 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import ExportDialog, { ExportOptions } from './ExportDialog';
 import * as XLSX from 'xlsx';
 interface TableViewProps {
-  tableName: 'apollo_contacts' | 'crm_contacts';
+  tableName: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts';
   onBack: () => void;
 }
 interface ColumnInfo {
@@ -1069,7 +1069,7 @@ const TableView: React.FC<TableViewProps> = ({
     try {
       const {
         error
-      } = await supabase.from(tableName).update({
+      } = await supabase.from(tableName as any).update({
         [columnName]: processedValue
       }).eq('id', rowId);
       if (error) throw error;
@@ -1078,14 +1078,14 @@ const TableView: React.FC<TableViewProps> = ({
       const {
         data: updatedRow,
         error: fetchError
-      } = await supabase.from(tableName).select('*').eq('id', rowId).single();
+      } = await supabase.from(tableName as any).select('*').eq('id', rowId).single();
       if (fetchError) throw fetchError;
 
       // Mettre à jour seulement cette ligne dans localData
       if (updatedRow) {
         setLocalData(prev => prev.map(row => row.id === rowId ? {
           ...row,
-          ...updatedRow
+          ...(updatedRow as any)
         } : row));
       }
       toast({
@@ -1113,11 +1113,11 @@ const TableView: React.FC<TableViewProps> = ({
       const {
         data: freshData,
         error: fetchError
-      } = await supabase.from(tableName).select('*').eq('id', rowId).single();
+      } = await supabase.from(tableName as any).select('*').eq('id', rowId).single();
       if (!fetchError && freshData) {
         setLocalData(prev => prev.map(row => row.id === rowId ? {
           ...row,
-          ...freshData
+          ...(freshData as any)
         } : row));
       }
       toast({
@@ -1387,7 +1387,7 @@ const TableView: React.FC<TableViewProps> = ({
     setIsDeleting(true);
     try {
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .delete()
         .eq('id', contactToDelete.id);
 

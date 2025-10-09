@@ -20,7 +20,7 @@ import * as XLSX from 'xlsx';
 interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tableName: 'apollo_contacts' | 'crm_contacts';
+  tableName: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts';
   totalCount: number;
   currentPageCount: number;
   appliedFilters: {

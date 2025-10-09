@@ -33,6 +33,11 @@ const DataSources = () => {
         .from('crm_contacts')
         .select('*', { count: 'exact', head: true });
 
+      // Compter les enregistrements HubSpot
+      const { count: hubspotCount } = await supabase
+        .from('hubspot_contacts' as any)
+        .select('*', { count: 'exact', head: true });
+
       // Obtenir les dernières dates de mise à jour
       const { data: apolloLatest } = await supabase
         .from('apollo_contacts')
@@ -43,6 +48,13 @@ const DataSources = () => {
 
       const { data: crmLatest } = await supabase
         .from('crm_contacts')
+        .select('updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const { data: hubspotLatest } = await supabase
+        .from('hubspot_contacts' as any)
         .select('updated_at')
         .order('updated_at', { ascending: false })
         .limit(1)
@@ -61,6 +73,13 @@ const DataSources = () => {
           description: 'Base de données CRM principale avec contacts, historique des interactions et statuts de prospection.',
           rowCount: crmCount || 0,
           lastUpdated: crmLatest?.updated_at || 'Jamais',
+          status: 'active'
+        },
+        {
+          name: 'hubspot_contacts',
+          description: 'Contacts et données importés depuis HubSpot avec informations détaillées sur les interactions et le lifecycle.',
+          rowCount: hubspotCount || 0,
+          lastUpdated: (hubspotLatest as any)?.updated_at || 'Jamais',
           status: 'active'
         }
       ];
@@ -122,8 +141,8 @@ const DataSources = () => {
       </div>
 
       {loading ? (
-        <div className="grid gap-6 md:grid-cols-2">
-          {[1, 2].map((i) => (
+        <div className="grid gap-6 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
                 <div className="h-6 bg-gray-200 rounded w-1/3"></div>
@@ -139,7 +158,7 @@ const DataSources = () => {
           ))}
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           {tables.map((table) => (
             <Card key={table.name} className="hover:shadow-lg transition-shadow">
               <CardHeader>

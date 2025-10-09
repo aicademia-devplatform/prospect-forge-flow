@@ -7,7 +7,7 @@ interface Section {
   count: number;
 }
 
-export const useTableSections = (tableName: 'apollo_contacts' | 'crm_contacts') => {
+export const useTableSections = (tableName: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts') => {
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(false);
 

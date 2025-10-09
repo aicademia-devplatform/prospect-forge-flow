@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 interface QueryParams {
-  tableName: 'apollo_contacts' | 'crm_contacts'
+  tableName: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts'
   page: number
   pageSize: number
   searchTerm?: string

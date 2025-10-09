@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface UseTableDataParams {
-  tableName: 'apollo_contacts' | 'crm_contacts';
+  tableName: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts';
   page: number;
   pageSize: number;
   searchTerm: string;

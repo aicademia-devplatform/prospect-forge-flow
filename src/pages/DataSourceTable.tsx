@@ -9,7 +9,7 @@ const DataSourceTable = () => {
   const { tableName } = useParams<{ tableName: string }>();
   const navigate = useNavigate();
 
-  if (!tableName || (tableName !== 'apollo_contacts' && tableName !== 'crm_contacts')) {
+  if (!tableName || (tableName !== 'apollo_contacts' && tableName !== 'crm_contacts' && tableName !== 'hubspot_contacts')) {
     return (
       <div className="p-6">
         <Card>
@@ -32,7 +32,7 @@ const DataSourceTable = () => {
 
   return (
     <TableView 
-      tableName={tableName as 'apollo_contacts' | 'crm_contacts'} 
+      tableName={tableName as 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts'} 
       onBack={() => navigate('/datasources')} 
     />
   );

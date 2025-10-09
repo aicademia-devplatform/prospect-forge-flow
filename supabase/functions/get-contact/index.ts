@@ -6,7 +6,7 @@ const corsHeaders = {
 }
 
 interface QueryParams {
-  tableName?: 'apollo_contacts' | 'crm_contacts'
+  tableName?: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts'
   contactId?: string
   email?: string
 }
@@ -39,8 +39,8 @@ Deno.serve(async (req) => {
     if (queryEmail) {
       console.log('Searching by email:', queryEmail)
       
-      // Chercher dans les deux tables
-      const tables: ('apollo_contacts' | 'crm_contacts')[] = ['apollo_contacts', 'crm_contacts']
+      // Chercher dans les trois tables
+      const tables: ('apollo_contacts' | 'crm_contacts' | 'hubspot_contacts')[] = ['apollo_contacts', 'crm_contacts', 'hubspot_contacts']
       
       for (const table of tables) {
         const { data: contacts, error } = await supabase
@@ -82,27 +82,30 @@ Deno.serve(async (req) => {
           data: mainContact
         })
 
-        // Rechercher dans l'autre table si l'email existe
+        // Rechercher dans les autres tables si l'email existe
         const email = mainContact.email
-        const otherTableName = tableName === 'crm_contacts' ? 'apollo_contacts' : 'crm_contacts'
+        const otherTableNames: ('apollo_contacts' | 'crm_contacts' | 'hubspot_contacts')[] = 
+          ['apollo_contacts', 'crm_contacts', 'hubspot_contacts'].filter(t => t !== tableName) as ('apollo_contacts' | 'crm_contacts' | 'hubspot_contacts')[]
         
         if (email) {
-          const { data: otherContact, error: otherError } = await supabase
-            .from(otherTableName)
-            .select('*')
-            .eq('email', email)
-            .maybeSingle()
+          for (const otherTableName of otherTableNames) {
+            const { data: otherContact, error: otherError } = await supabase
+              .from(otherTableName)
+              .select('*')
+              .eq('email', email)
+              .maybeSingle()
 
-          if (!otherError && otherContact) {
-            console.log(`Found contact in ${otherTableName}:`, 'Yes')
-            allContactData.push({
-              source_table: otherTableName,
-              data: otherContact
-            })
-          } else if (otherError) {
-            console.error(`Error searching in ${otherTableName}:`, otherError)
-          } else {
-            console.log(`No contact found in ${otherTableName}`)
+            if (!otherError && otherContact) {
+              console.log(`Found contact in ${otherTableName}:`, 'Yes')
+              allContactData.push({
+                source_table: otherTableName,
+                data: otherContact
+              })
+            } else if (otherError) {
+              console.error(`Error searching in ${otherTableName}:`, otherError)
+            } else {
+              console.log(`No contact found in ${otherTableName}`)
+            }
           }
         }
       }

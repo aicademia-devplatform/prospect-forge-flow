@@ -30,7 +30,7 @@ export interface FilterValues {
 }
 
 interface TableFiltersProps {
-  tableName: 'apollo_contacts' | 'crm_contacts';
+  tableName: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts';
   filters: FilterValues;
   onFiltersChange: (filters: FilterValues) => void;
   onReset: () => void;
