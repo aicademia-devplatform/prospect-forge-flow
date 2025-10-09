@@ -184,7 +184,8 @@ const TableView: React.FC<TableViewProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   // Initialize sorting state from URL parameters or default values
   const urlParams = new URLSearchParams(location.search);
-  const [sortBy, setSortBy] = useState(urlParams.get('sortBy') || 'created_at');
+  const defaultSortBy = tableName === 'hubspot_contacts' ? 'inserted_at' : 'created_at';
+  const [sortBy, setSortBy] = useState(urlParams.get('sortBy') || defaultSortBy);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(urlParams.get('sortOrder') as 'asc' | 'desc' || 'desc');
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
