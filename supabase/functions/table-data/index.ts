@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       searchTerm, 
       searchColumns = [],
       sectionFilter, 
-      sortBy = 'created_at', 
+      sortBy = tableName === 'hubspot_contacts' ? 'inserted_at' : 'created_at', 
       sortOrder = 'desc',
       visibleColumns = [],
       advancedFilters = {}
@@ -173,6 +173,19 @@ Deno.serve(async (req) => {
         }
       }
 
+      // HubSpot Contacts specific filters
+      if (tableName === 'hubspot_contacts') {
+        // Date range filter using inserted_at
+        if (advancedFilters.dateRange?.from) {
+          query = query.gte('inserted_at', advancedFilters.dateRange.from)
+        }
+        if (advancedFilters.dateRange?.to) {
+          const endDate = new Date(advancedFilters.dateRange.to)
+          endDate.setDate(endDate.getDate() + 1)
+          query = query.lt('inserted_at', endDate.toISOString())
+        }
+      }
+
       // Common filters for both tables
       if (advancedFilters.apolloStatus) {
         // Utiliser une recherche directe avec ILIKE pour matcher les statuts exacts ou partiels
@@ -201,6 +214,8 @@ Deno.serve(async (req) => {
           query = query.or(`email.ilike.${searchPattern},first_name.ilike.${searchPattern},last_name.ilike.${searchPattern},company.ilike.${searchPattern}`)
         } else if (tableName === 'crm_contacts') {
           query = query.or(`email.ilike.${searchPattern},firstname.ilike.${searchPattern},name.ilike.${searchPattern},company.ilike.${searchPattern}`)
+        } else if (tableName === 'hubspot_contacts') {
+          query = query.or(`email.ilike.${searchPattern},firstname.ilike.${searchPattern},lastname.ilike.${searchPattern},company.ilike.${searchPattern}`)
         }
       }
     }

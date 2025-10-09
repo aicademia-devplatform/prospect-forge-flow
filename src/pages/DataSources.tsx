@@ -55,8 +55,8 @@ const DataSources = () => {
 
       const { data: hubspotLatest } = await supabase
         .from('hubspot_contacts' as any)
-        .select('updated_at')
-        .order('updated_at', { ascending: false })
+        .select('inserted_at')
+        .order('inserted_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -79,7 +79,7 @@ const DataSources = () => {
           name: 'hubspot_contacts',
           description: 'Contacts et données importés depuis HubSpot avec informations détaillées sur les interactions et le lifecycle.',
           rowCount: hubspotCount || 0,
-          lastUpdated: (hubspotLatest as any)?.updated_at || 'Jamais',
+          lastUpdated: (hubspotLatest as any)?.inserted_at || 'Jamais',
           status: 'active'
         }
       ];
