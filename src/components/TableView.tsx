@@ -658,6 +658,145 @@ const TableView: React.FC<TableViewProps> = ({
         type: 'string',
         nullable: true
       }];
+    } else if (tableName === 'hubspot_contacts') {
+      // Colonnes HubSpot (exclure les JSONB)
+      return [{
+        name: 'id',
+        type: 'number',
+        nullable: false
+      }, {
+        name: 'email',
+        type: 'string',
+        nullable: false
+      }, {
+        name: 'firstname',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'lastname',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'company',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'jobtitle',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'phone',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'city',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'state',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'country',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'lifecyclestage',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_lead_status',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_pipeline',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_latest_source',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_email_domain',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'linkedin_account',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_object_source',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_object_source_id',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_object_source_user_id',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_calculated_phone_number',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_calculated_phone_number_country_code',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hs_searchable_calculated_phone_number',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'createdate',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'lastmodifieddate',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'inserted_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'updated_at',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_owner_id',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'hubspot_owner_email',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_owner_firstname',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'hubspot_owner_lastname',
+        type: 'string',
+        nullable: true
+      }, {
+        name: 'num_notes',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'num_contacted_notes',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'hs_analytics_num_visits',
+        type: 'number',
+        nullable: true
+      }, {
+        name: 'hs_analytics_num_page_views',
+        type: 'number',
+        nullable: true
+      }];
     } else {
       return [{
         name: 'id',
@@ -908,6 +1047,8 @@ const TableView: React.FC<TableViewProps> = ({
       defaultColumns = ['email', 'data_section', 'name', 'tel_pro', 'company'];
     } else if (tableName === 'apollo_contacts') {
       defaultColumns = ['email', 'data_section', 'last_name', 'work_direct_phone', 'company'];
+    } else if (tableName === 'hubspot_contacts') {
+      defaultColumns = ['email', 'firstname', 'lastname', 'company', 'jobtitle', 'phone', 'lifecyclestage', 'hs_lead_status'];
     }
     const toggleableColumns = allColumns.filter(col => col.name !== 'email' && col.name !== 'id').map(col => col.name);
     const initialVisible = toggleableColumns.filter(col => defaultColumns.includes(col));
