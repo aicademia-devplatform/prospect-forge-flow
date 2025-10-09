@@ -111,9 +111,11 @@ const translateColumnName = (columnName: string): string => {
     'last_sync_at': 'Dernière synchronisation',
     'primary_email_last_verified_at': 'Dernière vérification email principal',
     'last_raised_at': 'Dernière levée de fonds',
-     // Colonnes CRM
+     // Colonnes CRM et HubSpot
      'firstname': 'Prénom',
+     'lastname': 'Nom',
      'name_crm': 'Nom',
+     'name': 'Nom',
      'data_section_field': 'Section de données',
      'full_name': 'Nom complet',
      'email_domain': 'Domaine email',
@@ -127,6 +129,7 @@ const translateColumnName = (columnName: string): string => {
      'linkedin_function': 'Fonction LinkedIn',
      'industrie': 'Industrie',
      'linkedin_url': 'URL LinkedIn',
+     'linkedin_account': 'Compte LinkedIn',
      'linkedin_company_url': 'URL LinkedIn entreprise',
      'company_website': 'Site web entreprise',
      'systemeio_list': 'Liste Systeme.io',
@@ -143,12 +146,22 @@ const translateColumnName = (columnName: string): string => {
     'brevo_open_number': 'Nombre d\'ouvertures Brevo',
     'brevo_click_number': 'Nombre de clics Brevo',
     'brevo_reply_number': 'Nombre de réponses Brevo',
-    'hubspot_lead_status': 'Statut lead HubSpot',
-    'hubspot_contact_owner': 'Propriétaire contact HubSpot',
-    'hubspot_life_cycle_phase': 'Phase cycle de vie HubSpot',
-    'hubspot_buy_role': 'Rôle d\'achat HubSpot',
-    'hubspot_created_at': 'Créé le HubSpot',
-    'hubspot_modified_at': 'Modifié le HubSpot',
+     'hs_lead_status': 'Statut lead HubSpot',
+     'hubspot_lead_status': 'Statut lead HubSpot',
+     'hubspot_contact_owner': 'Propriétaire contact HubSpot',
+     'lifecyclestage': 'Phase cycle de vie HubSpot',
+     'hubspot_life_cycle_phase': 'Phase cycle de vie HubSpot',
+     'hubspot_buy_role': 'Rôle d\'achat HubSpot',
+     'jobtitle': 'Titre du poste',
+     'phone': 'Téléphone',
+     'createdate': 'Créé le HubSpot',
+     'hubspot_created_at': 'Créé le HubSpot',
+     'lastmodifieddate': 'Modifié le HubSpot',
+     'hubspot_modified_at': 'Modifié le HubSpot',
+     'inserted_at': 'Date d\'insertion',
+     'hs_email_domain': 'Domaine email HubSpot',
+     'hs_pipeline': 'Pipeline HubSpot',
+     'hs_latest_source': 'Dernière source HubSpot',
     'hubspot_last_activity': 'Dernière activité HubSpot',
     'hubspot_notes': 'Notes HubSpot',
     'hubspot_anis_comment': 'Commentaire Anis HubSpot',
@@ -236,7 +249,11 @@ const TableView: React.FC<TableViewProps> = ({
 
   // Search columns suggestion state
   const [searchColumnsOpen, setSearchColumnsOpen] = useState(false);
-  const [selectedSearchColumns, setSelectedSearchColumns] = useState<string[]>(['email', 'first_name', 'last_name', 'company']); // Default columns
+  // Adapter les colonnes de recherche selon la table
+  const defaultSearchColumns = tableName === 'hubspot_contacts' 
+    ? ['email', 'firstname', 'lastname', 'company']
+    : ['email', 'first_name', 'last_name', 'company'];
+  const [selectedSearchColumns, setSelectedSearchColumns] = useState<string[]>(defaultSearchColumns);
 
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
