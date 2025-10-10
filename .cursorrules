@@ -1,0 +1,477 @@
+# Cursor Rules - Prospect Forge Flow
+
+## 🎯 CONTEXTE DU PROJET
+
+Ce projet est une application de gestion de prospects CRM construite avec React, TypeScript, Vite et Supabase. L'application gère les contacts provenant de différentes sources (Apollo, HubSpot, CRM) et permet aux équipes commerciales de traiter et suivre les prospects.
+
+## 🏗️ ARCHITECTURE ET STRUCTURE
+
+### Structure des dossiers
+```
+src/
+├── components/          # Composants React réutilisables
+│   ├── ui/             # Composants UI de base (shadcn/ui)
+│   └── [feature]/      # Composants spécifiques aux fonctionnalités
+├── pages/              # Pages principales de l'application
+├── hooks/              # Hooks personnalisés React
+├── integrations/       # Intégrations externes (Supabase)
+├── lib/                # Utilitaires et helpers
+└── main.tsx           # Point d'entrée de l'application
+```
+
+### Technologies utilisées
+- **Frontend**: React 18, TypeScript, Vite
+- **UI**: shadcn/ui, Tailwind CSS, Radix UI
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
+- **State Management**: React Query, React Context
+- **Forms**: React Hook Form + Zod validation
+- **Routing**: React Router v6
+- **Icons**: Lucide React
+
+## 📋 RÈGLES DE DÉVELOPPEMENT
+
+### 1. LANGUE ET COMMUNICATION
+- **TOUJOURS répondre en français** dans les commentaires et messages
+- **JAMAIS d'emojis dans le code** - utiliser uniquement du texte
+- Les messages d'erreur et de succès doivent être en français
+- Les noms de variables et fonctions peuvent être en anglais
+
+### 2. ARCHITECTURE CLEAN CODE
+
+#### Séparation des responsabilités
+- **Pages** : Logique de routage et orchestration des composants
+- **Composants** : Logique d'affichage et interactions utilisateur
+- **Hooks** : Logique métier et gestion d'état
+- **Services** : Appels API et intégrations externes
+
+#### Structure des composants
+```typescript
+// 1. Imports externes
+import React from 'react';
+import { useForm } from 'react-hook-form';
+
+// 2. Imports internes (composants UI)
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+
+// 3. Imports de hooks et services
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+
+// 4. Types et interfaces
+interface ComponentProps {
+  // Props definition
+}
+
+// 5. Constantes
+const CONSTANTS = {
+  // Constants definition
+};
+
+// 6. Composant principal
+export const Component: React.FC<ComponentProps> = ({ prop1, prop2 }) => {
+  // Hooks
+  // State
+  // Effects
+  // Handlers
+  // Render
+};
+```
+
+### 3. GESTION D'ÉTAT ET DONNÉES
+
+#### Hooks personnalisés
+- Créer des hooks pour la logique métier complexe
+- Utiliser React Query pour la gestion des données serveur
+- Séparer la logique de récupération des données de l'affichage
+
+#### Exemple de hook personnalisé
+```typescript
+export const useTableData = (params: UseTableDataParams) => {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { data: response, error } = await supabase.functions.invoke('table-data', {
+        body: params
+      });
+      
+      if (error) throw error;
+      setData(response?.data || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchData();
+  }, [/* dependencies */]);
+  
+  return { data, loading, refetch: fetchData };
+};
+```
+
+### 4. FORMULAIRES ET VALIDATION
+
+#### Utilisation de React Hook Form + Zod
+```typescript
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const formSchema = z.object({
+  email: z.string().email('Email invalide'),
+  name: z.string().min(1, 'Le nom est requis'),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+const Component = () => {
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      name: '',
+    },
+  });
+  
+  const onSubmit = (data: FormData) => {
+    // Handle form submission
+  };
+  
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        {/* Form fields */}
+      </form>
+    </Form>
+  );
+};
+```
+
+### 5. GESTION DES ERREURS
+
+#### Messages d'erreur en français
+```typescript
+const handleError = (error: any) => {
+  toast({
+    variant: "destructive",
+    title: "Erreur",
+    description: "Une erreur est survenue lors de l'opération.",
+    duration: 4000
+  });
+};
+```
+
+#### Gestion des états de chargement
+```typescript
+const [loading, setLoading] = useState(false);
+
+const handleAction = async () => {
+  setLoading(true);
+  try {
+    // Action
+  } catch (error) {
+    handleError(error);
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+### 6. TYPES ET INTERFACES
+
+#### Naming conventions
+- Interfaces : `PascalCase` (ex: `UserProfile`, `TableData`)
+- Types : `PascalCase` (ex: `FormData`, `ApiResponse`)
+- Enums : `PascalCase` (ex: `UserRole`, `ProspectStatus`)
+
+#### Exemple de types
+```typescript
+interface ProspectData {
+  id: string;
+  email: string;
+  name: string;
+  status: ProspectStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+type ProspectStatus = 'RDV' | 'B' | 'RÉPONDEUR' | 'MAIL À ENVOYER' | 'MAIL ENVOYÉ';
+
+interface UseTableDataParams {
+  tableName: string;
+  page: number;
+  pageSize: number;
+  searchTerm?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+```
+
+### 7. INTÉGRATION SUPABASE
+
+#### Configuration client
+```typescript
+import { supabase } from '@/integrations/supabase/client';
+
+// Utilisation des Edge Functions
+const { data, error } = await supabase.functions.invoke('function-name', {
+  body: { /* params */ }
+});
+
+// Requêtes directes
+const { data, error } = await supabase
+  .from('table_name')
+  .select('*')
+  .eq('column', value);
+```
+
+### 8. ROUTING ET NAVIGATION
+
+#### Structure des routes
+- Utiliser React Router v6
+- Routes protégées avec `ProtectedRoute`
+- Layout commun avec `Layout` component
+- Navigation programmatique avec `useNavigate`
+
+#### Exemple de route
+```typescript
+<Route 
+  path="/prospects" 
+  element={
+    <ProtectedRoute>
+      <Layout>
+        <Prospects />
+      </Layout>
+    </ProtectedRoute>
+  } 
+/>
+```
+
+### 9. STYLING ET UI
+
+#### Tailwind CSS
+- Utiliser les classes Tailwind pour le styling
+- Éviter les styles inline
+- Utiliser les composants shadcn/ui comme base
+
+#### Composants UI
+```typescript
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+```
+
+### 10. PERFORMANCE ET OPTIMISATION
+
+#### React Query
+- Utiliser React Query pour le cache des données
+- Implémenter la pagination côté serveur
+- Utiliser `useMemo` et `useCallback` pour les calculs coûteux
+
+#### Lazy loading
+```typescript
+const LazyComponent = React.lazy(() => import('./LazyComponent'));
+
+// Dans le composant
+<Suspense fallback={<div>Chargement...</div>}>
+  <LazyComponent />
+</Suspense>
+```
+
+## 🚫 INTERDICTIONS
+
+### Code
+- **JAMAIS d'emojis** dans le code source
+- **JAMAIS de console.log** en production
+- **JAMAIS de any** sans justification
+- **JAMAIS de mutations directes** d'état
+- **JAMAIS de props drilling** excessif
+
+### Architecture
+- **JAMAIS de logique métier** dans les composants UI
+- **JAMAIS d'appels API** directement dans les composants
+- **JAMAIS de gestion d'état globale** sans justification
+- **JAMAIS de dépendances circulaires**
+
+## ✅ BONNES PRATIQUES
+
+### Code Quality
+- Utiliser TypeScript strict
+- Implémenter la validation avec Zod
+- Gérer les états de chargement et d'erreur
+- Utiliser des noms de variables explicites
+- Commenter le code complexe en français
+
+### Performance
+- Implémenter la pagination
+- Utiliser React.memo pour les composants lourds
+- Optimiser les re-renders avec useMemo/useCallback
+- Lazy loading des composants volumineux
+
+### Sécurité
+- Valider toutes les entrées utilisateur
+- Utiliser les RLS (Row Level Security) de Supabase
+- Implémenter l'authentification et l'autorisation
+- Sanitizer les données avant affichage
+
+## 🔧 OUTILS ET COMMANDES
+
+### Développement
+```bash
+npm run dev          # Serveur de développement
+npm run build        # Build de production
+npm run lint         # Vérification ESLint
+npm run preview      # Prévisualisation du build
+```
+
+### Installation
+```bash
+npm install --legacy-peer-deps  # Installation avec résolution de conflits
+```
+
+## 📝 EXEMPLES DE CODE
+
+### Composant avec formulaire
+```typescript
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+
+const formSchema = z.object({
+  name: z.string().min(1, 'Le nom est requis'),
+  email: z.string().email('Email invalide'),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+interface ComponentProps {
+  onSubmit: (data: FormData) => Promise<void>;
+}
+
+export const Component: React.FC<ComponentProps> = ({ onSubmit }) => {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+    },
+  });
+  
+  const handleSubmit = async (data: FormData) => {
+    setLoading(true);
+    try {
+      await onSubmit(data);
+      toast({
+        title: "Succès",
+        description: "L'opération a été effectuée avec succès.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'opération.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nom</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={loading}>
+          {loading ? "En cours..." : "Valider"}
+        </Button>
+      </form>
+    </Form>
+  );
+};
+```
+
+### Hook personnalisé
+```typescript
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface UseDataParams {
+  tableName: string;
+  page: number;
+  pageSize: number;
+}
+
+interface UseDataReturn {
+  data: any[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
+export const useData = ({ tableName, page, pageSize }: UseDataParams): UseDataReturn => {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { data: response, error: fetchError } = await supabase.functions.invoke('table-data', {
+        body: { tableName, page, pageSize }
+      });
+      
+      if (fetchError) throw fetchError;
+      
+      setData(response?.data || []);
+    } catch (err) {
+      setError('Erreur lors du chargement des données');
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchData();
+  }, [tableName, page, pageSize]);
+  
+  return { data, loading, error, refetch: fetchData };
+};
+```
+
+## 🎯 OBJECTIFS DE QUALITÉ
+
+1. **Maintenabilité** : Code lisible et bien structuré
+2. **Performance** : Optimisation des re-renders et chargements
+3. **Sécurité** : Validation et sanitisation des données
+4. **Expérience utilisateur** : Interface intuitive et responsive
+5. **Évolutivité** : Architecture modulaire et extensible
+
+Respecter ces règles garantit un code de qualité, maintenable et performant pour l'application Prospect Forge Flow.

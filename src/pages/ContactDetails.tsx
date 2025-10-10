@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import moment from 'moment';
+import 'moment/locale/fr';
+
+// Configuration de moment.js pour le français
+moment.locale('fr');
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Mail, Phone, Building, Globe, Linkedin, User, Calendar, Tag, Briefcase, MapPin, UserPlus, Edit, Save, X } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Building, Globe, Linkedin, User, Calendar, Tag, Briefcase, MapPin, UserPlus, Edit, Save, X, Database } from 'lucide-react';
 import { useContact } from '@/hooks/useContact';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -103,7 +109,78 @@ const translateColumnName = (columnName: string): string => {
     'apollo_status': 'Statut Apollo',
     'brevo_status': 'Statut Brevo',
     'hubspot_status': 'Statut HubSpot',
-    'systemeio_status': 'Statut Systeme.io'
+    'systemeio_status': 'Statut Systeme.io',
+    
+    // Traductions HubSpot
+    'hs_object_id': 'ID d\'objet HubSpot',
+    'vid': 'ID de visiteur',
+    'portal_id': 'ID de portail',
+    'associatedcompanyid': 'ID de l\'entreprise associée',
+    'lead_guid': 'GUID du lead',
+    'primary_email': 'E-mail principal',
+    'hs_email_domain': 'Domaine de l\'e-mail HubSpot',
+    'lifecyclestage': 'Stade du cycle de vie',
+    'hs_lead_status': 'Statut du lead',
+    'hs_pipeline': 'Pipeline',
+    'hs_is_contact': 'Est un contact',
+    'hs_is_unworked': 'Non travaillé',
+    'hs_count_is_unworked': 'Compteur non travaillé',
+    'hs_count_is_worked': 'Compteur travaillé',
+    'hs_registered_member': 'Membre enregistré',
+    'hs_membership_has_accessed_private_content': 'Accès au contenu privé',
+    'hs_latest_source': 'Dernière source',
+    'createdate_mc': 'Date de création (HubSpot)',
+    'createdate_ms': 'Date de création (HubSpot)',
+    'createdate': 'Date de création',
+    'lastmodifieddate': 'Date de dernière modification (HubSpot)',
+    'lastmodifieddate_ms': 'Date de dernière modification (HubSpot)',
+    'hs_first_outreach_date_mc': 'Date du premier contact (HubSpot)',
+    'hs_first_outreach_date_ms': 'Date du premier contact (HubSpot)',
+    'hs_first_outreach_date': 'Date du premier contact',
+    'notes_last_contacted_mc': 'Dernière note contactée (HubSpot)',
+    'notes_last_contacted_ms': 'Dernière note contactée (HubSpot)',
+    'notes_last_contacted': 'Dernière note contactée',
+    'notes_last_updated_mc': 'Dernière note mise à jour (HubSpot)',
+    'notes_last_updated_ms': 'Dernière note mise à jour (HubSpot)',
+    'notes_last_updated': 'Dernière note mise à jour',
+    'hs_analytics_latest_source_timestamp_mc': 'Horodatage de la dernière source analytique (HubSpot)',
+    'hs_latest_source_timestamp_ms': 'Horodatage de la dernière source (HubSpot)',
+    'hs_latest_source_timestamp': 'Horodatage de la dernière source',
+    'hs_analytics_first_timestamp_mc': 'Horodatage de la première source analytique (HubSpot)',
+    'hs_analytics_first_timestamp_ms': 'Horodatage de la première source analytique (HubSpot)',
+    'hs_analytics_first_timestamp': 'Horodatage de la première source analytique',
+    'inserted_at': 'Inséré à',
+    'identity_saved_at_mc': 'Identité sauvegardée à (HubSpot)',
+    'identity_saved_at_ms': 'Identité sauvegardée à (HubSpot)',
+    'identity_saved_at': 'Identité sauvegardée à',
+    'hs_analytics_revenue': 'Revenu analytique',
+    'hs_messaging_engagement_score': 'Score d\'engagement messagerie',
+    'hs_analytics_num_page_views': 'Nombre de pages vues',
+    'hs_analytics_num_visits': 'Nombre de visites',
+    'hs_analytics_num_event_completions': 'Nombre d\'événements complétés',
+    'hs_time_to_first_engagement': 'Temps jusqu\'au premier engagement',
+    'hs_sa_first_engagement_date_mc': 'Date du premier engagement',
+    'hs_sa_first_engagement_date_ms': 'Date du premier engagement',
+    'hs_sa_first_engagement_object_type': 'Type d\'objet du premier engagement',
+    'hs_sa_first_engagement_object_id': 'ID d\'objet du premier engagement',
+    'hs_sa_first_engagement_descr': 'Description du premier engagement',
+    'hs_first_engagement_object_id': 'ID d\'objet du premier engagement',
+    'num_notes': 'Nombre de notes',
+    'num_contacted_notes': 'Nombre de notes contactées',
+    'num_conversion_events': 'Nombre d\'événements de conversion',
+    'num_unique_conversion_events': 'Nombre d\'événements de conversion uniques',
+    'hs_object_source': 'Source de l\'objet',
+    'hs_object_source_id': 'ID de source de l\'objet',
+    'hs_object_source_user_id': 'ID utilisateur de source de l\'objet',
+    'hs_object_source_label': 'Étiquette de source de l\'objet',
+    'hubspot_owner_id': 'ID du propriétaire HubSpot',
+    'hubspot_owner_assigneddate_mc': 'Date d\'affectation du propriétaire HubSpot',
+    'hubspot_owner_assigneddate_ms': 'Date d\'affectation du propriétaire HubSpot',
+    'hubspot_owner_assigneddate': 'Date d\'affectation du propriétaire HubSpot',
+    'hs_user_ids_of_all_owners': 'IDs utilisateur de tous les propriétaires',
+    'hs_all_owner_ids': 'Tous les IDs de propriétaire',
+    'properties_raw': 'Propriétés brutes',
+    'identity_profiles_raw': 'Profils d\'identité bruts'
   };
   
   return translations[columnName] || columnName;
@@ -331,12 +408,35 @@ const ContactDetails: React.FC = () => {
       }
     }
 
-    if (columnName.includes('date') || columnName.includes('_at')) {
+    if (columnName.includes('date') || columnName.includes('timestamp') || columnName.includes('_at')) {
       try {
-        const date = new Date(value);
-        return <span>{date.toLocaleString('fr-FR')}</span>;
-      } catch {
-        return <span>{String(value)}</span>;
+        let momentDate: moment.Moment;
+        
+        // Si c'est un timestamp en millisecondes (nombre)
+        if (typeof value === 'number' && value > 1000000000000) {
+          momentDate = moment(value);
+        }
+        // Si c'est une chaîne de caractères
+        else if (typeof value === 'string') {
+          // Si c'est au format DD/MM/YYYY HH:mm:ss (format HubSpot), on le parse avec moment
+          if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/.test(value)) {
+            momentDate = moment(value, 'DD/MM/YYYY HH:mm:ss');
+          }
+          // Sinon on essaie de parser la date avec moment
+          else {
+            momentDate = moment(value);
+          }
+        }
+        else {
+          momentDate = moment(value);
+        }
+        
+        if (momentDate.isValid()) {
+          // Format HubSpot : "2 Oct 2025 à 16:16"
+          return <span className="text-sm">{momentDate.format('D MMM YYYY [à] HH:mm')}</span>;
+        }
+      } catch (e) {
+        // Si ce n'est pas une date valide, continuer avec le traitement normal
       }
     }
 
@@ -365,6 +465,11 @@ const ContactDetails: React.FC = () => {
           {String(value)}
         </a>
       );
+    }
+
+    // Gestion des nombres pour les champs HubSpot
+    if (typeof value === 'number') {
+      return <span className="text-sm font-mono">{value.toLocaleString()}</span>;
     }
 
     return <span>{String(value)}</span>;
@@ -424,6 +529,20 @@ const ContactDetails: React.FC = () => {
     });
   };
 
+  // Fonction pour détecter les champs HubSpot
+  const isHubSpotField = (field: string) => {
+    return field.startsWith('hs_') || 
+           field.startsWith('hubspot_') || 
+           field === 'vid' || 
+           field === 'portal_id' || 
+           field === 'lifecyclestage' ||
+           field === 'primary_email' ||
+           field === 'associatedcompanyid' ||
+           field === 'lead_guid' ||
+           field === 'properties_raw' ||
+           field === 'identity_profiles_raw';
+  };
+
   const categorizeFields = (fields: string[]) => {
     const personalFields = fields.filter(field => 
       ['firstname', 'name', 'full_name', 'first_name', 'last_name', 'email', 'title', 'linkedin_function', 'seniority', 'person_linkedin_url', 'linkedin_url'].includes(field)
@@ -465,6 +584,9 @@ const ContactDetails: React.FC = () => {
       ['technologies', 'keywords', 'departments', 'categorie_fonction', 'activity', 'lists', 'secteur_activite'].includes(field)
     );
 
+    // Séparer les champs HubSpot des autres champs
+    const hubspotFields = fields.filter(field => isHubSpotField(field));
+
     const otherFields = fields.filter(field => 
       !personalFields.includes(field) &&
       !companyFields.includes(field) &&
@@ -476,6 +598,7 @@ const ContactDetails: React.FC = () => {
       !sequenceFields.includes(field) &&
       !coldOutreachFields.includes(field) &&
       !technicalFields.includes(field) &&
+      !hubspotFields.includes(field) &&
       !['created_at', 'updated_at', 'last_sync_at', 'last_contacted', 'last_raised_at'].includes(field)
     );
 
@@ -490,12 +613,113 @@ const ContactDetails: React.FC = () => {
       sequenceFields,
       coldOutreachFields,
       technicalFields,
+      hubspotFields,
       otherFields
     };
   };
 
   const allFields = getAllAvailableFields();
   const categorizedFields = categorizeFields(allFields);
+
+  // Fonction spéciale pour rendre les données HubSpot avec le format en grilles
+  const renderHubSpotData = (data: Record<string, unknown>, title: string = "Informations dans HubSpot") => {
+    const hubspotFields = Object.keys(data).filter(field => isHubSpotField(field));
+    if (hubspotFields.length === 0) return null;
+
+    // Organiser les champs en grilles thématiques
+    const identifierFields = hubspotFields.filter(field => 
+      ['hs_object_id', 'vid', 'portal_id', 'associatedcompanyid', 'lead_guid', 'primary_email', 'hs_email_domain'].includes(field)
+    );
+    
+    const statusFields = hubspotFields.filter(field => 
+      ['lifecyclestage', 'hs_lead_status', 'hs_pipeline', 'hs_latest_source'].includes(field)
+    );
+    
+    const dateFields = hubspotFields.filter(field => 
+      field.includes('date') || field.includes('timestamp') || field.includes('_at')
+    );
+    
+    const analyticsFields = hubspotFields.filter(field => 
+      ['hs_analytics_revenue', 'hs_messaging_engagement_score', 'hs_analytics_num_page_views', 'hs_analytics_num_visits', 'hs_analytics_num_event_completions'].includes(field)
+    );
+    
+    const notesFields = hubspotFields.filter(field => 
+      field.includes('notes') || field.includes('num_') || field.includes('conversion')
+    );
+    
+    const ownershipFields = hubspotFields.filter(field => 
+      field.includes('owner') || field.includes('source') || field.includes('user_id')
+    );
+    
+    const booleanFields = hubspotFields.filter(field => 
+      ['hs_is_contact', 'hs_is_unworked', 'hs_registered_member', 'hs_membership_has_accessed_private_content'].includes(field)
+    );
+    
+    const rawDataFields = hubspotFields.filter(field => 
+      ['properties_raw', 'identity_profiles_raw'].includes(field)
+    );
+
+    const renderGrid = (fields: string[], gridTitle?: string) => {
+      if (fields.length === 0) return null;
+      
+      return (
+        <div className="space-y-4">
+          {gridTitle && (
+            <h4 className="text-sm font-semibold text-orange-700 border-b border-orange-200 pb-2">{gridTitle}</h4>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {fields.map(field => {
+              const value = data[field];
+              if (value === null || value === undefined || value === '') return null;
+              
+              return (
+                <Card key={field} className="p-4 border-orange-100 bg-white/80 hover:bg-white hover:shadow-md transition-all duration-200">
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-xs text-orange-600 font-semibold uppercase tracking-wide">
+                      {translateColumnName(field)}
+                    </span>
+                    <div className="text-sm text-gray-800">
+                      {formatValue(value, field)}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    // Vérifier si au moins une grille a du contenu
+    const hasContent = [identifierFields, statusFields, dateFields, analyticsFields, notesFields, ownershipFields, booleanFields, rawDataFields]
+      .some(fields => fields.some(field => {
+        const value = data[field];
+        return value !== null && value !== undefined && value !== '';
+      }));
+
+    if (!hasContent) return null;
+
+    return (
+      <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100/30">
+        <CardHeader className="bg-orange-500 text-white rounded-t-lg mb-3">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Database className="h-5 w-5" />
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 bg-white/50">
+          {renderGrid(identifierFields, "Identifiants et Informations de base")}
+          {renderGrid(statusFields, "Statut et Pipeline")}
+          {renderGrid(dateFields, "Dates importantes")}
+          {renderGrid(analyticsFields, "Compteurs et Statistiques")}
+          {renderGrid(notesFields, "Notes et Événements")}
+          {renderGrid(ownershipFields, "Propriété et Attribution")}
+          {renderGrid(booleanFields, "Statuts booléens")}
+          {renderGrid(rawDataFields, "Données brutes")}
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderFieldGroup = (title: string, fields: string[], icon: React.ReactNode) => {
     if (fields.length === 0) return null;
@@ -528,7 +752,7 @@ const ContactDetails: React.FC = () => {
     );
   };
 
-  const renderFieldGroupForSource = (sourceData: any, title: string, fields: string[], icon: React.ReactNode) => {
+  const renderFieldGroupForSource = (sourceData: Record<string, unknown>, title: string, fields: string[], icon: React.ReactNode) => {
     if (fields.length === 0) return null;
     
     return (
@@ -559,11 +783,111 @@ const ContactDetails: React.FC = () => {
     );
   };
 
-  const renderEditableField = (fieldName: string, value: any) => {
+  // Fonction spéciale pour rendre les données HubSpot des sources avec le format en grilles
+  const renderHubSpotDataForSource = (sourceData: Record<string, unknown>, sourceTable: string) => {
+    const hubspotFields = Object.keys(sourceData).filter(field => isHubSpotField(field));
+    if (hubspotFields.length === 0) return null;
+
+    // Organiser les champs en grilles thématiques
+    const identifierFields = hubspotFields.filter(field => 
+      ['hs_object_id', 'vid', 'portal_id', 'associatedcompanyid', 'lead_guid', 'primary_email', 'hs_email_domain'].includes(field)
+    );
+    
+    const statusFields = hubspotFields.filter(field => 
+      ['lifecyclestage', 'hs_lead_status', 'hs_pipeline', 'hs_latest_source'].includes(field)
+    );
+    
+    const dateFields = hubspotFields.filter(field => 
+      field.includes('date') || field.includes('timestamp') || field.includes('_at')
+    );
+    
+    const analyticsFields = hubspotFields.filter(field => 
+      ['hs_analytics_revenue', 'hs_messaging_engagement_score', 'hs_analytics_num_page_views', 'hs_analytics_num_visits', 'hs_analytics_num_event_completions'].includes(field)
+    );
+    
+    const notesFields = hubspotFields.filter(field => 
+      field.includes('notes') || field.includes('num_') || field.includes('conversion')
+    );
+    
+    const ownershipFields = hubspotFields.filter(field => 
+      field.includes('owner') || field.includes('source') || field.includes('user_id')
+    );
+    
+    const booleanFields = hubspotFields.filter(field => 
+      ['hs_is_contact', 'hs_is_unworked', 'hs_registered_member', 'hs_membership_has_accessed_private_content'].includes(field)
+    );
+    
+    const rawDataFields = hubspotFields.filter(field => 
+      ['properties_raw', 'identity_profiles_raw'].includes(field)
+    );
+
+    const renderGrid = (fields: string[], gridTitle?: string) => {
+      if (fields.length === 0) return null;
+      
+      return (
+        <div className="space-y-4">
+          {gridTitle && (
+            <h4 className="text-sm font-semibold text-orange-700 border-b border-orange-200 pb-2">{gridTitle}</h4>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {fields.map(field => {
+              const value = sourceData[field];
+              if (value === null || value === undefined || value === '') return null;
+              
+              return (
+                <Card key={field} className="p-4 border-orange-100 bg-white/80 hover:bg-white hover:shadow-md transition-all duration-200">
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-xs text-orange-600 font-semibold uppercase tracking-wide">
+                      {translateColumnName(field)}
+                    </span>
+                    <div className="text-sm text-gray-800">
+                      {formatValue(value, field)}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    // Vérifier si au moins une grille a du contenu
+    const hasContent = [identifierFields, statusFields, dateFields, analyticsFields, notesFields, ownershipFields, booleanFields, rawDataFields]
+      .some(fields => fields.some(field => {
+        const value = sourceData[field];
+        return value !== null && value !== undefined && value !== '';
+      }));
+
+    if (!hasContent) return null;
+
+    return (
+      <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100/30">
+        <CardHeader className="bg-orange-500 text-white rounded-t-lg">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Database className="h-5 w-5" />
+            Informations dans HubSpot
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 bg-white/50">
+          {renderGrid(identifierFields, "Identifiants et Informations de base")}
+          {renderGrid(statusFields, "Statut et Pipeline")}
+          {renderGrid(dateFields, "Dates importantes")}
+          {renderGrid(analyticsFields, "Compteurs et Statistiques")}
+          {renderGrid(notesFields, "Notes et Événements")}
+          {renderGrid(ownershipFields, "Propriété et Attribution")}
+          {renderGrid(booleanFields, "Statuts booléens")}
+          {renderGrid(rawDataFields, "Données brutes")}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderEditableField = (fieldName: string, value: unknown) => {
     // Handle data_section as a select
     if (fieldName === 'data_section') {
       return (
-        <Select value={value || ''} onValueChange={(newValue) => handleFieldChange(fieldName, newValue)}>
+        <Select value={String(value || '')} onValueChange={(newValue) => handleFieldChange(fieldName, newValue)}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Sélectionner une section" />
           </SelectTrigger>
@@ -579,7 +903,7 @@ const ContactDetails: React.FC = () => {
     // Handle boolean fields
     if (typeof contact[fieldName] === 'boolean') {
       return (
-        <Select value={value?.toString() || 'false'} onValueChange={(newValue) => handleFieldChange(fieldName, newValue === 'true')}>
+        <Select value={String(value || 'false')} onValueChange={(newValue) => handleFieldChange(fieldName, newValue === 'true')}>
           <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
@@ -595,7 +919,7 @@ const ContactDetails: React.FC = () => {
     if (fieldName.includes('description') || fieldName.includes('note') || fieldName.includes('comment')) {
       return (
         <Textarea
-          value={value || ''}
+          value={String(value || '')}
           onChange={(e) => handleFieldChange(fieldName, e.target.value)}
           className="w-full"
           rows={3}
@@ -608,7 +932,7 @@ const ContactDetails: React.FC = () => {
       return (
         <Input
           type="number"
-          value={value || ''}
+          value={String(value || '')}
           onChange={(e) => handleFieldChange(fieldName, e.target.value ? parseFloat(e.target.value) : null)}
           className="w-full"
         />
@@ -619,7 +943,7 @@ const ContactDetails: React.FC = () => {
     return (
       <Input
         type="text"
-        value={value || ''}
+        value={String(value || '')}
         onChange={(e) => handleFieldChange(fieldName, e.target.value)}
         className="w-full"
       />
@@ -777,12 +1101,17 @@ const ContactDetails: React.FC = () => {
             {renderFieldGroup('Séquences Marketing', categorizedFields.sequenceFields, <Tag className="h-5 w-5" />)}
             {renderFieldGroup('Cold Outreach', categorizedFields.coldOutreachFields, <User className="h-5 w-5" />)}
             {renderFieldGroup('Informations techniques', categorizedFields.technicalFields, <Building className="h-5 w-5" />)}
-            {renderFieldGroup('Autres informations', categorizedFields.otherFields, <Tag className="h-5 w-5" />)}
+          </div>
+          
+          {/* Section HubSpot - Pleine largeur */}
+          <div className="mt-8">
+            <Separator className="mb-6" />
+            {renderHubSpotData(contact, "Informations dans HubSpot")}
           </div>
         </div>
 
         {/* Sections pour les autres sources de données */}
-        {otherSources.map((source: any, index: number) => {
+        {otherSources.map((source: { source_table: string; data: Record<string, unknown> }, index: number) => {
           const otherCategorizedFields = categorizeFields(getAllAvailableFieldsForContact(source.data));
           
           return (
@@ -805,13 +1134,47 @@ const ContactDetails: React.FC = () => {
                 {renderFieldGroupForSource(source.data, 'Séquences Marketing', otherCategorizedFields.sequenceFields, <Tag className="h-5 w-5" />)}
                 {renderFieldGroupForSource(source.data, 'Cold Outreach', otherCategorizedFields.coldOutreachFields, <User className="h-5 w-5" />)}
                 {renderFieldGroupForSource(source.data, 'Informations techniques', otherCategorizedFields.technicalFields, <Building className="h-5 w-5" />)}
-                {renderFieldGroupForSource(source.data, 'Autres informations', otherCategorizedFields.otherFields, <Tag className="h-5 w-5" />)}
               </div>
+              
+              {/* Section HubSpot - Pleine largeur */}
+              {renderHubSpotDataForSource(source.data, source.source_table)}
+            </div>
+          );
+        })}
+
+        {/* Sections "Autres informations" - Footer */}
+        {categorizedFields.otherFields.length > 0 && (
+          <div className="mb-8">
+            <Separator className="mb-6" />
+            <div className="flex items-center gap-3 mb-6">
+              <Badge variant="outline" className="text-base px-4 py-2 bg-muted/10 border-muted/20">
+                Autres informations
+              </Badge>
+            </div>
+            {renderFieldGroup('Autres informations', categorizedFields.otherFields, <Tag className="h-5 w-5" />)}
+          </div>
+        )}
+
+        {/* Autres informations des sources additionnelles */}
+        {otherSources.map((source: { source_table: string; data: Record<string, unknown> }, index: number) => {
+          const otherCategorizedFields = categorizeFields(getAllAvailableFieldsForContact(source.data));
+          if (otherCategorizedFields.otherFields.length === 0) return null;
+          
+          return (
+            <div key={`other-${index}`} className="mb-8">
+              <Separator className="mb-6" />
+              <div className="flex items-center gap-3 mb-6">
+                <Badge variant="outline" className="text-base px-4 py-2 bg-muted/10 border-muted/20">
+                  {getTableDisplayName(source.source_table)} - Autres informations
+                </Badge>
+              </div>
+              {renderFieldGroupForSource(source.data, 'Autres informations', otherCategorizedFields.otherFields, <Tag className="h-5 w-5" />)}
             </div>
           );
         })}
 
         {/* Dates importantes */}
+        <div className="mt-8">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -835,6 +1198,7 @@ const ContactDetails: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
 
       {/* Dialogue d'assignation */}

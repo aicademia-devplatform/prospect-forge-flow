@@ -217,9 +217,7 @@ const TableView: React.FC<TableViewProps> = ({
   const [editingValue, setEditingValue] = useState<string>('');
   const [originalValue, setOriginalValue] = useState<string>(''); // Nouvelle variable pour stocker la valeur originale
   const [isSaving, setIsSaving] = useState(false);
-  const [localData, setLocalData] = useState<any[]>([]);
   const [recentlyUpdated, setRecentlyUpdated] = useState<Set<string>>(new Set());
-  const [pendingUpdates, setPendingUpdates] = useState<Set<string>>(new Set()); // Track pending updates to ignore realtime
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -261,13 +259,16 @@ const TableView: React.FC<TableViewProps> = ({
   // Memoize visible columns array to prevent infinite re-renders
   const visibleColumnsArray = useMemo(() => Array.from(visibleColumns), [visibleColumns]);
 
-  // Fetch data using server-side pagination
+  // Fetch data using server-side pagination with React Query
   const {
     data,
     totalCount,
     totalPages,
     loading,
-    refetch
+    refetch,
+    updateRowInCache,
+    optimisticUpdate,
+    invalidateAndRefetch
   } = useTableData({
     tableName,
     page: currentPage,
@@ -281,40 +282,24 @@ const TableView: React.FC<TableViewProps> = ({
     advancedFilters
   });
 
-  // Update local data when server data changes
-  useEffect(() => {
-    if (data) {
-      setLocalData(data);
-    }
-  }, [data]);
+  // Use data directly from React Query for better synchronization
+  // The optimistic updates are handled directly in the React Query cache
+  const displayData = data || [];
 
-  // Real-time updates setup
+  // Real-time updates setup - React Query will handle cache invalidation
   useEffect(() => {
     const channel = supabase.channel('table-changes').on('postgres_changes', {
       event: 'UPDATE',
       schema: 'public',
       table: tableName
     }, payload => {
-      // Update local data with real-time changes from other users
-      const updatedRecord = payload.new;
-      if (updatedRecord) {
-        const updateKey = `${updatedRecord.id}`;
-
-        // If we have a pending update for this record, ignore this realtime update to avoid conflicts
-        if (pendingUpdates.has(updateKey)) {
-          console.log('Ignoring realtime update for pending record:', updateKey);
-          return;
-        }
-        setLocalData(prev => prev.map(row => row.id === updatedRecord.id ? {
-          ...row,
-          ...updatedRecord
-        } : row));
-      }
+      // Invalidate React Query cache to refetch updated data
+      invalidateAndRefetch();
     }).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tableName]);
+  }, [tableName, invalidateAndRefetch]);
 
   // Fetch available sections
   const {
@@ -1193,6 +1178,17 @@ const TableView: React.FC<TableViewProps> = ({
     await proceedWithSave(rowId, columnName, editingValue);
   };
   const proceedWithSave = async (rowId: string, columnName: string, value: string) => {
+    // Vérifier que les données sont chargées
+    if (!data || data.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Les données ne sont pas encore chargées. Veuillez réessayer.",
+        duration: 4000
+      });
+      return;
+    }
+
     // Convert value based on column type
     let processedValue: any = value;
     const column = allColumns.find(col => col.name === columnName);
@@ -1211,51 +1207,24 @@ const TableView: React.FC<TableViewProps> = ({
       processedValue = value.toLowerCase() === 'true' || value === '1';
     }
 
-    // Optimistic update - update local data immediately
-    const optimisticData = localData.map(row => row.id === rowId ? {
-      ...row,
-      [columnName]: processedValue
-    } : row);
-    setLocalData(optimisticData);
-
-    // Mark this record as having a pending update to ignore realtime conflicts
-    const updateKey = `${rowId}`;
-    setPendingUpdates(prev => new Set([...prev, updateKey]));
-
     // Clear editing state immediately for fluid UX
     cancelEditing();
     setIsSaving(true);
+
+    // Add visual feedback immediately
+    const cellKey = `${rowId}-${columnName}`;
+    setRecentlyUpdated(prev => new Set([...prev, cellKey]));
+
     try {
-      const {
-        error
-      } = await supabase.from(tableName as any).update({
-        [columnName]: processedValue
-      }).eq('id', rowId);
-      if (error) throw error;
+      // Use the optimistic update function from the hook
+      await optimisticUpdate(rowId, { [columnName]: processedValue });
 
-      // Récupérer la ligne mise à jour depuis la base pour s'assurer d'avoir les vraies données
-      const {
-        data: updatedRow,
-        error: fetchError
-      } = await supabase.from(tableName as any).select('*').eq('id', rowId).single();
-      if (fetchError) throw fetchError;
-
-      // Mettre à jour seulement cette ligne dans localData
-      if (updatedRow) {
-        setLocalData(prev => prev.map(row => row.id === rowId ? {
-          ...row,
-          ...(updatedRow as any)
-        } : row));
-      }
+      // Success - show success feedback
       toast({
         title: "Modification sauvegardée",
         description: `${translateColumnName(columnName)} mis à jour avec succès.`,
-        duration: 2500 // 2.5 secondes pour les succès
+        duration: 2000
       });
-
-      // Add visual feedback for successful update
-      const cellKey = `${rowId}-${columnName}`;
-      setRecentlyUpdated(prev => new Set([...prev, cellKey]));
 
       // Remove visual feedback after 2 seconds
       setTimeout(() => {
@@ -1265,36 +1234,25 @@ const TableView: React.FC<TableViewProps> = ({
           return updated;
         });
       }, 2000);
+
     } catch (error) {
       console.error('Error saving edit:', error);
 
-      // Revert optimistic update on error - fetch fresh data
-      const {
-        data: freshData,
-        error: fetchError
-      } = await supabase.from(tableName as any).select('*').eq('id', rowId).single();
-      if (!fetchError && freshData) {
-        setLocalData(prev => prev.map(row => row.id === rowId ? {
-          ...row,
-          ...(freshData as any)
-        } : row));
-      }
       toast({
         variant: "destructive",
         title: "Erreur",
         description: "Impossible de sauvegarder la modification.",
-        duration: 4000 // 4 secondes pour les erreurs
+        duration: 4000
+      });
+
+      // Remove visual feedback immediately on error
+      setRecentlyUpdated(prev => {
+        const updated = new Set(prev);
+        updated.delete(cellKey);
+        return updated;
       });
     } finally {
       setIsSaving(false);
-      // Clear pending update flag after a delay to allow realtime to arrive
-      setTimeout(() => {
-        setPendingUpdates(prev => {
-          const updated = new Set(prev);
-          updated.delete(updateKey);
-          return updated;
-        });
-      }, 1000);
     }
   };
   const handleEmailWarningConfirm = async () => {
@@ -1507,7 +1465,7 @@ const TableView: React.FC<TableViewProps> = ({
   const handleEmailWarningCancel = () => {
     if (pendingEmailEdit) {
       // Remettre la valeur originale
-      const originalValue = localData.find(row => row.id === pendingEmailEdit.rowId)?.[pendingEmailEdit.columnName] || '';
+      const originalValue = data?.find(row => row.id === pendingEmailEdit.rowId)?.[pendingEmailEdit.columnName] || '';
       setEditingValue(originalValue);
     }
     setEmailWarningOpen(false);
@@ -1554,9 +1512,6 @@ const TableView: React.FC<TableViewProps> = ({
         throw error;
       }
 
-      // Remove from local data immediately for better UX
-      setLocalData(prev => prev.filter(row => row.id !== contactToDelete.id));
-      
       // Refresh data to get updated total count and pagination
       refetch();
 
@@ -1730,7 +1685,7 @@ const TableView: React.FC<TableViewProps> = ({
   };
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = localData.map(row => row.id?.toString() || '');
+      const allIds = data?.map(row => row.id?.toString() || '') || [];
       setSelectedRows(new Set(allIds));
       setSelectedRows(new Set(allIds));
     } else {
@@ -2037,7 +1992,7 @@ const TableView: React.FC<TableViewProps> = ({
                   <thead className="sticky top-0 bg-table-header border-b border-table-border z-20">
                     <tr>
                       <th className="w-12 px-4 py-4 text-left sticky top-0 left-0 bg-blue-50/95 backdrop-blur-sm border-r border-blue-200/30 z-30">
-                        <Checkbox checked={selectedRows.size === localData.length && localData.length > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
+                        <Checkbox checked={selectedRows.size === (data?.length || 0) && (data?.length || 0) > 0} onCheckedChange={handleSelectAll} aria-label="Sélectionner tout" />
                       </th>
                       {displayColumns.map(column => {
                     const isPinned = pinnedColumns.has(column.name);
@@ -2146,7 +2101,7 @@ const TableView: React.FC<TableViewProps> = ({
                   
                   {/* Scrollable Body */}
                   <tbody>
-                    {localData.map((row, index) => {
+                    {displayData.map((row, index) => {
                   const rowId = row.id?.toString() || index.toString();
                   const isSelected = selectedRows.has(rowId);
                   return <tr key={rowId} className={`border-b border-table-border hover:bg-table-row-hover transition-colors ${isSelected ? 'bg-table-selected' : ''}`}>
@@ -2161,7 +2116,7 @@ const TableView: React.FC<TableViewProps> = ({
                       const canEdit = column.name !== 'id' && column.name !== 'created_at' && column.name !== 'updated_at';
                       const cellKey = `${rowId}-${column.name}`;
                       const wasRecentlyUpdated = recentlyUpdated.has(cellKey);
-                      return <td key={column.name} className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''} ${canEdit ? 'cursor-pointer hover:bg-muted/30' : ''} ${wasRecentlyUpdated ? 'bg-green-50 border-green-200 transition-all duration-1000' : ''}`} style={isPinned ? {
+                      return <td key={column.name} className={`px-4 py-4 min-w-[120px] ${isPinned ? `sticky bg-primary/5 backdrop-blur-sm z-10 font-semibold text-primary ${borderStyle}` : ''} ${canEdit ? 'cursor-pointer hover:bg-muted/30' : ''} ${wasRecentlyUpdated ? 'bg-green-50 border-l-4 border-green-400 shadow-sm animate-pulse' : ''}`} style={isPinned ? {
                         left: '48px'
                       } : {}} onDoubleClick={() => canEdit && startEditing(rowId, column.name, row[column.name])}>
                                   {isEditing ? <div className="flex items-center gap-2">
@@ -2372,7 +2327,7 @@ const TableView: React.FC<TableViewProps> = ({
       </AlertDialog>
 
       {/* Export Dialog */}
-      <ExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} tableName={tableName} totalCount={totalCount} currentPageCount={localData.length} appliedFilters={{
+      <ExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} tableName={tableName} totalCount={totalCount} currentPageCount={data?.length || 0} appliedFilters={{
       searchTerm: debouncedSearchTerm,
       sectionFilter: sectionFilter !== 'all' ? sectionFilter : undefined,
       ...advancedFilters
