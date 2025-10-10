@@ -44,7 +44,7 @@ export const useOptimisticUpdate = ({ tableName, queryKey, onSuccess, onError }:
     try {
       // Update in database
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .update(updates)
         .eq('id', rowId);
 

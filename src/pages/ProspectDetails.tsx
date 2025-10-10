@@ -1485,7 +1485,8 @@ const ProspectDetails: React.FC = () => {
           </CardContent>
         </Card>}
 
-      {/* Dates importantes */}
+      {/* Section HubSpot si disponible */}
+      {prospect && renderHubSpotData(prospect)}
 
       {/* Dates importantes */}
       <Card>
