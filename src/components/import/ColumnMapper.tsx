@@ -14,7 +14,7 @@ interface ColumnMapperProps {
     rows: any[];
     fileName: string;
   };
-  targetTable: 'crm_contacts' | 'apollo_contacts';
+  targetTable: 'crm_contacts' | 'apollo_contacts' | 'prospects';
   onBack: () => void;
   onNext: (mapping: Record<string, string>) => void;
   onCancel: () => void;
@@ -30,6 +30,10 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ data, targetTable, onBack, 
       'address', 'city', 'departement', 'country', 'linkedin_url', 
       'linkedin_company_url', 'company_website', 'industrie', 'nb_employees',
       'zoho_status', 'apollo_status', 'data_section'
+    ],
+    prospects: [
+      'lead_email', 'source_table', 'source_id', 'notes_sales', 
+      'statut_prospect', 'date_action', 'manager_notes', 'rejection_reason'
     ],
     apollo_contacts: [
       // Informations personnelles

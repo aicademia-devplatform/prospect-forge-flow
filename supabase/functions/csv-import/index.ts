@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface ImportRequest {
-  targetTable: 'crm_contacts' | 'apollo_contacts';
+  targetTable: 'crm_contacts' | 'apollo_contacts' | 'prospects';
   columnMapping: Record<string, string>;
   rows: any[][];
   headers: string[];
@@ -111,7 +111,10 @@ Deno.serve(async (req) => {
       });
 
       return mappedRow;
-    }).filter((row) => row.email); // Only import rows with email
+    }).filter((row) => {
+      // For prospects table, filter by lead_email; for contacts, filter by email
+      return targetTable === 'prospects' ? row.lead_email : row.email;
+    });
 
     console.log(`Prepared ${dataToImport.length} rows for upsert`);
 
@@ -121,29 +124,65 @@ Deno.serve(async (req) => {
       let failedCount = 0;
       const errors: any[] = [];
 
-      // Upsert data in batches of 100
-      const batchSize = 100;
-      for (let i = 0; i < dataToImport.length; i += batchSize) {
-        const batch = dataToImport.slice(i, i + batchSize);
-        
-        const { data, error } = await supabaseClient
-          .from(targetTable)
-          .upsert(batch, {
-            onConflict: 'email',
-            ignoreDuplicates: false,
-          });
+      if (targetTable === 'prospects') {
+        // Logique spéciale pour l'import de prospects
+        for (const row of dataToImport) {
+          try {
+            // Ajouter les champs requis pour les prospects
+            const prospectData = {
+              ...row,
+              sales_user_id: user.id,
+              assigned_by: user.id,
+              sdr_id: user.id,
+            };
 
-        if (error) {
-          console.error(`Batch ${i / batchSize + 1} error:`, error);
-          failedCount += batch.length;
-          errors.push({
-            batch: i / batchSize + 1,
-            error: error.message,
-            rows: batch.length,
-          });
-        } else {
-          successCount += batch.length;
-          console.log(`Batch ${i / batchSize + 1} imported successfully`);
+            // Si statut_prospect est défini, importer dans prospects_traites
+            // Sinon, importer dans sales_assignments
+            if (row.statut_prospect) {
+              await supabaseClient
+                .from('prospects_traites')
+                .insert(prospectData);
+            } else {
+              await supabaseClient
+                .from('sales_assignments')
+                .insert(prospectData);
+            }
+            
+            successCount++;
+          } catch (error) {
+            console.error('Error importing prospect:', error);
+            failedCount++;
+            errors.push({
+              row: row.lead_email,
+              error: error.message,
+            });
+          }
+        }
+      } else {
+        // Upsert data in batches of 100 pour crm_contacts et apollo_contacts
+        const batchSize = 100;
+        for (let i = 0; i < dataToImport.length; i += batchSize) {
+          const batch = dataToImport.slice(i, i + batchSize);
+          
+          const { data, error } = await supabaseClient
+            .from(targetTable)
+            .upsert(batch, {
+              onConflict: 'email',
+              ignoreDuplicates: false,
+            });
+
+          if (error) {
+            console.error(`Batch ${i / batchSize + 1} error:`, error);
+            failedCount += batch.length;
+            errors.push({
+              batch: i / batchSize + 1,
+              error: error.message,
+              rows: batch.length,
+            });
+          } else {
+            successCount += batch.length;
+            console.log(`Batch ${i / batchSize + 1} imported successfully`);
+          }
         }
       }
 

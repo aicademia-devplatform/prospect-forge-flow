@@ -24,7 +24,7 @@ const CSVUploader = () => {
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
-  const [targetTable, setTargetTable] = useState<'crm_contacts' | 'apollo_contacts'>('crm_contacts');
+  const [targetTable, setTargetTable] = useState<'crm_contacts' | 'apollo_contacts' | 'prospects'>('prospects');
   const [step, setStep] = useState<'upload' | 'preview' | 'mapping' | 'confirm'>('upload');
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [isImporting, setIsImporting] = useState(false);
@@ -171,6 +171,7 @@ const CSVUploader = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="prospects">Prospects SDR</SelectItem>
                       <SelectItem value="crm_contacts">CRM Contacts</SelectItem>
                       <SelectItem value="apollo_contacts">Apollo Contacts</SelectItem>
                     </SelectContent>
