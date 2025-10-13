@@ -23,6 +23,131 @@ interface ColumnMapperProps {
 const ColumnMapper: React.FC<ColumnMapperProps> = ({ data, targetTable, onBack, onNext, onCancel }) => {
   const [mapping, setMapping] = useState<Record<string, string>>({});
 
+  // Traduction des noms de champs en français
+  const fieldLabels: Record<string, string> = {
+    // Champs communs
+    'email': 'Email',
+    'firstname': 'Prénom',
+    'first_name': 'Prénom',
+    'name': 'Nom',
+    'last_name': 'Nom',
+    'company': 'Entreprise',
+    'title': 'Fonction',
+    'mobile': 'Mobile',
+    'tel': 'Téléphone',
+    'tel_pro': 'Téléphone Pro',
+    'address': 'Adresse',
+    'city': 'Ville',
+    'departement': 'Département',
+    'country': 'Pays',
+    'linkedin_url': 'URL LinkedIn',
+    'person_linkedin_url': 'URL LinkedIn Personnel',
+    'linkedin_company_url': 'URL LinkedIn Entreprise',
+    'company_linkedin_url': 'URL LinkedIn Entreprise',
+    'company_website': 'Site Web Entreprise',
+    'website': 'Site Web',
+    'industrie': 'Industrie',
+    'industry': 'Industrie',
+    'nb_employees': 'Nombre d\'employés',
+    'num_employees': 'Nombre d\'employés',
+    
+    // Prospects
+    'lead_email': 'Email du Lead',
+    'source_table': 'Table Source',
+    'source_id': 'ID Source',
+    'notes_sales': 'Notes Commercial',
+    'statut_prospect': 'Statut Prospect',
+    'date_action': 'Date d\'Action',
+    'manager_notes': 'Notes Manager',
+    'rejection_reason': 'Raison de Rejet',
+    
+    // Apollo contacts
+    'company_name_for_emails': 'Nom Entreprise pour Emails',
+    'company_address': 'Adresse Entreprise',
+    'company_city': 'Ville Entreprise',
+    'company_state': 'État Entreprise',
+    'company_country': 'Pays Entreprise',
+    'company_phone': 'Téléphone Entreprise',
+    'work_direct_phone': 'Téléphone Direct Travail',
+    'home_phone': 'Téléphone Domicile',
+    'mobile_phone': 'Téléphone Mobile',
+    'corporate_phone': 'Téléphone Entreprise',
+    'other_phone': 'Autre Téléphone',
+    'state': 'État',
+    'region': 'Région',
+    
+    // Statuts email
+    'email_status': 'Statut Email',
+    'email_confidence': 'Confiance Email',
+    'primary_email_source': 'Source Email Principal',
+    'primary_email_catch_all_status': 'Statut Catch-All Email',
+    'primary_email_last_verified_at': 'Dernière Vérification Email',
+    'primary_email_verification_source': 'Source Vérification Email',
+    'secondary_email': 'Email Secondaire',
+    'secondary_email_source': 'Source Email Secondaire',
+    'secondary_email_status': 'Statut Email Secondaire',
+    'secondary_email_verification_source': 'Source Vérification Email Secondaire',
+    'tertiary_email': 'Email Tertiaire',
+    'tertiary_email_source': 'Source Email Tertiaire',
+    'tertiary_email_status': 'Statut Email Tertiaire',
+    'tertiary_email_verification_source': 'Source Vérification Email Tertiaire',
+    
+    // Professionnel
+    'seniority': 'Ancienneté',
+    'departments': 'Départements',
+    'categorie_fonction': 'Catégorie Fonction',
+    
+    // Réseaux sociaux
+    'facebook_url': 'URL Facebook',
+    'twitter_url': 'URL Twitter',
+    
+    // Commercial
+    'stage': 'Étape',
+    'lifecycle_stage': 'Phase du Cycle de Vie',
+    'lists': 'Listes',
+    'contact_owner': 'Propriétaire Contact',
+    'account_owner': 'Propriétaire Compte',
+    
+    // Activité
+    'email_sent': 'Email Envoyé',
+    'email_open': 'Email Ouvert',
+    'email_bounced': 'Email Rebondi',
+    'replied': 'A Répondu',
+    'demoed': 'Démo Effectuée',
+    'last_contacted': 'Dernier Contact',
+    'activity': 'Activité',
+    
+    // Entreprise détails
+    'secteur_activite': 'Secteur d\'Activité',
+    'number_of_retail_locations': 'Nombre de Magasins',
+    'technologies': 'Technologies',
+    'keywords': 'Mots-clés',
+    
+    // Financier
+    'annual_revenue': 'Chiffre d\'Affaires Annuel',
+    'total_funding': 'Financement Total',
+    'latest_funding': 'Dernier Financement',
+    'latest_funding_amount': 'Montant Dernier Financement',
+    'last_raised_at': 'Date Dernière Levée',
+    'subsidiary_of': 'Filiale de',
+    
+    // Identifiants
+    'apollo_contact_id': 'ID Contact Apollo',
+    'apollo_account_id': 'ID Compte Apollo',
+    
+    // Statut
+    'statut': 'Statut',
+    'zoho_status': 'Statut Zoho',
+    'apollo_status': 'Statut Apollo',
+    'data_section': 'Section Données',
+    
+    // Intent
+    'primary_intent_topic': 'Sujet d\'Intention Principal',
+    'primary_intent_score': 'Score d\'Intention Principal',
+    'secondary_intent_topic': 'Sujet d\'Intention Secondaire',
+    'secondary_intent_score': 'Score d\'Intention Secondaire',
+  };
+
   // Champs disponibles selon la table cible
   const targetFields: Record<string, string[]> = {
     crm_contacts: [
@@ -159,7 +284,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ data, targetTable, onBack, 
                         </SelectItem>
                         {fields.map(field => (
                           <SelectItem key={field} value={field}>
-                            {field}
+                            {fieldLabels[field] || field}
                           </SelectItem>
                         ))}
                       </SelectContent>
