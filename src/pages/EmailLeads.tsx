@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { encryptEmail } from '@/lib/emailCrypto';
 
 type EmailStatus = 'sent' | 'opened' | 'replied' | 'bounced';
 
@@ -118,6 +119,11 @@ const EmailLeads = () => {
   const filteredContacts = filterWithPhone 
     ? contacts.filter(hasValidPhone)
     : contacts;
+
+  const handleRowClick = (contact: ApolloContact) => {
+    const encryptedEmail = encryptEmail(contact.email);
+    navigate(`/contact/apollo_contacts/${encryptedEmail}`);
+  };
 
   const handleExport = async (options: ExportOptions) => {
     try {
@@ -248,18 +254,22 @@ const EmailLeads = () => {
                         Aucun contact trouvé
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    filteredContacts.map((contact) => (
-                      <TableRow key={contact.id}>
-                        <TableCell>{contact.email}</TableCell>
-                        <TableCell>{contact.first_name}</TableCell>
-                        <TableCell>{contact.last_name}</TableCell>
-                        <TableCell>{contact.company}</TableCell>
-                        <TableCell>{contact.title}</TableCell>
-                        <TableCell>{getPhoneNumber(contact)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
+              ) : (
+                filteredContacts.map((contact) => (
+                  <TableRow 
+                    key={contact.id} 
+                    onClick={() => handleRowClick(contact)}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  >
+                    <TableCell>{contact.email}</TableCell>
+                    <TableCell>{contact.first_name}</TableCell>
+                    <TableCell>{contact.last_name}</TableCell>
+                    <TableCell>{contact.company}</TableCell>
+                    <TableCell>{contact.title}</TableCell>
+                    <TableCell>{getPhoneNumber(contact)}</TableCell>
+                  </TableRow>
+                ))
+              )}
                 </TableBody>
               </Table>
             </div>
