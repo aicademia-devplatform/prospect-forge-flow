@@ -225,39 +225,45 @@ const EmailLeads = () => {
             Liste des contacts avec le statut "{statusLabels[status]}"
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Prénom</TableHead>
-                <TableHead>Nom</TableHead>
-                <TableHead>Entreprise</TableHead>
-                <TableHead>Titre</TableHead>
-                <TableHead>Téléphone</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredContacts.length === 0 ? (
+        <CardContent className="p-0">
+          <div className="border rounded-md">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    Aucun contact trouvé
-                  </TableCell>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Prénom</TableHead>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Entreprise</TableHead>
+                  <TableHead>Titre</TableHead>
+                  <TableHead>Téléphone</TableHead>
                 </TableRow>
-              ) : (
-                filteredContacts.map((contact) => (
-                  <TableRow key={contact.id}>
-                    <TableCell>{contact.email}</TableCell>
-                    <TableCell>{contact.first_name}</TableCell>
-                    <TableCell>{contact.last_name}</TableCell>
-                    <TableCell>{contact.company}</TableCell>
-                    <TableCell>{contact.title}</TableCell>
-                    <TableCell>{getPhoneNumber(contact)}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+            </Table>
+            <div className="max-h-[calc(100vh-400px)] overflow-y-auto">
+              <Table>
+                <TableBody>
+                  {filteredContacts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        Aucun contact trouvé
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredContacts.map((contact) => (
+                      <TableRow key={contact.id}>
+                        <TableCell>{contact.email}</TableCell>
+                        <TableCell>{contact.first_name}</TableCell>
+                        <TableCell>{contact.last_name}</TableCell>
+                        <TableCell>{contact.company}</TableCell>
+                        <TableCell>{contact.title}</TableCell>
+                        <TableCell>{getPhoneNumber(contact)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
