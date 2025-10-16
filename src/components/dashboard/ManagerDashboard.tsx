@@ -355,19 +355,31 @@ const ManagerDashboard = () => {
               </ResponsiveContainer>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="flex items-center justify-between p-3 bg-[hsl(var(--accent-blue-light))] rounded-lg">
+              <div 
+                className="flex items-center justify-between p-3 bg-[hsl(var(--accent-blue-light))] rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => navigate('/email-leads?status=sent')}
+              >
                 <span className="text-sm font-medium">Envoyés</span>
                 <span className="text-lg font-bold text-[hsl(var(--accent-blue))]">{emailStats.emailsSent}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-[hsl(var(--accent-green-light))] rounded-lg">
+              <div 
+                className="flex items-center justify-between p-3 bg-[hsl(var(--accent-green-light))] rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => navigate('/email-leads?status=opened')}
+              >
                 <span className="text-sm font-medium">Ouverts</span>
                 <span className="text-lg font-bold text-[hsl(var(--accent-green))]">{emailStats.emailsOpened}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-[hsl(var(--accent-purple-light))] rounded-lg">
+              <div 
+                className="flex items-center justify-between p-3 bg-[hsl(var(--accent-purple-light))] rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => navigate('/email-leads?status=replied')}
+              >
                 <span className="text-sm font-medium">Répondus</span>
                 <span className="text-lg font-bold text-[hsl(var(--accent-purple))]">{emailStats.emailsReplied}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-[hsl(var(--accent-orange-light))] rounded-lg">
+              <div 
+                className="flex items-center justify-between p-3 bg-[hsl(var(--accent-orange-light))] rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => navigate('/email-leads?status=bounced')}
+              >
                 <span className="text-sm font-medium">Rebondis</span>
                 <span className="text-lg font-bold text-[hsl(var(--accent-orange))]">{emailStats.emailsBounced}</span>
               </div>
