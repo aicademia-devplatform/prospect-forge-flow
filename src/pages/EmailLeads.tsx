@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLoader from '@/components/dashboard/DashboardLoader';
 import ExportDialog, { ExportOptions } from '@/components/ExportDialog';
@@ -29,6 +31,11 @@ interface ApolloContact {
   email_open: boolean;
   replied: boolean;
   email_bounced: boolean;
+  mobile_phone?: string;
+  work_direct_phone?: string;
+  home_phone?: string;
+  other_phone?: string;
+  corporate_phone?: string;
 }
 
 const EmailLeads = () => {
@@ -40,6 +47,7 @@ const EmailLeads = () => {
   const [contacts, setContacts] = useState<ApolloContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [filterWithPhone, setFilterWithPhone] = useState(false);
 
   const statusLabels = {
     sent: 'Envoyés',
@@ -99,9 +107,21 @@ const EmailLeads = () => {
     }
   };
 
+  const hasValidPhone = (contact: ApolloContact) => {
+    return !!(contact.mobile_phone || contact.work_direct_phone || contact.home_phone || contact.other_phone || contact.corporate_phone);
+  };
+
+  const getPhoneNumber = (contact: ApolloContact) => {
+    return contact.mobile_phone || contact.work_direct_phone || contact.home_phone || contact.other_phone || contact.corporate_phone || '-';
+  };
+
+  const filteredContacts = filterWithPhone 
+    ? contacts.filter(hasValidPhone)
+    : contacts;
+
   const handleExport = async (options: ExportOptions) => {
     try {
-      const dataToExport = contacts.map(contact => {
+      const dataToExport = filteredContacts.map(contact => {
         const filtered: any = {};
         options.columns.forEach(col => {
           filtered[col] = contact[col as keyof ApolloContact];
@@ -173,13 +193,25 @@ const EmailLeads = () => {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Emails {statusLabels[status]}</h1>
-            <p className="text-muted-foreground">{contacts.length} contacts</p>
+            <p className="text-muted-foreground">{filteredContacts.length} contacts</p>
           </div>
         </div>
-        <Button onClick={() => setExportDialogOpen(true)} className="gap-2">
-          <Download className="h-4 w-4" />
-          Exporter
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch 
+              id="phone-filter" 
+              checked={filterWithPhone}
+              onCheckedChange={setFilterWithPhone}
+            />
+            <Label htmlFor="phone-filter" className="cursor-pointer">
+              Avec numéro de téléphone
+            </Label>
+          </div>
+          <Button onClick={() => setExportDialogOpen(true)} className="gap-2">
+            <Download className="h-4 w-4" />
+            Exporter
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -202,23 +234,25 @@ const EmailLeads = () => {
                 <TableHead>Nom</TableHead>
                 <TableHead>Entreprise</TableHead>
                 <TableHead>Titre</TableHead>
+                <TableHead>Téléphone</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {contacts.length === 0 ? (
+              {filteredContacts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     Aucun contact trouvé
                   </TableCell>
                 </TableRow>
               ) : (
-                contacts.map((contact) => (
+                filteredContacts.map((contact) => (
                   <TableRow key={contact.id}>
                     <TableCell>{contact.email}</TableCell>
                     <TableCell>{contact.first_name}</TableCell>
                     <TableCell>{contact.last_name}</TableCell>
                     <TableCell>{contact.company}</TableCell>
                     <TableCell>{contact.title}</TableCell>
+                    <TableCell>{getPhoneNumber(contact)}</TableCell>
                   </TableRow>
                 ))
               )}
@@ -231,8 +265,8 @@ const EmailLeads = () => {
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
         tableName="apollo_contacts"
-        totalCount={contacts.length}
-        currentPageCount={contacts.length}
+        totalCount={filteredContacts.length}
+        currentPageCount={filteredContacts.length}
         appliedFilters={{}}
         onExport={handleExport}
       />
