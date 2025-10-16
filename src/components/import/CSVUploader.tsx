@@ -1,18 +1,37 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import * as XLSX from 'xlsx';
-import CSVPreview from './CSVPreview';
-import ColumnMapper from './ColumnMapper';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Upload,
+  FileSpreadsheet,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import * as XLSX from "xlsx";
+import CSVPreview from "./CSVPreview";
+import ColumnMapper from "./ColumnMapper";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 interface ParsedData {
   headers: string[];
@@ -22,28 +41,63 @@ interface ParsedData {
 
 const CSVUploader = () => {
   const { toast } = useToast();
+  const { userRole } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
-  const [targetTable, setTargetTable] = useState<'crm_contacts' | 'apollo_contacts' | 'prospects'>('prospects');
-  const [step, setStep] = useState<'upload' | 'preview' | 'mapping' | 'confirm'>('upload');
-  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const [targetTable, setTargetTable] = useState<
+    "crm_contacts" | "apollo_contacts" | "prospects"
+  >("prospects");
+  const [step, setStep] = useState<
+    "upload" | "preview" | "mapping" | "confirm"
+  >("upload");
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>(
+    {}
+  );
   const [isImporting, setIsImporting] = useState(false);
+
+  // Déterminer les tables disponibles selon le rôle
+  const getAvailableTables = () => {
+    if (userRole === "sdr") {
+      // SDR ne peut importer que dans prospects
+      return [{ value: "prospects", label: "Prospects SDR" }];
+    } else if (userRole === "sales" || userRole === "marketing") {
+      // Sales et Marketing ont accès à prospects et CRM
+      return [
+        { value: "prospects", label: "Prospects SDR" },
+        { value: "crm_contacts", label: "CRM Contacts" },
+      ];
+    } else if (userRole === "admin") {
+      // Admin a accès à toutes les tables
+      return [
+        { value: "prospects", label: "Prospects SDR" },
+        { value: "crm_contacts", label: "CRM Contacts" },
+        { value: "apollo_contacts", label: "Apollo Contacts" },
+      ];
+    }
+    // Par défaut (au cas où le rôle n'est pas défini), limiter à prospects
+    return [{ value: "prospects", label: "Prospects SDR" }];
+  };
+
+  const availableTables = getAvailableTables();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
 
     const validTypes = [
-      'text/csv',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      "text/csv",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ];
 
-    if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.csv')) {
+    if (
+      !validTypes.includes(selectedFile.type) &&
+      !selectedFile.name.endsWith(".csv")
+    ) {
       toast({
-        title: 'Format invalide',
-        description: 'Veuillez sélectionner un fichier CSV ou Excel',
-        variant: 'destructive',
+        title: "Format invalide",
+        description: "Veuillez sélectionner un fichier CSV ou Excel",
+        variant: "destructive",
       });
       return;
     }
@@ -58,22 +112,26 @@ const CSVUploader = () => {
     reader.onload = (e) => {
       try {
         const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
+        const workbook = XLSX.read(data, { type: "binary" });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+        }) as any[][];
 
         if (jsonData.length === 0) {
           toast({
-            title: 'Fichier vide',
-            description: 'Le fichier ne contient aucune donnée',
-            variant: 'destructive',
+            title: "Fichier vide",
+            description: "Le fichier ne contient aucune donnée",
+            variant: "destructive",
           });
           return;
         }
 
         const headers = jsonData[0] as string[];
-        const rows = jsonData.slice(1).filter(row => row.some(cell => cell !== null && cell !== ''));
+        const rows = jsonData
+          .slice(1)
+          .filter((row) => row.some((cell) => cell !== null && cell !== ""));
 
         setParsedData({
           headers,
@@ -81,18 +139,18 @@ const CSVUploader = () => {
           fileName: file.name,
         });
 
-        setStep('preview');
+        setStep("preview");
 
         toast({
-          title: 'Fichier chargé',
+          title: "Fichier chargé",
           description: `${rows.length} lignes détectées`,
         });
       } catch (error) {
-        console.error('Error parsing file:', error);
+        console.error("Error parsing file:", error);
         toast({
-          title: 'Erreur de lecture',
-          description: 'Impossible de lire le fichier',
-          variant: 'destructive',
+          title: "Erreur de lecture",
+          description: "Impossible de lire le fichier",
+          variant: "destructive",
         });
       }
     };
@@ -103,7 +161,7 @@ const CSVUploader = () => {
   const handleReset = () => {
     setFile(null);
     setParsedData(null);
-    setStep('upload');
+    setStep("upload");
     setColumnMapping({});
     setIsImporting(false);
   };
@@ -114,7 +172,19 @@ const CSVUploader = () => {
     setIsImporting(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('csv-import', {
+      // Vérifier que l'utilisateur est bien authentifié
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        throw new Error("Vous devez être connecté pour importer des données");
+      }
+
+      console.log("Calling csv-import with session:", session.user.id);
+
+      const { data, error } = await supabase.functions.invoke("csv-import", {
         body: {
           targetTable,
           columnMapping,
@@ -124,20 +194,26 @@ const CSVUploader = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
 
       toast({
-        title: 'Import réussi',
-        description: `${data.successRows} lignes importées avec succès${data.failedRows > 0 ? `, ${data.failedRows} échecs` : ''}`,
+        title: "Import réussi",
+        description: `${data.successRows} lignes importées avec succès${
+          data.failedRows > 0 ? `, ${data.failedRows} échecs` : ""
+        }`,
       });
 
       handleReset();
     } catch (error: any) {
-      console.error('Import error:', error);
+      console.error("Import error:", error);
       toast({
-        title: 'Erreur d\'importation',
-        description: error.message || 'Une erreur est survenue lors de l\'importation',
-        variant: 'destructive',
+        title: "Erreur d'importation",
+        description:
+          error.message || "Une erreur est survenue lors de l'importation",
+        variant: "destructive",
       });
     } finally {
       setIsImporting(false);
@@ -146,7 +222,7 @@ const CSVUploader = () => {
 
   return (
     <div className="space-y-6">
-      {step === 'upload' && (
+      {step === "upload" && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -159,23 +235,35 @@ const CSVUploader = () => {
                 Importer un fichier CSV
               </CardTitle>
               <CardDescription>
-                Sélectionnez un fichier CSV ou Excel à importer dans le data warehouse
+                Sélectionnez un fichier CSV ou Excel à importer dans le data
+                warehouse
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="target-table">Table de destination</Label>
-                  <Select value={targetTable} onValueChange={(value: any) => setTargetTable(value)}>
+                  <Select
+                    value={targetTable}
+                    onValueChange={(value: any) => setTargetTable(value)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="prospects">Prospects SDR</SelectItem>
-                      <SelectItem value="crm_contacts">CRM Contacts</SelectItem>
-                      <SelectItem value="apollo_contacts">Apollo Contacts</SelectItem>
+                      {availableTables.map((table) => (
+                        <SelectItem key={table.value} value={table.value}>
+                          {table.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {userRole === "sdr" && (
+                    <p className="text-xs text-muted-foreground">
+                      En tant que SDR, vous pouvez uniquement importer dans la
+                      table Prospects SDR
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -195,15 +283,18 @@ const CSVUploader = () => {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Format attendu :</strong> Fichier CSV ou Excel avec une ligne d'en-tête.
-                  Les colonnes seront mappées automatiquement si elles correspondent aux champs de la base de données.
+                  <strong>Format attendu :</strong> Fichier CSV ou Excel avec
+                  une ligne d'en-tête. Les colonnes seront mappées
+                  automatiquement si elles correspondent aux champs de la base
+                  de données.
                 </AlertDescription>
               </Alert>
 
               <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary transition-colors">
                 <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  Glissez-déposez votre fichier ici ou utilisez le bouton ci-dessus
+                  Glissez-déposez votre fichier ici ou utilisez le bouton
+                  ci-dessus
                 </p>
               </div>
             </CardContent>
@@ -211,29 +302,29 @@ const CSVUploader = () => {
         </motion.div>
       )}
 
-      {step === 'preview' && parsedData && (
+      {step === "preview" && parsedData && (
         <CSVPreview
           data={parsedData}
           targetTable={targetTable}
-          onNext={() => setStep('mapping')}
+          onNext={() => setStep("mapping")}
           onCancel={handleReset}
         />
       )}
 
-      {step === 'mapping' && parsedData && (
+      {step === "mapping" && parsedData && (
         <ColumnMapper
           data={parsedData}
           targetTable={targetTable}
-          onBack={() => setStep('preview')}
+          onBack={() => setStep("preview")}
           onNext={(mapping) => {
             setColumnMapping(mapping);
-            setStep('confirm');
+            setStep("confirm");
           }}
           onCancel={handleReset}
         />
       )}
 
-      {step === 'confirm' && parsedData && (
+      {step === "confirm" && parsedData && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -265,20 +356,30 @@ const CSVUploader = () => {
                 </div>
                 <div className="flex justify-between p-4 bg-muted rounded-lg">
                   <span className="font-medium">Colonnes mappées :</span>
-                  <span>{Object.values(columnMapping).filter(v => v !== 'ignore').length}</span>
+                  <span>
+                    {
+                      Object.values(columnMapping).filter((v) => v !== "ignore")
+                        .length
+                    }
+                  </span>
                 </div>
               </div>
 
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  L'import utilisera l'<strong>email</strong> comme identifiant unique. 
-                  Les contacts existants seront mis à jour avec les nouvelles données.
+                  L'import utilisera l'<strong>email</strong> comme identifiant
+                  unique. Les contacts existants seront mis à jour avec les
+                  nouvelles données.
                 </AlertDescription>
               </Alert>
 
               <div className="flex gap-3 justify-end">
-                <Button variant="outline" onClick={handleReset} disabled={isImporting}>
+                <Button
+                  variant="outline"
+                  onClick={handleReset}
+                  disabled={isImporting}
+                >
                   Annuler
                 </Button>
                 <Button onClick={handleConfirmImport} disabled={isImporting}>

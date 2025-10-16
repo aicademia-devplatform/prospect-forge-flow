@@ -12,6 +12,7 @@ import Import from "./pages/Import";
 import Reports from "./pages/Reports";
 import DataSources from "./pages/DataSources";
 import DataSourceTable from "./pages/DataSourceTable";
+import UnifiedProspectsView from "./pages/UnifiedProspectsView";
 import ContactDetails from "./pages/ContactDetails";
 import ProspectDetails from "./pages/ProspectDetails";
 import AdminPanel from "./pages/AdminPanel";
@@ -110,6 +111,16 @@ const App = () => (
                 <ProtectedRoute>
                   <Layout>
                     <DataSources />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/datasources/unified-view" 
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <UnifiedProspectsView />
                   </Layout>
                 </ProtectedRoute>
               } 

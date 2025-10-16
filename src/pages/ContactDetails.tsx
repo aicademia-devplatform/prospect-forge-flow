@@ -218,10 +218,15 @@ const ContactDetails: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
+  // Récupérer l'email depuis les paramètres de requête (pour la vue unifiée)
+  const searchParams = new URLSearchParams(location.search);
+  const emailParam = searchParams.get('email');
+
   // Récupérer les données du contact spécifique avec gestion des deux formats
   const { data: rawContactsData, loading } = useContact({
-    tableName: tableName!,
-    contactId: contactId!
+    tableName: emailParam ? undefined : tableName!,
+    contactId: emailParam ? undefined : contactId!,
+    email: emailParam || undefined
   });
 
   // Normaliser les données pour gérer les deux formats (ancien et nouveau)

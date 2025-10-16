@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Database, Table, RefreshCw, Activity } from 'lucide-react';
+import { Database, Table, RefreshCw, Activity, Eye, GitMerge } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,8 +16,11 @@ interface TableInfo {
 }
 
 const DataSources = () => {
+  const navigate = useNavigate();
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uniqueEmails, setUniqueEmails] = useState(0);
+  const [multiSourceCount, setMultiSourceCount] = useState(0);
   const { toast } = useToast();
 
   const fetchTableInfo = async () => {
@@ -85,6 +88,51 @@ const DataSources = () => {
       ];
 
       setTables(tableData);
+
+      // Calculer les statistiques de la vue 360
+      // Récupérer tous les emails uniques de toutes les sources
+      const allEmails = new Set<string>();
+      const emailSources = new Map<string, number>();
+
+      // Apollo emails
+      const { data: apolloEmails } = await supabase
+        .from('apollo_contacts')
+        .select('email');
+      apolloEmails?.forEach((item: any) => {
+        if (item.email) {
+          const email = item.email.toLowerCase().trim();
+          allEmails.add(email);
+          emailSources.set(email, (emailSources.get(email) || 0) + 1);
+        }
+      });
+
+      // CRM emails
+      const { data: crmEmails } = await supabase
+        .from('crm_contacts')
+        .select('email');
+      crmEmails?.forEach((item: any) => {
+        if (item.email) {
+          const email = item.email.toLowerCase().trim();
+          allEmails.add(email);
+          emailSources.set(email, (emailSources.get(email) || 0) + 1);
+        }
+      });
+
+      // HubSpot emails
+      const { data: hubspotEmails } = await supabase
+        .from('hubspot_contacts' as any)
+        .select('primary_email');
+      hubspotEmails?.forEach((item: any) => {
+        if (item.primary_email) {
+          const email = item.primary_email.toLowerCase().trim();
+          allEmails.add(email);
+          emailSources.set(email, (emailSources.get(email) || 0) + 1);
+        }
+      });
+
+      setUniqueEmails(allEmails.size);
+      setMultiSourceCount(Array.from(emailSources.values()).filter(count => count > 1).length);
+
     } catch (error) {
       console.error('Erreur lors du chargement des sources de données:', error);
       toast({
@@ -139,6 +187,86 @@ const DataSources = () => {
           Actualiser
         </Button>
       </div>
+
+      {/* Card Vue 360 */}
+      <Card className="border-2 border-primary bg-gradient-to-br from-blue-50 to-purple-50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Database className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  Vue 360° des Prospects
+                  <Badge className="bg-blue-500">Nouveau</Badge>
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Vue unifiée et dédupliquée de tous vos contacts depuis toutes les sources
+                </CardDescription>
+              </div>
+            </div>
+            <Button 
+              size="lg" 
+              onClick={() => navigate('/datasources/unified-view')}
+              className="shadow-lg"
+            >
+              <Eye className="h-5 w-5 mr-2" />
+              Accéder à la vue
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm border">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Database className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-primary">
+                  {loading ? '...' : uniqueEmails.toLocaleString('fr-FR')}
+                </p>
+                <p className="text-sm text-muted-foreground">Contacts uniques</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm border">
+              <div className="p-3 bg-green-100 rounded-full">
+                <GitMerge className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-600">
+                  {loading ? '...' : multiSourceCount.toLocaleString('fr-FR')}
+                </p>
+                <p className="text-sm text-muted-foreground">Multi-sources</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm border">
+              <div className="p-3 bg-purple-100 rounded-full">
+                <Table className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-purple-600">3</p>
+                <p className="text-sm text-muted-foreground">Sources agrégées</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start gap-3">
+              <GitMerge className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <p className="font-semibold text-sm text-blue-900">Agrégation intelligente</p>
+                <p className="text-sm text-blue-700 mt-1">
+                  Les données des 3 sources sont fusionnées par email avec priorisation CRM &gt; HubSpot &gt; Apollo. 
+                  Visualisez tous vos prospects en un seul endroit avec toutes leurs informations disponibles.
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {loading ? (
         <div className="grid gap-6 md:grid-cols-3">

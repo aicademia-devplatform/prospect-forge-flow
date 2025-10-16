@@ -3,8 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface UseContactParams {
-  tableName: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts';
-  contactId: string;
+  tableName?: 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts';
+  contactId?: string;
+  email?: string; // Nouveau: recherche par email (pour la vue unifiée)
 }
 
 export const useContact = (params: UseContactParams) => {
@@ -49,10 +50,11 @@ export const useContact = (params: UseContactParams) => {
   };
 
   useEffect(() => {
-    if (params.tableName && params.contactId) {
+    // Fetch si on a soit un tableName+contactId, soit un email
+    if ((params.tableName && params.contactId) || params.email) {
       fetchContact();
     }
-  }, [params.tableName, params.contactId]);
+  }, [params.tableName, params.contactId, params.email]);
 
   return {
     data,

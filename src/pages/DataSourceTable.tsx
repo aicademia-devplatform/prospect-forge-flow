@@ -30,10 +30,14 @@ const DataSourceTable = () => {
     );
   }
 
+  // Déterminer si on utilise la vue unifiée pour CRM
+  const isUnifiedView = tableName === 'crm_contacts';
+
   return (
     <TableView 
       tableName={tableName as 'apollo_contacts' | 'crm_contacts' | 'hubspot_contacts'} 
-      onBack={() => navigate('/datasources')} 
+      onBack={() => navigate('/datasources')}
+      isUnifiedView={isUnifiedView}
     />
   );
 };
