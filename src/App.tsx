@@ -21,6 +21,9 @@ import MySalesLeads from "./pages/MySalesLeads";
 import TeamStats from "./pages/TeamStats";
 import SalesProspects from "./pages/SalesProspects";
 import AllAssignedProspects from "./pages/AllAssignedProspects";
+import EmailLeads from "./pages/EmailLeads";
+import BrevoLeads from "./pages/BrevoLeads";
+import BrevoAllContacts from "./pages/BrevoAllContacts";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -35,205 +38,235 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route 
-              path="/" 
+            <Route
+              path="/"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <Dashboard />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/prospects" 
+            <Route
+              path="/prospects"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <Prospects />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/prospects/assigned" 
+            <Route
+              path="/prospects/assigned"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <Prospects />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/prospects/rappeler" 
+            <Route
+              path="/prospects/rappeler"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <Prospects />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/prospects/traites" 
+            <Route
+              path="/prospects/traites"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <Prospects />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/import" 
+            <Route
+              path="/import"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <Import />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/reports" 
+            <Route
+              path="/reports"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <Reports />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/datasources" 
+            <Route
+              path="/datasources"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <DataSources />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/datasources/unified-view" 
+            <Route
+              path="/datasources/unified-view"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <UnifiedProspectsView />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/datasources/:tableName" 
+            <Route
+              path="/datasources/:tableName"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <DataSourceTable />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/contact/:tableName/:contactId" 
+            <Route
+              path="/contact/:tableName/:contactId"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <ContactDetails />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/prospect/:encryptedEmail" 
+            <Route
+              path="/prospect/:encryptedEmail"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <ProspectDetails />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin" 
+            <Route
+              path="/admin"
               element={
                 <ProtectedRoute requiredPermission="access_admin_panel">
                   <Layout>
                     <AdminPanel />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/settings" 
+            <Route
+              path="/settings"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <Settings />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/my-sales-leads" 
+            <Route
+              path="/my-sales-leads"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <MySalesLeads />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/sales-prospects" 
+            <Route
+              path="/sales-prospects"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <SalesProspects />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/sales-prospects/rappeler" 
+            <Route
+              path="/sales-prospects/rappeler"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <SalesProspects />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/sales-prospects/traites" 
+            <Route
+              path="/sales-prospects/traites"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <SalesProspects />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/team-stats" 
+            <Route
+              path="/team-stats"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <TeamStats />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/all-assigned-prospects" 
+            <Route
+              path="/all-assigned-prospects"
               element={
                 <ProtectedRoute>
                   <Layout>
                     <AllAssignedProspects />
                   </Layout>
                 </ProtectedRoute>
-              } 
+              }
+            />
+            <Route
+              path="/email-leads"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <EmailLeads />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/brevo-leads"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <BrevoLeads />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/brevo/all-contacts"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <BrevoAllContacts />
+                  </Layout>
+                </ProtectedRoute>
+              }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
