@@ -86,7 +86,13 @@ const EmailLeads = () => {
         return;
       }
 
-      let query = supabase.from("apollo_contacts").select("*");
+      // Récupérer apollo_contacts avec LEFT JOIN sur crm_contacts pour avoir toutes les colonnes
+      let query = supabase
+        .from("apollo_contacts")
+        .select(`
+          *,
+          crm:crm_contacts!left(*)
+        `);
 
       switch (status) {
         case "sent":
@@ -103,25 +109,17 @@ const EmailLeads = () => {
           break;
       }
 
-      const { data: apolloData, error } = await query;
+      const { data, error } = await query;
 
       if (error) throw error;
 
-      // Pour chaque contact Apollo, récupérer toutes les colonnes de crm_contacts
-      const contactsWithCRM = await Promise.all(
-        (apolloData || []).map(async (apolloContact) => {
-          const { data: crmData } = await supabase
-            .from("crm_contacts")
-            .select("*")
-            .eq("email", apolloContact.email)
-            .maybeSingle();
-
-          return {
-            ...apolloContact,
-            crm: crmData || null,
-          };
-        })
-      );
+      // Transformer les données pour avoir crm comme objet unique au lieu de tableau
+      const contactsWithCRM = (data || []).map((contact: any) => ({
+        ...contact,
+        crm: Array.isArray(contact.crm) && contact.crm.length > 0 
+          ? contact.crm[0] 
+          : null,
+      }));
 
       setContacts(contactsWithCRM);
     } catch (error) {
