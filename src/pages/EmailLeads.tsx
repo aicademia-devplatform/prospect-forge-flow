@@ -44,6 +44,7 @@ interface ApolloContact {
   home_phone?: string;
   other_phone?: string;
   corporate_phone?: string;
+  crm?: any; // Toutes les colonnes de crm_contacts
 }
 
 const EmailLeads = () => {
@@ -102,10 +103,27 @@ const EmailLeads = () => {
           break;
       }
 
-      const { data, error } = await query;
+      const { data: apolloData, error } = await query;
 
       if (error) throw error;
-      setContacts(data || []);
+
+      // Pour chaque contact Apollo, récupérer toutes les colonnes de crm_contacts
+      const contactsWithCRM = await Promise.all(
+        (apolloData || []).map(async (apolloContact) => {
+          const { data: crmData } = await supabase
+            .from("crm_contacts")
+            .select("*")
+            .eq("email", apolloContact.email)
+            .maybeSingle();
+
+          return {
+            ...apolloContact,
+            crm: crmData || null,
+          };
+        })
+      );
+
+      setContacts(contactsWithCRM);
     } catch (error) {
       console.error("Error fetching contacts:", error);
       toast({
