@@ -1,0 +1,4 @@
+email,firstname,name,company,notes_sales
+test-no-status1@example.com,Alice,Martin,Test Company 1,Prospect à contacter
+test-no-status2@example.com,Bob,Dupont,Test Company 2,Nouveau prospect
+test-no-status3@example.com,Claire,Bernard,Test Company 3,Lead qualifié

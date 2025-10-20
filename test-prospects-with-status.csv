@@ -1,0 +1,4 @@
+email,firstname,name,statut_prospect,notes_sales,date_action,apollo_status,zoho_status
+test-status1@example.com,Jean,Dupont,RDV,Prospect intéressé par une démo,2024-01-15,Qualified,Hot Lead
+test-status2@example.com,Marie,Martin,En cours,À rappeler la semaine prochaine,2024-01-16,Contacted,In Progress
+test-status3@example.com,Pierre,Bernard,Non intéressé,Ne souhaite pas être contacté,2024-01-17,Unqualified,Cold Lead

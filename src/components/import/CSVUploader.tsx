@@ -53,6 +53,9 @@ const CSVUploader = () => {
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>(
     {}
   );
+  const [sdrAssignments, setSDRAssignments] = useState<Record<string, string>>(
+    {}
+  );
   const [isImporting, setIsImporting] = useState(false);
 
   // Déterminer les tables disponibles selon le rôle
@@ -163,6 +166,7 @@ const CSVUploader = () => {
     setParsedData(null);
     setStep("upload");
     setColumnMapping({});
+    setSDRAssignments({});
     setIsImporting(false);
   };
 
@@ -183,11 +187,22 @@ const CSVUploader = () => {
       }
 
       console.log("Calling csv-import with session:", session.user.id);
+      console.log("Request payload:", {
+        targetTable,
+        columnMapping,
+        sdrAssignments:
+          Object.keys(sdrAssignments).length > 0 ? sdrAssignments : undefined,
+        rowsCount: parsedData.rows.length,
+        headers: parsedData.headers,
+        fileName: parsedData.fileName,
+      });
 
       const { data, error } = await supabase.functions.invoke("csv-import", {
         body: {
           targetTable,
           columnMapping,
+          sdrAssignments:
+            Object.keys(sdrAssignments).length > 0 ? sdrAssignments : undefined,
           rows: parsedData.rows,
           headers: parsedData.headers,
           fileName: parsedData.fileName,
@@ -199,10 +214,34 @@ const CSVUploader = () => {
         throw error;
       }
 
+      console.log("Import response data:", data);
+
+      // Vérifier que l'import a réussi
+      if (
+        !data ||
+        data.successRows === undefined ||
+        data.successRows === null
+      ) {
+        throw new Error(
+          data?.error || "Aucune donnée retournée par le serveur"
+        );
+      }
+
+      const successCount = data.successRows || 0;
+      const failedCount = data.failedRows || 0;
+
+      if (successCount === 0 && failedCount > 0) {
+        throw new Error(
+          `Échec de l'importation : ${failedCount} lignes en échec. ${
+            data.errors?.[0]?.error || ""
+          }`
+        );
+      }
+
       toast({
         title: "Import réussi",
-        description: `${data.successRows} lignes importées avec succès${
-          data.failedRows > 0 ? `, ${data.failedRows} échecs` : ""
+        description: `${successCount} lignes importées avec succès${
+          failedCount > 0 ? `, ${failedCount} échecs` : ""
         }`,
       });
 
@@ -316,8 +355,11 @@ const CSVUploader = () => {
           data={parsedData}
           targetTable={targetTable}
           onBack={() => setStep("preview")}
-          onNext={(mapping) => {
+          onNext={(mapping, assignments) => {
             setColumnMapping(mapping);
+            if (assignments) {
+              setSDRAssignments(assignments);
+            }
             setStep("confirm");
           }}
           onCancel={handleReset}
@@ -363,6 +405,14 @@ const CSVUploader = () => {
                     }
                   </span>
                 </div>
+                {Object.keys(sdrAssignments).length > 0 && (
+                  <div className="flex justify-between p-4 bg-muted rounded-lg">
+                    <span className="font-medium">
+                      Prospects assignés aux SDR :
+                    </span>
+                    <span>{Object.keys(sdrAssignments).length}</span>
+                  </div>
+                )}
               </div>
 
               <Alert>
