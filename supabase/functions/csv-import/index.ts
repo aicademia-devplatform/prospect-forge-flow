@@ -137,7 +137,12 @@ Deno.serve(async (req) => {
           const contactData = { email: email };
           Object.keys(row).forEach((key) => {
             if (crmContactFields.includes(key) && key !== "email") {
-              contactData[key] = row[key];
+              let value = row[key];
+              // Tronquer les valeurs trop longues pour VARCHAR(20)
+              if (["tel_pro", "tel", "mobile", "mobile_2"].includes(key) && value && value.length > 20) {
+                value = value.substring(0, 20);
+              }
+              contactData[key] = value;
             }
           });
 
@@ -250,8 +255,27 @@ Deno.serve(async (req) => {
             }
           } else {
             // Prospect sans statut -> sales_assignments
-            await supabaseClient.from("sales_assignments").upsert(
-              {
+            const { data: existingAssignment } = await supabaseClient
+              .from("sales_assignments")
+              .select("id")
+              .eq("lead_email", email)
+              .eq("sales_user_id", assignedSDRId)
+              .maybeSingle();
+
+            if (existingAssignment) {
+              // Mise à jour de l'assignation existante
+              await supabaseClient
+                .from("sales_assignments")
+                .update({
+                  custom_data: {
+                    import_source: fileName,
+                    imported_at: new Date().toISOString(),
+                  },
+                })
+                .eq("id", existingAssignment.id);
+            } else {
+              // Création d'une nouvelle assignation
+              await supabaseClient.from("sales_assignments").insert({
                 lead_email: email,
                 sales_user_id: assignedSDRId,
                 assigned_by: user.id,
@@ -261,11 +285,8 @@ Deno.serve(async (req) => {
                   import_source: fileName,
                   imported_at: new Date().toISOString(),
                 },
-              },
-              {
-                onConflict: "lead_email,sales_user_id",
-              }
-            );
+              });
+            }
           }
 
           successCount++;
