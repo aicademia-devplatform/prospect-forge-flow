@@ -1,0 +1,7 @@
+email,firstname,lastname,arlynk_cold_status,aicademia_cold_status,notes_sales
+arlynk-test1@example.com,Jean,Dupont,Interested,,
+arlynk-test2@example.com,Marie,Martin,Not Interested,,
+aicademia-test1@example.com,Pierre,Bernard,,Qualified,
+aicademia-test2@example.com,Sophie,Moreau,,Unqualified,
+no-status-test@example.com,Paul,Durand,,,
+mixed-status@example.com,Julie,Petit,Maybe,Qualified,
