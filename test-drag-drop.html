@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Drag and Drop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .drop-zone.drag-over {
+            border-color: #007bff;
+            background-color: #f0f8ff;
+        }
+        .file-info {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test de la zone de drag and drop</h1>
+    
+    <div id="dropZone" class="drop-zone">
+        <p>Glissez-déposez votre fichier CSV ou Excel ici</p>
+        <p><small>Formats supportés: .csv, .xlsx, .xls</small></p>
+    </div>
+    
+    <input type="file" id="fileInput" class="hidden" accept=".csv,.xlsx,.xls">
+    
+    <div id="fileInfo" class="file-info hidden">
+        <h3>Fichier sélectionné:</h3>
+        <p id="fileName"></p>
+        <p id="fileSize"></p>
+        <p id="fileType"></p>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileType = document.getElementById('fileType');
+
+        let isDragOver = false;
+
+        // Gestionnaires drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isDragOver) {
+                isDragOver = true;
+                dropZone.classList.add('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isDragOver) {
+                isDragOver = true;
+                dropZone.classList.add('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (isDragOver) {
+                isDragOver = false;
+                dropZone.classList.remove('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            isDragOver = false;
+            dropZone.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // Clic sur la zone pour ouvrir le sélecteur de fichiers
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Gestionnaire pour le sélecteur de fichiers
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            // Vérifier le type de fichier
+            const allowedTypes = [
+                'text/csv',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ];
+            
+            const fileExtension = file.name.split('.').pop()?.toLowerCase();
+            const isAllowedExtension = ['csv', 'xlsx', 'xls'].includes(fileExtension || '');
+            
+            if (allowedTypes.includes(file.type) || isAllowedExtension) {
+                // Afficher les informations du fichier
+                fileName.textContent = `Nom: ${file.name}`;
+                fileSize.textContent = `Taille: ${(file.size / 1024).toFixed(2)} KB`;
+                fileType.textContent = `Type: ${file.type || 'Type inconnu'}`;
+                fileInfo.classList.remove('hidden');
+                
+                console.log('Fichier valide:', file);
+            } else {
+                alert('Type de fichier non supporté. Veuillez sélectionner un fichier CSV ou Excel.');
+            }
+        }
+    </script>
+</body>
+</html>
+

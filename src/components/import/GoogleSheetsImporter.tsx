@@ -177,11 +177,11 @@ const GoogleSheetsImporter = () => {
         throw error;
       }
 
+      // Afficher un toast temporaire
       toast({
-        title: "Import réussi",
-        description: `${data.successRows} lignes importées avec succès${
-          data.failedRows > 0 ? `, ${data.failedRows} échecs` : ""
-        }`,
+        title: "Import en cours",
+        description:
+          "Votre importation est en cours de traitement. Vous recevrez une notification une fois terminée.",
       });
 
       handleReset();

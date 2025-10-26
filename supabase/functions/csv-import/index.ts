@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
 
     let successCount = 0;
     let failedCount = 0;
-    const errors = [];
+    const errors: any[] = [];
 
     if (targetTable === "prospects") {
       const crmContactFields = [
@@ -103,14 +103,84 @@ Deno.serve(async (req) => {
         "brevo_tag",
         "zoho_tag",
         "zoho_status",
+        "zoho_status_2",
         "apollo_status",
         "arlynk_status",
+        "arlynk_cold_status",
         "aicademia_high_status",
         "aicademia_low_status",
+        "aicademia_cold_status",
+        "hubspot_lead_status",
+        "statut_prospect",
         "full_name",
         "contact_active",
         "data_section",
       ];
+
+      // Fonction de mapping intelligent des statuts
+      const mapStatusField = (columnName: string, value: string) => {
+        const lowerColumnName = columnName.toLowerCase();
+        const lowerValue = value.toLowerCase();
+
+        // Mapping des colonnes de statut communes
+        if (
+          lowerColumnName.includes("statut") ||
+          lowerColumnName.includes("status")
+        ) {
+          // Mapping intelligent basé sur le nom de la colonne
+          if (
+            lowerColumnName.includes("apollo") ||
+            lowerColumnName.includes("apollo_status")
+          ) {
+            return { apollo_status: value };
+          }
+          if (
+            lowerColumnName.includes("zoho") ||
+            lowerColumnName.includes("zoho_status")
+          ) {
+            return { zoho_status: value };
+          }
+          if (
+            lowerColumnName.includes("arlynk") ||
+            lowerColumnName.includes("arlynk_status")
+          ) {
+            return { arlynk_status: value };
+          }
+          if (
+            lowerColumnName.includes("aicademia") ||
+            lowerColumnName.includes("aicademia_status")
+          ) {
+            return { aicademia_high_status: value };
+          }
+          if (
+            lowerColumnName.includes("hubspot") ||
+            lowerColumnName.includes("hubspot_status")
+          ) {
+            return { hubspot_lead_status: value };
+          }
+          if (
+            lowerColumnName.includes("cold") ||
+            lowerColumnName.includes("froid")
+          ) {
+            if (lowerColumnName.includes("arlynk")) {
+              return { arlynk_cold_status: value };
+            }
+            if (lowerColumnName.includes("aicademia")) {
+              return { aicademia_cold_status: value };
+            }
+          }
+          if (
+            lowerColumnName.includes("prospect") ||
+            lowerColumnName.includes("prospect_status")
+          ) {
+            return { statut_prospect: value };
+          }
+          // Par défaut, utiliser le statut prospect
+          return { statut_prospect: value };
+        }
+
+        return null;
+      };
 
       for (let index = 0; index < dataToImport.length; index++) {
         const row = dataToImport[index];
@@ -118,31 +188,36 @@ Deno.serve(async (req) => {
           const email = row.email || row.lead_email;
           if (!email) throw new Error("Email manquant");
 
-          const statusColumns = {};
-          Object.keys(row).forEach((key) => {
-            if (
-              (key.toLowerCase().includes("status") ||
-                key.toLowerCase().includes("statut")) &&
-              row[key]
-            ) {
-              statusColumns[key] = row[key];
-            }
-          });
-
           const assignedSDRId =
             sdrAssignments && sdrAssignments[index]
               ? sdrAssignments[index]
               : user.id;
 
-          const contactData = { email: email };
+          const contactData: any = { email: email };
+
+          // Traitement des données avec mapping intelligent des statuts
           Object.keys(row).forEach((key) => {
             if (crmContactFields.includes(key) && key !== "email") {
               let value = row[key];
               // Tronquer les valeurs trop longues pour VARCHAR(20)
-              if (["tel_pro", "tel", "mobile", "mobile_2"].includes(key) && value && value.length > 20) {
+              if (
+                ["tel_pro", "tel", "mobile", "mobile_2"].includes(key) &&
+                value &&
+                value.length > 20
+              ) {
                 value = value.substring(0, 20);
               }
               contactData[key] = value;
+            } else if (
+              row[key] &&
+              (key.toLowerCase().includes("status") ||
+                key.toLowerCase().includes("statut"))
+            ) {
+              // Mapping intelligent des colonnes de statut
+              const statusMapping = mapStatusField(key, row[key]);
+              if (statusMapping) {
+                Object.assign(contactData, statusMapping);
+              }
             }
           });
 
@@ -158,7 +233,16 @@ Deno.serve(async (req) => {
           if (contactError || !contact)
             throw new Error("Échec enregistrement contact");
 
-          if (row.statut_prospect || Object.keys(statusColumns).length > 0) {
+          // Vérifier s'il y a des statuts dans les données enrichies
+          const hasStatus =
+            contactData.statut_prospect ||
+            contactData.apollo_status ||
+            contactData.zoho_status ||
+            contactData.arlynk_status ||
+            contactData.aicademia_high_status ||
+            contactData.hubspot_lead_status;
+
+          if (hasStatus) {
             // Prospect avec statut -> prospects_traites
             const { data: existingTraite } = await supabaseClient
               .from("prospects_traites")
@@ -172,11 +256,19 @@ Deno.serve(async (req) => {
               await supabaseClient
                 .from("prospects_traites")
                 .update({
-                  statut_prospect: row.statut_prospect || "Importé avec statut",
+                  statut_prospect:
+                    contactData.statut_prospect || "Importé avec statut",
                   notes_sales: row.notes_sales || null,
                   date_action: row.date_action || null,
                   custom_data: {
-                    status_history: statusColumns,
+                    status_history: {
+                      statut_prospect: contactData.statut_prospect,
+                      apollo_status: contactData.apollo_status,
+                      zoho_status: contactData.zoho_status,
+                      arlynk_status: contactData.arlynk_status,
+                      aicademia_high_status: contactData.aicademia_high_status,
+                      hubspot_lead_status: contactData.hubspot_lead_status,
+                    },
                     import_source: fileName,
                     imported_at: new Date().toISOString(),
                   },
@@ -221,11 +313,19 @@ Deno.serve(async (req) => {
                   assigned_by: user.id,
                   assigned_at: new Date().toISOString(),
                   completed_at: new Date().toISOString(),
-                  statut_prospect: row.statut_prospect || "Importé avec statut",
+                  statut_prospect:
+                    contactData.statut_prospect || "Importé avec statut",
                   notes_sales: row.notes_sales || null,
                   date_action: row.date_action || null,
                   custom_data: {
-                    status_history: statusColumns,
+                    status_history: {
+                      statut_prospect: contactData.statut_prospect,
+                      apollo_status: contactData.apollo_status,
+                      zoho_status: contactData.zoho_status,
+                      arlynk_status: contactData.arlynk_status,
+                      aicademia_high_status: contactData.aicademia_high_status,
+                      hubspot_lead_status: contactData.hubspot_lead_status,
+                    },
                     import_source: fileName,
                     imported_at: new Date().toISOString(),
                   },
@@ -290,7 +390,7 @@ Deno.serve(async (req) => {
           }
 
           successCount++;
-        } catch (error) {
+        } catch (error: any) {
           failedCount++;
           errors.push({
             row: row.email || `ligne ${index + 1}`,
@@ -325,6 +425,35 @@ Deno.serve(async (req) => {
       })
       .eq("id", importRecord.id);
 
+    // Créer une notification pour l'utilisateur
+    const notificationTitle =
+      finalStatus === "completed"
+        ? "Importation réussie"
+        : "Importation échouée";
+
+    const notificationMessage =
+      finalStatus === "completed"
+        ? `Votre fichier "${fileName}" a été importé avec succès. ${successCount} lignes importées${
+            failedCount > 0 ? `, ${failedCount} échecs` : ""
+          }.`
+        : `L'importation de "${fileName}" a échoué. ${failedCount} lignes en échec.`;
+
+    await supabaseClient.from("notifications").insert({
+      user_id: user.id,
+      type: "import_result",
+      title: notificationTitle,
+      message: notificationMessage,
+      data: {
+        import_id: importRecord.id,
+        file_name: fileName,
+        target_table: targetTable,
+        success_rows: successCount,
+        failed_rows: failedCount,
+        status: finalStatus,
+        errors: errors.length > 0 ? errors : null,
+      },
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -339,7 +468,30 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
+  } catch (error: any) {
+    // Créer une notification d'erreur si possible
+    try {
+      const {
+        data: { user: errorUser },
+      } = await supabaseClient.auth.getUser();
+
+      if (errorUser) {
+        await supabaseClient.from("notifications").insert({
+          user_id: errorUser.id,
+          type: "import_error",
+          title: "Erreur d'importation",
+          message: `L'importation a échoué : ${
+            error.message || "Erreur inconnue"
+          }`,
+          data: {
+            error: error.message,
+          },
+        });
+      }
+    } catch (notificationError) {
+      console.error("Failed to create error notification:", notificationError);
+    }
+
     return new Response(
       JSON.stringify({
         error: error.message || "Erreur lors de l'importation",

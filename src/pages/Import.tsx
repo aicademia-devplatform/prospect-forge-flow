@@ -1,14 +1,20 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Database, Sheet } from 'lucide-react';
-import CSVUploader from '@/components/import/CSVUploader';
-import GoogleSheetsImporter from '@/components/import/GoogleSheetsImporter';
-import ImportHistory from '@/components/import/ImportHistory';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Upload, Database, Sheet } from "lucide-react";
+import CSVUploader from "@/components/import/CSVUploader";
+import GoogleSheetsImporter from "@/components/import/GoogleSheetsImporter";
+import ImportHistory from "@/components/import/ImportHistory";
 
 const Import = () => {
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useState("upload");
 
   return (
     <div className="p-6 space-y-6">
@@ -20,7 +26,9 @@ const Import = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold">Import de données</h1>
-            <p className="text-muted-foreground">Importez vos données CSV dans le data warehouse</p>
+            <p className="text-muted-foreground">
+              Importez vos données CSV dans le data warehouse
+            </p>
           </div>
         </div>
 

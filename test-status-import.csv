@@ -1,0 +1,6 @@
+email,firstname,name,company,statut_prospect,apollo_status,zoho_status,arlynk_status,aicademia_high_status,hubspot_lead_status
+test1@example.com,Jean,Dupont,Acme Corp,CLIENT,Hot Lead,Qualified,Active,High Priority,Marketing Qualified Lead
+test2@example.com,Marie,Martin,Tech Inc,PROSPECT,Cold Lead,New,Inactive,Low Priority,Sales Qualified Lead
+test3@example.com,Pierre,Durand,StartupXYZ,REPONDEUR,Warm Lead,Contacted,Active,Medium Priority,Marketing Qualified Lead
+test4@example.com,Sophie,Bernard,BigCorp,APPEL COUPE,Hot Lead,Qualified,Active,High Priority,Sales Qualified Lead
+test5@example.com,Luc,Petit,SmallBiz,NRP,Cold Lead,New,Inactive,Low Priority,Marketing Qualified Lead

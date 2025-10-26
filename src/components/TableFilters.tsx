@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Filter,
@@ -20,6 +22,7 @@ import {
   ChevronUp,
   ChevronDown,
   SlidersHorizontal,
+  Phone,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -42,6 +45,12 @@ export interface FilterValues {
   departments?: string;
   contactOwner?: string;
   lists?: string;
+  // Nouveaux filtres
+  jobFunction?: string; // Filtre de fonction (fuzzy search)
+  hasValidPhone?: boolean; // Switch pour numéros valides
+  // Filtres de statut
+  arlynkColdStatus?: string; // Statut Arlynk Cold
+  aicademiaColdStatus?: string; // Statut Aicademia Cold
 }
 
 interface TableFiltersProps {
@@ -662,6 +671,141 @@ const TableFilters: React.FC<TableFiltersProps> = ({
                     />
                   </div>
 
+                  {/* Filtre Fonction (uniquement pour crm_contacts) */}
+                  {tableName === "crm_contacts" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="jobFunction">Fonction</Label>
+                      <Input
+                        id="jobFunction"
+                        placeholder="Ex: dirigeant, directeur, CEO..."
+                        value={localFilters.jobFunction || ""}
+                        onChange={(e) =>
+                          updateFilter(
+                            "jobFunction",
+                            e.target.value || undefined
+                          )
+                        }
+                        className="h-9 transition-all duration-200 hover:border-primary/50 focus:border-primary"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Recherche flexible dans les titres de poste
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Switch Téléphone Valide (uniquement pour crm_contacts) */}
+                  {tableName === "crm_contacts" && (
+                    <div className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <Label
+                            htmlFor="hasValidPhone"
+                            className="cursor-pointer"
+                          >
+                            Contacts avec téléphone
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Afficher uniquement les contacts ayant un numéro de
+                            téléphone
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        id="hasValidPhone"
+                        checked={localFilters.hasValidPhone || false}
+                        onCheckedChange={(checked) =>
+                          updateFilter(
+                            "hasValidPhone",
+                            checked ? true : undefined
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {/* Filtre Statut Arlynk Cold (uniquement pour crm_contacts) */}
+                  {tableName === "crm_contacts" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="arlynkColdStatus">
+                        Statut Arlynk Cold
+                      </Label>
+                      <Select
+                        value={localFilters.arlynkColdStatus || "all"}
+                        onValueChange={(value) =>
+                          updateFilter(
+                            "arlynkColdStatus",
+                            value === "all" ? undefined : value
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Tous les statuts" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous les statuts</SelectItem>
+                          <SelectItem value="RAPPELER">A RAPPELER</SelectItem>
+                          <SelectItem value="BARRAGE_MAIL">
+                            BARRAGE/OUI PAR MAIL
+                          </SelectItem>
+                          <SelectItem value="MAIL_ENVOYER">
+                            MAIL A ENVOYER
+                          </SelectItem>
+                          <SelectItem value="MAIL_ENVOYE">
+                            MAIL ENVOYÉ
+                          </SelectItem>
+                          <SelectItem value="NRP">NRP</SelectItem>
+                          <SelectItem value="PB_REUNION">
+                            PB REUNION NON ATTRIBUÉ
+                          </SelectItem>
+                          <SelectItem value="RDV">RDV</SelectItem>
+                          <SelectItem value="REPONDEUR">RÉPONDEUR</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Filtre Statut Aicademia Cold (uniquement pour crm_contacts) */}
+                  {tableName === "crm_contacts" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="aicademiaColdStatus">
+                        Statut Aicademia Cold
+                      </Label>
+                      <Select
+                        value={localFilters.aicademiaColdStatus || "all"}
+                        onValueChange={(value) =>
+                          updateFilter(
+                            "aicademiaColdStatus",
+                            value === "all" ? undefined : value
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Tous les statuts" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous les statuts</SelectItem>
+                          <SelectItem value="RAPPELER">A RAPPELER</SelectItem>
+                          <SelectItem value="BARRAGE_MAIL">
+                            BARRAGE/OUI PAR MAIL
+                          </SelectItem>
+                          <SelectItem value="MAIL_ENVOYER">
+                            MAIL A ENVOYER
+                          </SelectItem>
+                          <SelectItem value="MAIL_ENVOYE">
+                            MAIL ENVOYÉ
+                          </SelectItem>
+                          <SelectItem value="NRP">NRP</SelectItem>
+                          <SelectItem value="PB_REUNION">
+                            PB REUNION NON ATTRIBUÉ
+                          </SelectItem>
+                          <SelectItem value="RDV">RDV</SelectItem>
+                          <SelectItem value="REPONDEUR">RÉPONDEUR</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   {tableName === "apollo_contacts" && (
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground/80">
@@ -838,6 +982,54 @@ const TableFilters: React.FC<TableFiltersProps> = ({
                     <X
                       className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
                       onClick={() => removeFilter("company")}
+                    />
+                  </Badge>
+                )}
+                {localFilters.jobFunction && (
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in"
+                  >
+                    Fonction: {localFilters.jobFunction}
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
+                      onClick={() => removeFilter("jobFunction")}
+                    />
+                  </Badge>
+                )}
+                {localFilters.hasValidPhone && (
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in"
+                  >
+                    Avec téléphone
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
+                      onClick={() => removeFilter("hasValidPhone")}
+                    />
+                  </Badge>
+                )}
+                {localFilters.arlynkColdStatus && (
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in"
+                  >
+                    Arlynk: {localFilters.arlynkColdStatus}
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
+                      onClick={() => removeFilter("arlynkColdStatus")}
+                    />
+                  </Badge>
+                )}
+                {localFilters.aicademiaColdStatus && (
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in"
+                  >
+                    Aicademia: {localFilters.aicademiaColdStatus}
+                    <X
+                      className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
+                      onClick={() => removeFilter("aicademiaColdStatus")}
                     />
                   </Badge>
                 )}

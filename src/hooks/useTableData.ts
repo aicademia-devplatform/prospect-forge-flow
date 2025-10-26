@@ -52,6 +52,12 @@ interface UseTableDataParams {
     hubspot_buy_role?: string;
     apollo_status?: string;
     apollo_list?: string;
+    // Nouveaux filtres
+    jobFunction?: string;
+    hasValidPhone?: boolean;
+    // Filtres de statut
+    arlynkColdStatus?: string;
+    aicademiaColdStatus?: string;
   };
 }
 

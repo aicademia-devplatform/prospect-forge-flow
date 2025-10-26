@@ -3,8 +3,8 @@ import React, {
   useState,
   useCallback,
   useRef,
-  useEffect,
   useMemo,
+  useEffect,
 } from "react";
 import { AnimatePresence } from "framer-motion";
 import {
@@ -261,6 +261,18 @@ const translateColumnName = (columnName: string): string => {
     zoho_product_interest: "Intérêt produit Zoho",
     zoho_status_2: "Statut 2 Zoho",
     zoho_industrie_tag: "Tag industrie Zoho",
+    // Colonnes de statut Arlynk
+    arlynk_cold_status: "Statut Arlynk Cold",
+    arlynk_cold_action_date: "Date action Arlynk Cold",
+    arlynk_cold_note: "Note Arlynk Cold",
+    arlynk_cold_relance2: "Relance 2 Arlynk Cold",
+    arlynk_cold_relance3: "Relance 3 Arlynk Cold",
+    // Colonnes de statut Aicademia
+    aicademia_cold_status: "Statut Aicademia Cold",
+    aicademia_cold_action_date: "Date action Aicademia Cold",
+    aicademia_cold_note: "Note Aicademia Cold",
+    aicademia_cold_relance2: "Relance 2 Aicademia Cold",
+    aicademia_cold_relance3: "Relance 3 Aicademia Cold",
   };
   return translations[columnName] || columnName;
 };
@@ -350,7 +362,26 @@ const TableView: React.FC<TableViewProps> = ({
     return value !== undefined && value !== null && value !== "";
   });
 
-  const shouldUseUnifiedView = isUnifiedView && !hasActiveToolFilters;
+  // Fonction pour calculer si on doit utiliser la vue unifiée
+  const calculateShouldUseUnifiedView = (filters: FilterValues) => {
+    const hasActiveCRMAdvancedFilters = Object.keys(filters).some((key) => {
+      const value = filters[key as keyof typeof filters];
+      // Inclure les nouveaux filtres jobFunction, hasValidPhone et les filtres de statut
+      if (
+        key === "jobFunction" ||
+        key === "hasValidPhone" ||
+        key === "arlynkColdStatus" ||
+        key === "aicademiaColdStatus"
+      ) {
+        return value !== undefined && value !== null && value !== "";
+      }
+      return false;
+    });
+
+    return (
+      isUnifiedView && !hasActiveToolFilters && !hasActiveCRMAdvancedFilters
+    );
+  };
 
   // Initialize sorting state from URL parameters or default values
   const urlParams = new URLSearchParams(location.search);
@@ -367,21 +398,6 @@ const TableView: React.FC<TableViewProps> = ({
     (urlParams.get("sortOrder") as "asc" | "desc") || "desc"
   );
 
-  // Mettre à jour le tri quand on bascule entre vue unifiée et table normale
-  useEffect(() => {
-    // Si on passe à la vue unifiée et que sortBy est created_at, changer pour last_updated
-    if (shouldUseUnifiedView && sortBy === "created_at") {
-      setSortBy("last_updated");
-    }
-    // Si on quitte la vue unifiée et que sortBy est last_updated, revenir à created_at
-    if (
-      !shouldUseUnifiedView &&
-      sortBy === "last_updated" &&
-      tableName === "crm_contacts"
-    ) {
-      setSortBy("created_at");
-    }
-  }, [shouldUseUnifiedView, tableName]);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
   const [pinnedColumns, setPinnedColumns] = useState<Set<string>>(
@@ -412,6 +428,127 @@ const TableView: React.FC<TableViewProps> = ({
   );
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Mettre à jour le tri quand on bascule entre vue unifiée et table normale
+  useEffect(() => {
+    // Si on passe à la vue unifiée et que sortBy est created_at, changer pour last_updated
+    if (
+      calculateShouldUseUnifiedView(advancedFilters) &&
+      sortBy === "created_at"
+    ) {
+      setSortBy("last_updated");
+    }
+    // Si on quitte la vue unifiée et que sortBy est last_updated, revenir à created_at
+    if (
+      !calculateShouldUseUnifiedView(advancedFilters) &&
+      sortBy === "last_updated" &&
+      tableName === "crm_contacts"
+    ) {
+      setSortBy("created_at");
+    }
+  }, [advancedFilters, tableName]);
+
+  // Afficher automatiquement les colonnes correspondantes aux filtres actifs
+  useEffect(() => {
+    const newVisibleColumns = new Set(visibleColumns);
+    let hasChanges = false;
+
+    // Mapping des filtres vers leurs colonnes correspondantes
+    const filterColumnMap: Record<string, string[]> = {
+      jobFunction: ["linkedin_function"],
+      hasValidPhone: ["mobile", "tel", "tel_pro", "mobile_2"],
+      company: ["company"],
+      industrie: ["industrie"],
+      contactActive: ["contact_active"],
+      zohoStatus: ["zoho_status"],
+      apolloStatus: ["apollo_status"],
+      arlynkColdStatus: ["arlynk_cold_status"],
+      aicademiaColdStatus: ["aicademia_cold_status"],
+    };
+
+    // Vérifier le filtre de plage de dates
+    if (advancedFilters.dateRange?.from || advancedFilters.dateRange?.to) {
+      if (!newVisibleColumns.has("created_at")) {
+        newVisibleColumns.add("created_at");
+        hasChanges = true;
+      }
+    }
+
+    // Mapping des filtres d'outils vers leurs colonnes correspondantes
+    const toolFilterColumnMap: Record<string, string[]> = {
+      systemeio_list: ["systemeio_list"],
+      brevo_tag: ["brevo_tag"],
+      zoho_tag: ["zoho_tag", "zoho_status"],
+      hubspot_lead_status: ["hubspot_lead_status"],
+      apollo_list: ["apollo_list", "apollo_status"],
+    };
+
+    // Ajouter les colonnes pour les filtres avancés actifs
+    Object.entries(filterColumnMap).forEach(([filterKey, columns]) => {
+      const filterValue = advancedFilters[filterKey as keyof FilterValues];
+
+      if (
+        filterValue !== undefined &&
+        filterValue !== null &&
+        filterValue !== "" &&
+        filterValue !== "all"
+      ) {
+        columns.forEach((column) => {
+          if (!newVisibleColumns.has(column)) {
+            newVisibleColumns.add(column);
+            hasChanges = true;
+          }
+        });
+      }
+    });
+
+    // Ajouter les colonnes pour les filtres d'outils actifs
+    Object.entries(toolFilterColumnMap).forEach(([filterKey, columns]) => {
+      const filterValue = advancedFilters[filterKey as keyof FilterValues];
+      if (
+        filterValue !== undefined &&
+        filterValue !== null &&
+        filterValue !== "" &&
+        filterValue !== "all"
+      ) {
+        columns.forEach((column) => {
+          if (!newVisibleColumns.has(column)) {
+            newVisibleColumns.add(column);
+            hasChanges = true;
+          }
+        });
+      }
+    });
+
+    // Note: On ne masque pas automatiquement les colonnes quand les filtres sont supprimés
+    // pour éviter de masquer des colonnes que l'utilisateur a explicitement choisies
+    // L'utilisateur peut toujours masquer manuellement les colonnes via le menu
+
+    if (hasChanges) {
+      setVisibleColumns(newVisibleColumns);
+
+      // Afficher une notification pour informer l'utilisateur
+      const addedColumns = Array.from(newVisibleColumns).filter(
+        (column) => !visibleColumns.has(column)
+      );
+
+      if (addedColumns.length > 0) {
+        // Note: Le toast sera affiché via le système de notification existant
+        console.log(
+          `📊 Colonnes ajoutées automatiquement pour les filtres actifs: ${addedColumns.join(
+            ", "
+          )}`
+        );
+
+        // Optionnel: Afficher un toast pour informer l'utilisateur
+        // toast({
+        //   title: "Colonnes ajoutées",
+        //   description: `Les colonnes ${addedColumns.join(', ')} ont été ajoutées automatiquement pour les filtres actifs.`,
+        //   duration: 3000,
+        // });
+      }
+    }
+  }, [advancedFilters, visibleColumns]);
 
   // Détecter si des filtres sont actifs dans chaque section
   const hasActiveSourceFilters =
@@ -527,7 +664,9 @@ const TableView: React.FC<TableViewProps> = ({
     updateRowInCache,
     optimisticUpdate,
     invalidateAndRefetch,
-  } = shouldUseUnifiedView ? unifiedData : standardData;
+  } = calculateShouldUseUnifiedView(advancedFilters)
+    ? unifiedData
+    : standardData;
 
   // Use data directly from React Query for better synchronization
   // The optimistic updates are handled directly in the React Query cache
@@ -1426,6 +1565,56 @@ const TableView: React.FC<TableViewProps> = ({
         },
         {
           name: "zoho_industrie_tag",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "arlynk_cold_status",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "arlynk_cold_action_date",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "arlynk_cold_note",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "arlynk_cold_relance2",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "arlynk_cold_relance3",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "aicademia_cold_status",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "aicademia_cold_action_date",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "aicademia_cold_note",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "aicademia_cold_relance2",
+          type: "string",
+          nullable: true,
+        },
+        {
+          name: "aicademia_cold_relance3",
           type: "string",
           nullable: true,
         },
@@ -2753,25 +2942,26 @@ const TableView: React.FC<TableViewProps> = ({
           )}
 
           {/* Filtres unifiés uniquement pour la vue CRM (masqués si filtres source/outils actifs) */}
-          {shouldUseUnifiedView && !hasActiveSourceFilters && (
-            <UnifiedCRMFilters
-              sourceFilters={sourceFilters}
-              onSourceFiltersChange={setSourceFilters}
-              statusFilters={statusFilters}
-              onStatusFiltersChange={setStatusFilters}
-              onReset={() => {
-                setSourceFilters([]);
-                setStatusFilters({});
-              }}
-              isExpanded={openFilterSection === "unified"}
-              onExpandedChange={(expanded) =>
-                setOpenFilterSection(expanded ? "unified" : "none")
-              }
-              activeFilterCount={
-                sourceFilters.length + Object.keys(statusFilters).length
-              }
-            />
-          )}
+          {calculateShouldUseUnifiedView(advancedFilters) &&
+            !hasActiveSourceFilters && (
+              <UnifiedCRMFilters
+                sourceFilters={sourceFilters}
+                onSourceFiltersChange={setSourceFilters}
+                statusFilters={statusFilters}
+                onStatusFiltersChange={setStatusFilters}
+                onReset={() => {
+                  setSourceFilters([]);
+                  setStatusFilters({});
+                }}
+                isExpanded={openFilterSection === "unified"}
+                onExpandedChange={(expanded) =>
+                  setOpenFilterSection(expanded ? "unified" : "none")
+                }
+                activeFilterCount={
+                  sourceFilters.length + Object.keys(statusFilters).length
+                }
+              />
+            )}
         </div>
       )}
 
@@ -3193,7 +3383,9 @@ const TableView: React.FC<TableViewProps> = ({
                                           column.name
                                         )}
                                       </span>
-                                      {shouldUseUnifiedView &&
+                                      {calculateShouldUseUnifiedView(
+                                        advancedFilters
+                                      ) &&
                                         column.name === "email" && (
                                           <SourceBadges row={row} />
                                         )}

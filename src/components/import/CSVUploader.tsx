@@ -57,6 +57,7 @@ const CSVUploader = () => {
     {}
   );
   const [isImporting, setIsImporting] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   // Déterminer les tables disponibles selon le rôle
   const getAvailableTables = () => {
@@ -107,6 +108,59 @@ const CSVUploader = () => {
 
     setFile(selectedFile);
     parseFile(selectedFile);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragOver(false);
+
+    const files = event.dataTransfer.files;
+    if (files && files.length > 0) {
+      const droppedFile = files[0];
+      
+      // Vérifier le type de fichier
+      const validTypes = [
+        "text/csv",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ];
+
+      if (
+        !validTypes.includes(droppedFile.type) &&
+        !droppedFile.name.endsWith(".csv") &&
+        !droppedFile.name.endsWith(".xlsx") &&
+        !droppedFile.name.endsWith(".xls")
+      ) {
+        toast({
+          title: "Format invalide",
+          description: "Veuillez sélectionner un fichier CSV ou Excel",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setFile(droppedFile);
+      parseFile(droppedFile);
+    }
   };
 
   const parseFile = (file: File) => {
@@ -238,11 +292,11 @@ const CSVUploader = () => {
         );
       }
 
+      // Afficher un toast temporaire
       toast({
-        title: "Import réussi",
-        description: `${successCount} lignes importées avec succès${
-          failedCount > 0 ? `, ${failedCount} échecs` : ""
-        }`,
+        title: "Import en cours",
+        description:
+          "Votre importation est en cours de traitement. Vous recevrez une notification une fois terminée.",
       });
 
       handleReset();
@@ -329,11 +383,31 @@ const CSVUploader = () => {
                 </AlertDescription>
               </Alert>
 
-              <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary transition-colors">
-                <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Glissez-déposez votre fichier ici ou utilisez le bouton
-                  ci-dessus
+              <div 
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+                  isDragOver 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-gray-300 hover:border-primary'
+                }`}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById('file-upload')?.click()}
+              >
+                <FileSpreadsheet className={`h-12 w-12 mx-auto mb-4 ${
+                  isDragOver ? 'text-primary' : 'text-muted-foreground'
+                }`} />
+                <p className={`text-sm ${
+                  isDragOver ? 'text-primary font-medium' : 'text-muted-foreground'
+                }`}>
+                  {isDragOver 
+                    ? 'Relâchez le fichier pour l\'importer' 
+                    : 'Glissez-déposez votre fichier ici ou cliquez pour sélectionner'
+                  }
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Formats supportés: CSV, XLSX, XLS
                 </p>
               </div>
             </CardContent>

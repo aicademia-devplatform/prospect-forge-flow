@@ -51,6 +51,12 @@ interface QueryParams {
     hubspot_buy_role?: string;
     apollo_list?: string;
     apollo_status?: string;
+    // Nouveaux filtres
+    jobFunction?: string;
+    hasValidPhone?: boolean;
+    // Filtres de statut
+    arlynkColdStatus?: string;
+    aicademiaColdStatus?: string;
   };
 }
 
@@ -102,9 +108,21 @@ Deno.serve(async (req) => {
 
     // Build the column selection
     const baseColumns = ["id", "email"];
-    const allColumns = [...baseColumns, ...visibleColumns].filter(
-      (col, index, arr) => arr.indexOf(col) === index
-    );
+
+    // Ajouter automatiquement les colonnes de statut si les filtres correspondants sont actifs
+    const statusColumns = [];
+    if (advancedFilters.arlynkColdStatus) {
+      statusColumns.push("arlynk_cold_status");
+    }
+    if (advancedFilters.aicademiaColdStatus) {
+      statusColumns.push("aicademia_cold_status");
+    }
+
+    const allColumns = [
+      ...baseColumns,
+      ...visibleColumns,
+      ...statusColumns,
+    ].filter((col, index, arr) => arr.indexOf(col) === index);
     const selectColumns = allColumns.length > 0 ? allColumns.join(",") : "*";
 
     // Build the query
@@ -251,10 +269,6 @@ Deno.serve(async (req) => {
           "apollo_status",
           `%${advancedFilters.apolloStatus}%`
         );
-      }
-      if (advancedFilters.industrie) {
-        // Utiliser une recherche directe avec ILIKE pour matcher les industries
-        query = query.ilike("industry", `%${advancedFilters.industrie}%`);
       }
       if (advancedFilters.company) {
         query = query.ilike("company", `%${advancedFilters.company}%`);
@@ -462,6 +476,267 @@ Deno.serve(async (req) => {
           );
         }
       }
+    }
+
+    // Filtre industrie (recherche fuzzy) - placé à la fin pour éviter les conflits OR
+    if (advancedFilters.industrie && tableName === "crm_contacts") {
+      const searchTerm = advancedFilters.industrie.toLowerCase();
+
+      // Mapper les termes de recherche vers des patterns plus larges
+      const industryPatterns: Record<string, string[]> = {
+        technologie: [
+          "technology",
+          "tech",
+          "software",
+          "informatique",
+          "digital",
+          "it",
+        ],
+        santé: [
+          "health",
+          "medical",
+          "hospital",
+          "santé",
+          "médical",
+          "pharmaceutical",
+        ],
+        finance: ["finance", "banking", "financial", "financier", "banque"],
+        immobilier: [
+          "real estate",
+          "immobilier",
+          "property",
+          "construction",
+          "bâtiment",
+        ],
+        éducation: [
+          "education",
+          "enseignement",
+          "school",
+          "university",
+          "université",
+        ],
+        consulting: ["consulting", "conseil", "advisory", "services"],
+        média: [
+          "media",
+          "communication",
+          "marketing",
+          "advertising",
+          "publicité",
+        ],
+        automobile: ["automotive", "automobile", "auto", "vehicle", "véhicule"],
+        énergie: ["energy", "oil", "gas", "énergétique", "pétrole", "gaz"],
+        retail: ["retail", "commerce", "distribution", "vente", "commercial"],
+        manufacturing: [
+          "manufacturing",
+          "production",
+          "fabrication",
+          "industrial",
+        ],
+        transport: [
+          "transport",
+          "logistics",
+          "logistique",
+          "shipping",
+          "expédition",
+        ],
+        agriculture: ["agriculture", "farming", "agro", "food", "alimentaire"],
+        construction: [
+          "construction",
+          "building",
+          "bâtiment",
+          "infrastructure",
+        ],
+        services: ["services", "service", "business", "entreprise"],
+      };
+
+      // Construire le pattern de recherche
+      let searchPatterns = [searchTerm];
+      for (const [key, patterns] of Object.entries(industryPatterns)) {
+        if (searchTerm.includes(key)) {
+          searchPatterns = [...searchPatterns, ...patterns];
+        }
+      }
+
+      // Créer la condition OR pour la colonne industrie
+      const orConditions = searchPatterns
+        .map((pattern) => `industrie.ilike.%${pattern}%`)
+        .join(",");
+
+      query = query.or(orConditions);
+
+      console.log(
+        `🏭 Filtre industrie appliqué: ${searchTerm} -> patterns: ${searchPatterns.join(
+          ", "
+        )}`
+      );
+    }
+
+    // Filtre de fonction (recherche fuzzy sur plusieurs colonnes)
+    if (advancedFilters.jobFunction && tableName === "crm_contacts") {
+      const searchTerm = advancedFilters.jobFunction.toLowerCase();
+
+      // Mapper les termes de recherche vers des patterns plus larges
+      const functionPatterns: Record<string, string[]> = {
+        dirigeant: [
+          "directeur",
+          "ceo",
+          "président",
+          "gérant",
+          "fondateur",
+          "owner",
+          "dirigeant",
+          "dg",
+          "pdg",
+        ],
+        directeur: [
+          "directeur",
+          "director",
+          "head",
+          "dirigeant",
+          "responsable",
+        ],
+        manager: ["manager", "responsable", "chef", "lead"],
+        commercial: ["commercial", "sales", "business", "développement"],
+        technique: [
+          "technique",
+          "technical",
+          "tech",
+          "développeur",
+          "developer",
+          "ingénieur",
+          "engineer",
+        ],
+        rh: [
+          "rh",
+          "ressources humaines",
+          "human resources",
+          "hr",
+          "recrutement",
+        ],
+        marketing: ["marketing", "communication", "digital"],
+        finance: ["finance", "comptable", "comptabilité", "accounting", "cfo"],
+      };
+
+      // Construire le pattern de recherche
+      let searchPatterns = [searchTerm];
+      for (const [key, patterns] of Object.entries(functionPatterns)) {
+        if (searchTerm.includes(key)) {
+          searchPatterns = [...searchPatterns, ...patterns];
+        }
+      }
+
+      // Créer la condition OR pour toutes les colonnes de fonction
+      const orConditions = searchPatterns
+        .map((pattern) => `linkedin_function.ilike.%${pattern}%`)
+        .join(",");
+
+      query = query.or(orConditions);
+
+      console.log(
+        `🎯 Filtre fonction appliqué: ${searchTerm} -> patterns: ${searchPatterns.join(
+          ", "
+        )}`
+      );
+    }
+
+    // Filtre téléphone valide
+    if (advancedFilters.hasValidPhone && tableName === "crm_contacts") {
+      // Vérifier qu'au moins un champ de téléphone est non null et non vide
+      query = query.or("mobile.neq.,tel.neq.,tel_pro.neq.,mobile_2.neq.");
+
+      console.log("📞 Filtre téléphone valide appliqué");
+    }
+
+    // Filtre Statut Arlynk Cold (recherche intelligente)
+    if (advancedFilters.arlynkColdStatus && tableName === "crm_contacts") {
+      const statusValue = advancedFilters.arlynkColdStatus;
+
+      // Mapping des valeurs de filtre vers des patterns de recherche
+      const statusPatterns: Record<string, string[]> = {
+        RAPPELER: ["rappeler", "rappel", "a rap", "arap", "à rap", "appel"],
+        BARRAGE_MAIL: [
+          "barrage",
+          "mail",
+          "barrage mail",
+          "barrage/oui par mail",
+          "barrage, mail",
+        ],
+        MAIL_ENVOYER: ["mail a envoyer", "mail à envoyer", "envoyer", "mevo"],
+        MAIL_ENVOYE: ["mail envoyé", "mail envoye", "envoyé", "envoye"],
+        NRP: ["nrp", "n.r.p", "ne repond pas", "NRP"],
+        PB_REUNION: [
+          "pb reunion",
+          "reunion non attribué",
+          "reunion non attribue",
+          "pb réunion",
+          "pas la bonne prs",
+        ],
+        RDV: ["rdv", "rendez-vous", "rendez vous"],
+        REPONDEUR: ["repondeur", "répondeur", "messagerie"],
+      };
+
+      const patterns = statusPatterns[statusValue] || [
+        statusValue.toLowerCase(),
+      ];
+
+      // Créer les conditions OR avec ILIKE pour recherche insensible
+      const orConditions = patterns
+        .map((pattern) => `arlynk_cold_status.ilike.%${pattern}%`)
+        .join(",");
+
+      query = query.or(orConditions);
+
+      console.log(
+        `📋 Filtre Arlynk Cold appliqué: ${statusValue} -> patterns: ${patterns.join(
+          ", "
+        )}`
+      );
+    }
+
+    // Filtre Statut Aicademia Cold (recherche intelligente)
+    if (advancedFilters.aicademiaColdStatus && tableName === "crm_contacts") {
+      const statusValue = advancedFilters.aicademiaColdStatus;
+
+      // Mapping des valeurs de filtre vers des patterns de recherche
+      const statusPatterns: Record<string, string[]> = {
+        RAPPELER: ["rappeler", "rappel", "a rap", "arap", "à rap", "appel"],
+        BARRAGE_MAIL: [
+          "barrage",
+          "mail",
+          "barrage mail",
+          "barrage/oui par mail",
+          "barrage, mail",
+        ],
+        MAIL_ENVOYER: ["mail a envoyer", "mail à envoyer", "envoyer", "mevo"],
+        MAIL_ENVOYE: ["mail envoyé", "mail envoye", "envoyé", "envoye"],
+        NRP: ["nrp", "n.r.p", "ne repond pas", "NRP"],
+        PB_REUNION: [
+          "pb reunion",
+          "reunion non attribué",
+          "reunion non attribue",
+          "pb réunion",
+          "pas la bonne prs",
+        ],
+        RDV: ["rdv", "rendez-vous", "rendez vous"],
+        REPONDEUR: ["repondeur", "répondeur", "messagerie"],
+      };
+
+      const patterns = statusPatterns[statusValue] || [
+        statusValue.toLowerCase(),
+      ];
+
+      // Créer les conditions OR avec ILIKE pour recherche insensible
+      const orConditions = patterns
+        .map((pattern) => `aicademia_cold_status.ilike.%${pattern}%`)
+        .join(",");
+
+      query = query.or(orConditions);
+
+      console.log(
+        `📋 Filtre Aicademia Cold appliqué: ${statusValue} -> patterns: ${patterns.join(
+          ", "
+        )}`
+      );
     }
 
     // Apply search filter with custom search columns
