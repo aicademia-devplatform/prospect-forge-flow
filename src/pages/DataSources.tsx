@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Database, Table, RefreshCw, Activity, Eye, GitMerge } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
 interface TableInfo {
   name: string;
   description: string;
@@ -14,79 +13,77 @@ interface TableInfo {
   lastUpdated: string;
   status: 'active' | 'syncing' | 'error';
 }
-
 const DataSources = () => {
   const navigate = useNavigate();
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uniqueEmails, setUniqueEmails] = useState(0);
   const [multiSourceCount, setMultiSourceCount] = useState(0);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const fetchTableInfo = async () => {
     setLoading(true);
     try {
       // Compter les enregistrements Apollo
-      const { count: apolloCount } = await supabase
-        .from('apollo_contacts')
-        .select('*', { count: 'exact', head: true });
+      const {
+        count: apolloCount
+      } = await supabase.from('apollo_contacts').select('*', {
+        count: 'exact',
+        head: true
+      });
 
       // Compter les enregistrements CRM
-      const { count: crmCount } = await supabase
-        .from('crm_contacts')
-        .select('*', { count: 'exact', head: true });
+      const {
+        count: crmCount
+      } = await supabase.from('crm_contacts').select('*', {
+        count: 'exact',
+        head: true
+      });
 
       // Compter les enregistrements HubSpot
-      const { count: hubspotCount } = await supabase
-        .from('hubspot_contacts' as any)
-        .select('*', { count: 'exact', head: true });
+      const {
+        count: hubspotCount
+      } = await supabase.from('hubspot_contacts' as any).select('*', {
+        count: 'exact',
+        head: true
+      });
 
       // Obtenir les dernières dates de mise à jour
-      const { data: apolloLatest } = await supabase
-        .from('apollo_contacts')
-        .select('updated_at')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const { data: crmLatest } = await supabase
-        .from('crm_contacts')
-        .select('updated_at')
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const { data: hubspotLatest } = await supabase
-        .from('hubspot_contacts' as any)
-        .select('inserted_at')
-        .order('inserted_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const tableData: TableInfo[] = [
-        {
-          name: 'apollo_contacts',
-          description: 'Contacts et prospects importés depuis Apollo.io avec informations détaillées sur les entreprises et contacts.',
-          rowCount: apolloCount || 0,
-          lastUpdated: apolloLatest?.updated_at || 'Jamais',
-          status: 'active'
-        },
-        {
-          name: 'crm_contacts',
-          description: 'Base de données CRM principale avec contacts, historique des interactions et statuts de prospection.',
-          rowCount: crmCount || 0,
-          lastUpdated: crmLatest?.updated_at || 'Jamais',
-          status: 'active'
-        },
-        {
-          name: 'hubspot_contacts',
-          description: 'Contacts et données importés depuis HubSpot avec informations détaillées sur les interactions et le lifecycle.',
-          rowCount: hubspotCount || 0,
-          lastUpdated: (hubspotLatest as any)?.inserted_at || 'Jamais',
-          status: 'active'
-        }
-      ];
-
+      const {
+        data: apolloLatest
+      } = await supabase.from('apollo_contacts').select('updated_at').order('updated_at', {
+        ascending: false
+      }).limit(1).maybeSingle();
+      const {
+        data: crmLatest
+      } = await supabase.from('crm_contacts').select('updated_at').order('updated_at', {
+        ascending: false
+      }).limit(1).maybeSingle();
+      const {
+        data: hubspotLatest
+      } = await supabase.from('hubspot_contacts' as any).select('inserted_at').order('inserted_at', {
+        ascending: false
+      }).limit(1).maybeSingle();
+      const tableData: TableInfo[] = [{
+        name: 'apollo_contacts',
+        description: 'Contacts et prospects importés depuis Apollo.io avec informations détaillées sur les entreprises et contacts.',
+        rowCount: apolloCount || 0,
+        lastUpdated: apolloLatest?.updated_at || 'Jamais',
+        status: 'active'
+      }, {
+        name: 'crm_contacts',
+        description: 'Base de données CRM principale avec contacts, historique des interactions et statuts de prospection.',
+        rowCount: crmCount || 0,
+        lastUpdated: crmLatest?.updated_at || 'Jamais',
+        status: 'active'
+      }, {
+        name: 'hubspot_contacts',
+        description: 'Contacts et données importés depuis HubSpot avec informations détaillées sur les interactions et le lifecycle.',
+        rowCount: hubspotCount || 0,
+        lastUpdated: (hubspotLatest as any)?.inserted_at || 'Jamais',
+        status: 'active'
+      }];
       setTables(tableData);
 
       // Calculer les statistiques de la vue 360
@@ -95,9 +92,9 @@ const DataSources = () => {
       const emailSources = new Map<string, number>();
 
       // Apollo emails
-      const { data: apolloEmails } = await supabase
-        .from('apollo_contacts')
-        .select('email');
+      const {
+        data: apolloEmails
+      } = await supabase.from('apollo_contacts').select('email');
       apolloEmails?.forEach((item: any) => {
         if (item.email) {
           const email = item.email.toLowerCase().trim();
@@ -107,9 +104,9 @@ const DataSources = () => {
       });
 
       // CRM emails
-      const { data: crmEmails } = await supabase
-        .from('crm_contacts')
-        .select('email');
+      const {
+        data: crmEmails
+      } = await supabase.from('crm_contacts').select('email');
       crmEmails?.forEach((item: any) => {
         if (item.email) {
           const email = item.email.toLowerCase().trim();
@@ -119,9 +116,9 @@ const DataSources = () => {
       });
 
       // HubSpot emails
-      const { data: hubspotEmails } = await supabase
-        .from('hubspot_contacts' as any)
-        .select('primary_email');
+      const {
+        data: hubspotEmails
+      } = await supabase.from('hubspot_contacts' as any).select('primary_email');
       hubspotEmails?.forEach((item: any) => {
         if (item.primary_email) {
           const email = item.primary_email.toLowerCase().trim();
@@ -129,10 +126,8 @@ const DataSources = () => {
           emailSources.set(email, (emailSources.get(email) || 0) + 1);
         }
       });
-
       setUniqueEmails(allEmails.size);
       setMultiSourceCount(Array.from(emailSources.values()).filter(count => count > 1).length);
-
     } catch (error) {
       console.error('Erreur lors du chargement des sources de données:', error);
       toast({
@@ -144,37 +139,40 @@ const DataSources = () => {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchTableInfo();
   }, []);
-
   const formatDate = (dateString: string) => {
     if (dateString === 'Jamais') return dateString;
     return new Date(dateString).toLocaleString('fr-FR');
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'syncing': return 'bg-blue-100 text-blue-800';
-      case 'error': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'syncing':
+        return 'bg-blue-100 text-blue-800';
+      case 'error':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
-
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'active': return 'Actif';
-      case 'syncing': return 'Synchronisation';
-      case 'error': return 'Erreur';
-      default: return 'Inconnu';
+      case 'active':
+        return 'Actif';
+      case 'syncing':
+        return 'Synchronisation';
+      case 'error':
+        return 'Erreur';
+      default:
+        return 'Inconnu';
     }
   };
 
   // Rendu principal de la page sources de données
-  return (
-    <div className="p-6 space-y-6">
+  return <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Sources de données</h1>
@@ -206,14 +204,7 @@ const DataSources = () => {
                 </CardDescription>
               </div>
             </div>
-            <Button 
-              size="lg" 
-              onClick={() => navigate('/datasources/unified-view')}
-              className="shadow-lg"
-            >
-              <Eye className="h-5 w-5 mr-2" />
-              Accéder à la vue
-            </Button>
+            
           </div>
         </CardHeader>
         <CardContent>
@@ -268,10 +259,8 @@ const DataSources = () => {
         </CardContent>
       </Card>
 
-      {loading ? (
-        <div className="grid gap-6 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
+      {loading ? <div className="grid gap-6 md:grid-cols-3">
+          {[1, 2, 3].map(i => <Card key={i} className="animate-pulse">
               <CardHeader>
                 <div className="h-6 bg-gray-200 rounded w-1/3"></div>
                 <div className="h-4 bg-gray-200 rounded w-2/3"></div>
@@ -282,13 +271,9 @@ const DataSources = () => {
                   <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-3">
-          {tables.map((table) => (
-            <Card key={table.name} className="hover:shadow-lg transition-shadow">
+            </Card>)}
+        </div> : <div className="grid gap-6 md:grid-cols-3">
+          {tables.map(table => <Card key={table.name} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -326,12 +311,7 @@ const DataSources = () => {
                 </div>
 
                 <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    asChild
-                  >
+                  <Button variant="outline" size="sm" className="flex-1" asChild>
                     <Link to={`/datasources/${table.name}`}>
                       Voir les données
                     </Link>
@@ -341,10 +321,8 @@ const DataSources = () => {
                   </Button>
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+            </Card>)}
+        </div>}
 
       <Card>
         <CardHeader>
@@ -374,8 +352,6 @@ const DataSources = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default DataSources;
