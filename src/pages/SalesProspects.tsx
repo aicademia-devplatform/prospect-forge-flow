@@ -374,19 +374,33 @@ const SalesProspects = () => {
       if (!user) return;
 
       // Récupérer d'abord les prospects validés avec RDV
-      const { data: validatedData, error: validatedError } = await supabase
+      let validatedQuery = supabase
         .from("prospects_valides")
         .select("*")
         .order("validated_at", { ascending: false });
+
+      // Si l'utilisateur est SDR, filtrer par sdr_id
+      if (userRole === 'sdr') {
+        validatedQuery = validatedQuery.eq('sdr_id', user.id);
+      }
+
+      const { data: validatedData, error: validatedError } = await validatedQuery;
 
       if (validatedError) throw validatedError;
       setValidatedProspects((validatedData || []) as ValidatedProspect[]);
 
       // Récupérer les prospects archivés/rejetés
-      const { data: archivedData, error: archivedError } = await supabase
+      let archivedQuery = supabase
         .from("prospects_archives")
         .select("*")
         .order("rejected_at", { ascending: false });
+
+      // Si l'utilisateur est SDR, filtrer par sdr_id
+      if (userRole === 'sdr') {
+        archivedQuery = archivedQuery.eq('sdr_id', user.id);
+      }
+
+      const { data: archivedData, error: archivedError } = await archivedQuery;
 
       if (archivedError) throw archivedError;
       setArchivedProspects((archivedData || []) as ArchivedProspect[]);
@@ -398,11 +412,17 @@ const SalesProspects = () => {
       ]);
 
       // Récupérer les prospects prévalidés (SDR) en excluant ceux déjà traités
-      const { data: prevalidatedData, error: prevalidatedError } =
-        await supabase
-          .from("sales_sdr_prospects_view")
-          .select("*")
-          .order("created_at", { ascending: false });
+      let prevalidatedQuery = supabase
+        .from("sales_sdr_prospects_view")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      // Si l'utilisateur est SDR, filtrer uniquement ses prospects assignés
+      if (userRole === 'sdr') {
+        prevalidatedQuery = prevalidatedQuery.eq('sdr_id', user.id);
+      }
+
+      const { data: prevalidatedData, error: prevalidatedError } = await prevalidatedQuery;
 
       if (prevalidatedError) throw prevalidatedError;
 
