@@ -192,14 +192,14 @@ const ToolFilters: React.FC<ToolFiltersProps> = ({
     }
   }, [selectedTools]);
 
-  const updateFilter = (key: keyof ToolFilterValues, value: any) => {
-    const newFilters = { ...filters };
+  const updateFilter = (key: keyof ToolFilterValues, value: string | string[] | number | boolean | undefined) => {
+    const newFilters: Record<string, any> = { ...filters };
     if (value === '' || value === undefined || value === null) {
       delete newFilters[key];
     } else {
       newFilters[key] = value;
     }
-    onFiltersChange(newFilters);
+    onFiltersChange(newFilters as ToolFilterValues);
   };
 
   const toggleToolSelection = (tool: string) => {

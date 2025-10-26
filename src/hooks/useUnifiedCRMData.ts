@@ -273,7 +273,7 @@ export const useUnifiedCRMData = (params: UseUnifiedCRMDataParams) => {
       const { error } = await supabase
         .from('crm_contacts')
         .update(updates)
-        .eq('id', rowId);
+        .eq('id', parseInt(rowId));
 
       if (error) throw error;
 

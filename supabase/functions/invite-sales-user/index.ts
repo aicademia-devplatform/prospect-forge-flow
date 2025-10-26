@@ -48,19 +48,41 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Vérifier l'utilisateur qui invite (pour le manager_id)
+    // Verify caller is authenticated
     const authHeader = req.headers.get("Authorization");
-    let inviterId = null;
-    
-    if (authHeader) {
-      try {
-        const token = authHeader.replace("Bearer ", "");
-        const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-        inviterId = user?.id;
-      } catch (error) {
-        console.log("Could not get inviter user:", error);
-      }
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Non autorisé - token d'authentification requis" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Non autorisé - token invalide" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify caller has permission to invite users
+    const { data: callerRole, error: roleError } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (roleError || !callerRole || !['admin', 'sales', 'marketing'].includes(callerRole.role)) {
+      return new Response(
+        JSON.stringify({ error: "Permissions insuffisantes - seuls les admin, sales ou marketing peuvent inviter des utilisateurs" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Use verified user.id as inviterId
+    const inviterId = user.id;
 
     // Vérifier si l'utilisateur existe déjà
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();

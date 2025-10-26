@@ -257,6 +257,387 @@ export type Database = {
         }
         Relationships: []
       }
+      brevo_campaign_link_stats: {
+        Row: {
+          campaign_id: number
+          clicks: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          campaign_id: number
+          clicks?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          campaign_id?: number
+          clicks?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brevo_campaign_link_stats_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "brevo_campaigns"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "brevo_campaign_link_stats_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_brevo_campaign_performance"
+            referencedColumns: ["campaign_id"]
+          },
+        ]
+      }
+      brevo_campaign_list_stats: {
+        Row: {
+          campaign_id: number
+          clickers: number
+          complaints: number
+          deferred: number
+          delivered: number
+          hard_bounces: number
+          list_id: number
+          sent: number
+          soft_bounces: number
+          trackable_views: number
+          unique_clicks: number
+          unique_views: number
+          unsubscriptions: number
+          updated_at: string
+          viewed: number
+        }
+        Insert: {
+          campaign_id: number
+          clickers?: number
+          complaints?: number
+          deferred?: number
+          delivered?: number
+          hard_bounces?: number
+          list_id: number
+          sent?: number
+          soft_bounces?: number
+          trackable_views?: number
+          unique_clicks?: number
+          unique_views?: number
+          unsubscriptions?: number
+          updated_at?: string
+          viewed?: number
+        }
+        Update: {
+          campaign_id?: number
+          clickers?: number
+          complaints?: number
+          deferred?: number
+          delivered?: number
+          hard_bounces?: number
+          list_id?: number
+          sent?: number
+          soft_bounces?: number
+          trackable_views?: number
+          unique_clicks?: number
+          unique_views?: number
+          unsubscriptions?: number
+          updated_at?: string
+          viewed?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brevo_campaign_list_stats_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "brevo_campaigns"
+            referencedColumns: ["campaign_id"]
+          },
+          {
+            foreignKeyName: "brevo_campaign_list_stats_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "v_brevo_campaign_performance"
+            referencedColumns: ["campaign_id"]
+          },
+        ]
+      }
+      brevo_campaigns: {
+        Row: {
+          campaign_id: number
+          created_at_brevo: string | null
+          footer_exists: boolean | null
+          header_exists: boolean | null
+          modified_at_brevo: string | null
+          name: string
+          raw_campaign: Json | null
+          recipients_lists: number[] | null
+          reply_to: string | null
+          scheduled_at: string | null
+          sender_email: string | null
+          sender_id: number | null
+          sender_name: string | null
+          sent_date: string | null
+          share_link: string | null
+          status: string | null
+          subject: string | null
+          test_sent: boolean | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: number
+          created_at_brevo?: string | null
+          footer_exists?: boolean | null
+          header_exists?: boolean | null
+          modified_at_brevo?: string | null
+          name: string
+          raw_campaign?: Json | null
+          recipients_lists?: number[] | null
+          reply_to?: string | null
+          scheduled_at?: string | null
+          sender_email?: string | null
+          sender_id?: number | null
+          sender_name?: string | null
+          sent_date?: string | null
+          share_link?: string | null
+          status?: string | null
+          subject?: string | null
+          test_sent?: boolean | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: number
+          created_at_brevo?: string | null
+          footer_exists?: boolean | null
+          header_exists?: boolean | null
+          modified_at_brevo?: string | null
+          name?: string
+          raw_campaign?: Json | null
+          recipients_lists?: number[] | null
+          reply_to?: string | null
+          scheduled_at?: string | null
+          sender_email?: string | null
+          sender_id?: number | null
+          sender_name?: string | null
+          sent_date?: string | null
+          share_link?: string | null
+          status?: string | null
+          subject?: string | null
+          test_sent?: boolean | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      brevo_contact_list_memberships: {
+        Row: {
+          contact_id: string
+          created_at: string
+          list_id: number
+          subscribed_at: string | null
+          unsubscribed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          list_id: number
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          list_id?: number
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brevo_contact_list_memberships_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "brevo_contacts"
+            referencedColumns: ["contact_id"]
+          },
+          {
+            foreignKeyName: "brevo_contact_list_memberships_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "v_brevo_contact_stats"
+            referencedColumns: ["contact_id"]
+          },
+          {
+            foreignKeyName: "brevo_contact_list_memberships_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "v_brevo_crm_unified"
+            referencedColumns: ["brevo_contact_id"]
+          },
+          {
+            foreignKeyName: "brevo_contact_list_memberships_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "brevo_lists"
+            referencedColumns: ["list_id"]
+          },
+        ]
+      }
+      brevo_contacts: {
+        Row: {
+          brevo_contact_id: number | null
+          contact_id: string
+          created_at: string
+          created_at_brevo: string | null
+          email: string
+          email_blacklisted: boolean
+          modified_at_brevo: string | null
+          nom: string | null
+          prenom: string | null
+          raw_attributes: Json
+          sms_blacklisted: boolean
+          societe: string | null
+          telephone: string | null
+          titre: string | null
+          updated_at: string
+        }
+        Insert: {
+          brevo_contact_id?: number | null
+          contact_id?: string
+          created_at?: string
+          created_at_brevo?: string | null
+          email: string
+          email_blacklisted?: boolean
+          modified_at_brevo?: string | null
+          nom?: string | null
+          prenom?: string | null
+          raw_attributes?: Json
+          sms_blacklisted?: boolean
+          societe?: string | null
+          telephone?: string | null
+          titre?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brevo_contact_id?: number | null
+          contact_id?: string
+          created_at?: string
+          created_at_brevo?: string | null
+          email?: string
+          email_blacklisted?: boolean
+          modified_at_brevo?: string | null
+          nom?: string | null
+          prenom?: string | null
+          raw_attributes?: Json
+          sms_blacklisted?: boolean
+          societe?: string | null
+          telephone?: string | null
+          titre?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      brevo_email_events: {
+        Row: {
+          campaign_id: number | null
+          campaign_name: string | null
+          contact_id: string
+          created_at: string
+          event_at: string
+          event_id: string
+          event_type: Database["public"]["Enums"]["brevo_email_event_type"]
+          raw_event: Json
+        }
+        Insert: {
+          campaign_id?: number | null
+          campaign_name?: string | null
+          contact_id: string
+          created_at?: string
+          event_at: string
+          event_id?: string
+          event_type: Database["public"]["Enums"]["brevo_email_event_type"]
+          raw_event?: Json
+        }
+        Update: {
+          campaign_id?: number | null
+          campaign_name?: string | null
+          contact_id?: string
+          created_at?: string
+          event_at?: string
+          event_id?: string
+          event_type?: Database["public"]["Enums"]["brevo_email_event_type"]
+          raw_event?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brevo_email_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "brevo_contacts"
+            referencedColumns: ["contact_id"]
+          },
+          {
+            foreignKeyName: "brevo_email_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "v_brevo_contact_stats"
+            referencedColumns: ["contact_id"]
+          },
+          {
+            foreignKeyName: "brevo_email_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "v_brevo_crm_unified"
+            referencedColumns: ["brevo_contact_id"]
+          },
+        ]
+      }
+      brevo_lists: {
+        Row: {
+          created_at: string
+          created_at_brevo: string | null
+          end_date: string | null
+          folder_id: number | null
+          list_id: number
+          name: string
+          start_date: string | null
+          total_blacklisted: number | null
+          total_subscribers: number | null
+          unique_subscribers: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_at_brevo?: string | null
+          end_date?: string | null
+          folder_id?: number | null
+          list_id: number
+          name: string
+          start_date?: string | null
+          total_blacklisted?: number | null
+          total_subscribers?: number | null
+          unique_subscribers?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_at_brevo?: string | null
+          end_date?: string | null
+          folder_id?: number | null
+          list_id?: number
+          name?: string
+          start_date?: string | null
+          total_blacklisted?: number | null
+          total_subscribers?: number | null
+          unique_subscribers?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_contacts: {
         Row: {
           _email_unique: boolean | null
@@ -2892,10 +3273,215 @@ export type Database = {
         }
         Relationships: []
       }
+      unified_crm_detailed_view: {
+        Row: {
+          apollo_data: Json | null
+          apollo_id: string | null
+          apollo_stage: string | null
+          apollo_status: string | null
+          city: string | null
+          company: string | null
+          contact_active: string | null
+          country: string | null
+          crm_data: Json | null
+          crm_id: number | null
+          data_section: string | null
+          email: string | null
+          email_status: string | null
+          firstname: string | null
+          has_apollo: boolean | null
+          has_crm: boolean | null
+          has_hubspot: boolean | null
+          hs_lead_status: string | null
+          hubspot_data: Json | null
+          hubspot_id: number | null
+          industrie: string | null
+          last_updated: string | null
+          lastname: string | null
+          lifecyclestage: string | null
+          linkedin_url: string | null
+          nb_employees: string | null
+          phone: string | null
+          source_count: number | null
+          website: string | null
+          zoho_status: string | null
+          zoho_tag: string | null
+        }
+        Relationships: []
+      }
+      unified_prospects_view: {
+        Row: {
+          address: string | null
+          city: string | null
+          company: string | null
+          company_website: string | null
+          country: string | null
+          departement: string | null
+          email: string | null
+          email_normalized: string | null
+          firstname: string | null
+          has_apollo: boolean | null
+          has_crm: boolean | null
+          has_hubspot: boolean | null
+          industrie: string | null
+          last_updated: string | null
+          lastname: string | null
+          linkedin_company_url: string | null
+          linkedin_url: string | null
+          mobile: string | null
+          nb_employees: number | null
+          source_count: number | null
+          tel: string | null
+          tel_pro: string | null
+          title: string | null
+        }
+        Relationships: []
+      }
+      v_brevo_campaign_performance: {
+        Row: {
+          campaign_id: number | null
+          campaign_name: string | null
+          campaign_type: string | null
+          click_rate: number | null
+          complaints: number | null
+          delivery_rate: number | null
+          open_rate: number | null
+          sender_email: string | null
+          sender_name: string | null
+          sent_date: string | null
+          status: string | null
+          subject: string | null
+          total_delivered: number | null
+          total_sent: number | null
+          total_views: number | null
+          unique_clicks: number | null
+          unique_views: number | null
+          unsubscribe_rate: number | null
+          unsubscriptions: number | null
+        }
+        Relationships: []
+      }
+      v_brevo_contact_stats: {
+        Row: {
+          brevo_contact_id: number | null
+          click_rate_pct: number | null
+          contact_id: string | null
+          created_at_brevo: string | null
+          email: string | null
+          email_blacklisted: boolean | null
+          emails_bounced: number | null
+          emails_clicked: number | null
+          emails_delivered: number | null
+          emails_opened: number | null
+          emails_sent: number | null
+          emails_spam: number | null
+          emails_unsubscribed: number | null
+          last_event_at: string | null
+          last_event_type:
+            | Database["public"]["Enums"]["brevo_email_event_type"]
+            | null
+          list_ids: number[] | null
+          modified_at_brevo: string | null
+          nom: string | null
+          open_rate_pct: number | null
+          prenom: string | null
+          sms_blacklisted: boolean | null
+          societe: string | null
+          telephone: string | null
+          titre: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      v_brevo_crm_unified: {
+        Row: {
+          brevo_attributes: Json | null
+          brevo_click_number: string | null
+          brevo_contact_id: string | null
+          brevo_id: number | null
+          brevo_last_mail_campain: string | null
+          brevo_last_sms_campain: string | null
+          brevo_lists: string | null
+          brevo_open_number: string | null
+          brevo_reply_number: string | null
+          brevo_tag: string | null
+          brevo_unsuscribe: string | null
+          campaign_names: string | null
+          company: string | null
+          created_at_brevo: string | null
+          crm_created_at: string | null
+          crm_id: number | null
+          crm_updated_at: string | null
+          email: string | null
+          email_blacklisted: boolean | null
+          firstname: string | null
+          last_campaign_date: string | null
+          last_campaign_name: string | null
+          last_click_date: string | null
+          last_open_date: string | null
+          linkedin_function: string | null
+          list_count: number | null
+          modified_at_brevo: string | null
+          name: string | null
+          sms_blacklisted: boolean | null
+          tel_pro: string | null
+          total_clicks: number | null
+          total_opens: number | null
+          total_unsubscribes: number | null
+        }
+        Relationships: []
+      }
+      v_brevo_email_stats: {
+        Row: {
+          bounce_rate: number | null
+          click_rate: number | null
+          delivery_rate: number | null
+          open_rate: number | null
+          total_clickers: number | null
+          total_clicks: number | null
+          total_complaints: number | null
+          total_deferred: number | null
+          total_delivered: number | null
+          total_hard_bounces: number | null
+          total_opens: number | null
+          total_replies: number | null
+          total_sent: number | null
+          total_soft_bounces: number | null
+          total_unsubscribes: number | null
+          total_views: number | null
+          unsubscribe_rate: number | null
+        }
+        Relationships: []
+      }
+      v_brevo_global_stats: {
+        Row: {
+          active_count: number | null
+          blacklisted_count: number | null
+          metric_type: string | null
+          total_count: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      filter_crm_contacts_by_tools: {
+        Args: {
+          p_apollo_filter?: boolean
+          p_brevo_filter?: boolean
+          p_hubspot_filter?: boolean
+          p_page?: number
+          p_page_size?: number
+          p_search_term?: string
+          p_section_filter?: string
+          p_sort_by?: string
+          p_sort_order?: string
+          p_systemeio_filter?: boolean
+          p_zoho_filter?: boolean
+        }
+        Returns: Json
+      }
       get_apollo_contacts_only: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           email: string
           id: string
@@ -2903,8 +3489,9 @@ export type Database = {
           primary_email_last_verified_at: string
         }[]
       }
+      get_brevo_sync_status: { Args: never; Returns: Json }
       get_contacts_crm_apollo: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           aicademia_high_status: string
           aicademia_low_status: string
@@ -2977,9 +3564,49 @@ export type Database = {
         }
         Returns: boolean
       }
+      insert_many_email_events: { Args: { p_events: Json }; Returns: number }
+      refresh_unified_crm_detailed_view: { Args: never; Returns: undefined }
+      refresh_unified_view: { Args: never; Returns: undefined }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      sync_brevo_contacts_to_crm: {
+        Args: never
+        Returns: {
+          error_count: number
+          inserted_count: number
+          updated_count: number
+        }[]
+      }
+      sync_brevo_lists_to_crm: {
+        Args: never
+        Returns: {
+          contact_count: number
+          list_name: string
+          updated_count: number
+        }[]
+      }
+      trigger_brevo_sync: { Args: never; Returns: Json }
+      update_brevo_contact_stats: {
+        Args: never
+        Returns: {
+          updated_count: number
+        }[]
+      }
+      upsert_membership_by_email: {
+        Args: { p_email: string; p_list_id: number }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "sdr" | "sales" | "marketing" | "admin"
+      brevo_email_event_type:
+        | "sent"
+        | "delivered"
+        | "open"
+        | "click"
+        | "bounce"
+        | "spam"
+        | "unsubscribe"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3108,6 +3735,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["sdr", "sales", "marketing", "admin"],
+      brevo_email_event_type: [
+        "sent",
+        "delivered",
+        "open",
+        "click",
+        "bounce",
+        "spam",
+        "unsubscribe",
+      ],
     },
   },
 } as const

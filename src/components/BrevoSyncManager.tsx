@@ -66,7 +66,7 @@ export const BrevoSyncManager: React.FC = () => {
 
       if (error) throw error;
 
-      setSyncStatus(data);
+      setSyncStatus(data as unknown as SyncStatus);
     } catch (error) {
       console.error("Erreur lors du chargement du statut:", error);
       toast({
@@ -90,7 +90,7 @@ export const BrevoSyncManager: React.FC = () => {
 
       if (error) throw error;
 
-      setLastSyncResult(data);
+      setLastSyncResult(data as unknown as SyncResult);
 
       // Recharger le statut
       await loadSyncStatus();
