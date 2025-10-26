@@ -611,24 +611,6 @@ const ManagerDashboard = () => {
                       {realBrevoStats?.total_opens || 0}
                     </span>
                   </div>
-                  <div
-                    className="flex items-center justify-between p-3 bg-[hsl(var(--accent-purple-light))] rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => navigate("/brevo-leads?status=replies")}
-                  >
-                    <span className="text-sm font-medium">Répondus</span>
-                    <span className="text-lg font-bold text-[hsl(var(--accent-purple))]">
-                      {realBrevoStats?.total_replies || 0}
-                    </span>
-                  </div>
-                  <div
-                    className="flex items-center justify-between p-3 bg-[hsl(var(--accent-orange-light))] rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => navigate("/brevo-leads?status=unsubscribes")}
-                  >
-                    <span className="text-sm font-medium">Désabonnés</span>
-                    <span className="text-lg font-bold text-[hsl(var(--accent-orange))]">
-                      {realBrevoStats?.total_unsubscribes || 0}
-                    </span>
-                  </div>
                 </div>
               </TabsContent>
             </Tabs>
