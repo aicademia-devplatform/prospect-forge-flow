@@ -742,7 +742,8 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
                 </div>
               </TabsContent>
 
-              <TabsContent value="format" className="space-y-6 mt-4">
+              <TabsContent value="format" className="mt-4 flex flex-col h-[calc(90vh-280px)]">
+                <div className="space-y-6 overflow-y-auto pr-3 flex-1 scrollbar-custom">
                 {/* Format Selection */}
                 <div className="space-y-3">
                   <Label className="text-sm font-medium">
@@ -903,6 +904,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({
                     </Card>
                   </>
                 )}
+                </div>
               </TabsContent>
             </ScrollArea>
           </div>
