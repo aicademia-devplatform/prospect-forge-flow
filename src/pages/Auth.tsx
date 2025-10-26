@@ -15,12 +15,21 @@ const emailSchema = z.object({
   password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères').max(128, 'Mot de passe trop long')
 });
 
+const signupSchema = z.object({
+  email: z.string().trim().email('Email invalide').max(255, 'Email trop long'),
+  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères').max(128, 'Mot de passe trop long'),
+  firstName: z.string().min(1, 'Le prénom est requis').max(100, 'Prénom trop long'),
+  lastName: z.string().min(1, 'Le nom est requis').max(100, 'Nom trop long')
+});
+
 const Auth = () => {
   const { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const { toast } = useToast();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
 
   // Redirect if already authenticated
@@ -34,23 +43,38 @@ const Auth = () => {
 
     try {
       // Validate input
-      const validatedData = emailSchema.parse({ email, password });
-      
-      const { error } = isSignUp 
-        ? await signUpWithEmail(validatedData.email, validatedData.password)
-        : await signInWithEmail(validatedData.email, validatedData.password);
-
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: isSignUp ? "Inscription échouée" : "Connexion échouée",
-          description: error.message || "Une erreur est survenue. Veuillez réessayer."
-        });
-      } else if (isSignUp) {
-        toast({
-          title: "Inscription réussie",
-          description: "Vérifiez votre email pour confirmer votre compte."
-        });
+      if (isSignUp) {
+        const validatedData = signupSchema.parse({ email, password, firstName, lastName });
+        const { error } = await signUpWithEmail(
+          validatedData.email, 
+          validatedData.password,
+          validatedData.firstName,
+          validatedData.lastName
+        );
+        
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Inscription échouée",
+            description: error.message || "Une erreur est survenue. Veuillez réessayer."
+          });
+        } else {
+          toast({
+            title: "Inscription réussie",
+            description: "Vérifiez votre email pour confirmer votre compte."
+          });
+        }
+      } else {
+        const validatedData = emailSchema.parse({ email, password });
+        const { error } = await signInWithEmail(validatedData.email, validatedData.password);
+        
+        if (error) {
+          toast({
+            variant: "destructive",
+            title: "Connexion échouée",
+            description: error.message || "Une erreur est survenue. Veuillez réessayer."
+          });
+        }
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -186,6 +210,30 @@ const Auth = () => {
 
               <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={(e) => { setIsSignUp(true); handleEmailAuth(e); }} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-firstname">Prénom</Label>
+                      <Input
+                        id="signup-firstname"
+                        type="text"
+                        placeholder="Jean"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-lastname">Nom</Label>
+                      <Input
+                        id="signup-lastname"
+                        type="text"
+                        placeholder="Dupont"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <div className="relative">

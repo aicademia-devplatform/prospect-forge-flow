@@ -28,7 +28,7 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<{ data: any; error: AuthError | null }>;
   signInWithEmail: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
-  signUpWithEmail: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
+  signUpWithEmail: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ data: any; error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   hasRole: (role: 'sdr' | 'sales' | 'marketing' | 'admin') => boolean;
   hasPermission: (permission: string) => boolean;
@@ -168,13 +168,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signUpWithEmail = async (email: string, password: string) => {
+  const signUpWithEmail = async (email: string, password: string, firstName?: string, lastName?: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            first_name: firstName,
+            last_name: lastName
+          }
         }
       });
       return { data, error };
