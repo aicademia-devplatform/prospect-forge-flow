@@ -28,6 +28,9 @@ interface QueryParams {
       from?: string
       to?: string
     }
+    statutProspect?: string
+    sdrId?: string
+    prospectType?: string
     hasPhoneNumber?: boolean
   }
 }
@@ -263,6 +266,34 @@ Deno.serve(async (req) => {
         endDate.setDate(endDate.getDate() + 1)
         filteredProspects = filteredProspects.filter(prospect => 
           prospect[dateField] && new Date(prospect[dateField]) < endDate
+        )
+      }
+      
+      // Statut prospect filter
+      if (salesFilters.statutProspect) {
+        filteredProspects = filteredProspects.filter(prospect => 
+          prospect.statut_prospect === salesFilters.statutProspect
+        )
+      }
+      
+      // SDR filter - adapt based on filterMode
+      if (salesFilters.sdrId) {
+        filteredProspects = filteredProspects.filter(prospect => {
+          if (filterMode === 'assigned') {
+            // Pour assigned, on filtre uniquement sur sales_user_id
+            return prospect._assignment_data?.sales_user_id === salesFilters.sdrId
+          } else {
+            // Pour traites et rappeler, on filtre sur sdr_id OU sales_user_id
+            return prospect._assignment_data?.sdr_id === salesFilters.sdrId || 
+                   prospect._assignment_data?.sales_user_id === salesFilters.sdrId
+          }
+        })
+      }
+      
+      // Prospect type filter (traites/rappeler)
+      if (salesFilters.prospectType) {
+        filteredProspects = filteredProspects.filter(prospect => 
+          prospect._assignment_data?.prospect_type === salesFilters.prospectType
         )
       }
       
