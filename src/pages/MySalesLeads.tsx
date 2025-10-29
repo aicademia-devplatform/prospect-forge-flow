@@ -189,6 +189,19 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
       }
     }
   }, [advancedFilters, visibleColumns]);
+
+  // Effet pour afficher automatiquement la colonne téléphone quand le filtre est activé
+  useEffect(() => {
+    if (salesFilters.hasPhoneNumber) {
+      // Activer la colonne téléphone
+      setShowPhoneColumn(true);
+      
+      // Ajouter la colonne aux colonnes visibles si elle n'est pas déjà visible
+      if (!visibleColumns.has('phone_number')) {
+        setVisibleColumns(prev => new Set([...prev, 'phone_number']));
+      }
+    }
+  }, [salesFilters.hasPhoneNumber, visibleColumns]);
   const loadTableConfig = async () => {
     if (!user) return;
     try {
