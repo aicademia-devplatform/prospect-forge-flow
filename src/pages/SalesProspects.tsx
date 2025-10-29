@@ -535,15 +535,6 @@ const SalesProspects = () => {
         new Date(prospect.created_at) >= filters.dateRange.from &&
         new Date(prospect.created_at) <= filters.dateRange.to);
 
-    const matchesStatut =
-      !filters.statutProspect ||
-      prospect.statut_prospect === filters.statutProspect;
-
-    const matchesSdr = !filters.sdrId || prospect.sdr_id === filters.sdrId;
-
-    const matchesProspectType =
-      !filters.prospectType || prospect.prospect_type === filters.prospectType;
-
     // Filtre par présence de numéro de téléphone
     const matchesPhoneFilter =
       !filters.hasPhoneNumber ||
@@ -553,9 +544,6 @@ const SalesProspects = () => {
     // Combiner tous les filtres
     const matchesFilters =
       matchesDateRange &&
-      matchesStatut &&
-      matchesSdr &&
-      matchesProspectType &&
       matchesPhoneFilter;
 
     if (activeTab === "prevalidated") {

@@ -2,13 +2,6 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
@@ -23,22 +16,12 @@ import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
-import { supabase } from "@/integrations/supabase/client";
 
 export interface SalesProspectsFilterValues {
   dateRange?: DateRange;
-  statutProspect?: string;
-  sdrId?: string;
-  prospectType?: string;
   hasPhoneNumber?: boolean;
 }
 
-interface SDR {
-  id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-}
 
 interface SalesProspectsFiltersProps {
   filters: SalesProspectsFilterValues;
@@ -52,16 +35,6 @@ interface SalesProspectsFiltersProps {
   filterMode?: 'assigned' | 'traites' | 'rappeler';
 }
 
-const STATUT_PROSPECT_OPTIONS = [
-  "RÉPONDEUR",
-  "Importé avec statut",
-  "RDV",
-  "B",
-  "MAIL À ENVOYER",
-  "MAIL ENVOYÉ",
-];
-
-const PROSPECT_TYPE_OPTIONS = ["traites", "rappeler"];
 
 const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
   filters,
@@ -76,56 +49,11 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
 }) => {
   const [localFilters, setLocalFilters] =
     useState<SalesProspectsFilterValues>(filters);
-  const [sdrList, setSdrList] = useState<SDR[]>([]);
-  const [loadingSdr, setLoadingSdr] = useState(false);
 
   // Update local filters when prop filters change
   useEffect(() => {
     setLocalFilters(filters);
   }, [filters]);
-
-  // Charger la liste des SDR depuis user_roles et profiles
-  useEffect(() => {
-    const fetchSdrList = async () => {
-      setLoadingSdr(true);
-      try {
-        const { data, error } = await supabase
-          .from("user_roles")
-          .select("user_id, role, profiles(id, email, first_name, last_name)")
-          .in("role", ["sdr", "sales"])
-          .order("profiles(email)");
-
-        if (error) throw error;
-
-        // Mapper vers le format SDR attendu
-        const sdrs: SDR[] = (data || [])
-          .filter((item: any) => item.profiles) // Filtrer ceux qui ont un profil
-          .map((item: any) => ({
-            id: item.profiles.id,
-            email: item.profiles.email,
-            first_name: item.profiles.first_name,
-            last_name: item.profiles.last_name,
-          }));
-
-        // Dédupliquer par id
-        const uniqueSdrs = sdrs.reduce((acc: SDR[], current: SDR) => {
-          const existing = acc.find((sdr) => sdr.id === current.id);
-          if (!existing) {
-            acc.push(current);
-          }
-          return acc;
-        }, []);
-
-        setSdrList(uniqueSdrs);
-      } catch (error) {
-        console.error("Erreur lors du chargement des SDR:", error);
-      } finally {
-        setLoadingSdr(false);
-      }
-    };
-
-    fetchSdrList();
-  }, []);
 
   const updateFilter = (key: keyof SalesProspectsFilterValues, value: any) => {
     const newFilters = { ...localFilters, [key]: value };
@@ -167,13 +95,6 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
     );
   }
 
-  const getSdrDisplayName = (sdr: SDR) => {
-    if (sdr.first_name && sdr.last_name) {
-      return `${sdr.first_name} ${sdr.last_name} (${sdr.email})`;
-    }
-    return sdr.email;
-  };
-
   const getDateRangeLabel = () => {
     switch (filterMode) {
       case 'assigned':
@@ -200,17 +121,6 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
     }
   };
 
-  const getSdrLabel = () => {
-    switch (filterMode) {
-      case 'assigned':
-        return 'SDR assigné';
-      case 'traites':
-      case 'rappeler':
-        return 'SDR qui a traité';
-      default:
-        return 'SDR';
-    }
-  };
 
   return (
     <motion.div
@@ -289,121 +199,34 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
                   />
                 </div>
 
-                {/* Select filters */}
+                {/* Phone filter */}
                 <div
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in"
+                  className="space-y-2 animate-fade-in"
                   style={{ animationDelay: "200ms" }}
                 >
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground/80">
-                      Statut de traitement
-                    </label>
-                    <Select
-                      value={localFilters.statutProspect || "all"}
-                      onValueChange={(value) =>
+                  <label className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Numéro de téléphone disponible
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="phone-filter"
+                      checked={localFilters.hasPhoneNumber || false}
+                      onCheckedChange={(checked) =>
                         updateFilter(
-                          "statutProspect",
-                          value === "all" ? undefined : value
+                          "hasPhoneNumber",
+                          checked ? true : undefined
                         )
                       }
+                    />
+                    <label
+                      htmlFor="phone-filter"
+                      className="text-sm text-muted-foreground cursor-pointer"
                     >
-                      <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                        <SelectValue placeholder="Tous les statuts" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les statuts</SelectItem>
-                        {STATUT_PROSPECT_OPTIONS.map((status) => (
-                          <SelectItem key={status} value={status}>
-                            {status}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground/80">
-                      {getSdrLabel()}
+                      {localFilters.hasPhoneNumber
+                        ? "Prospects avec téléphone uniquement"
+                        : "Tous les prospects"}
                     </label>
-                    <Select
-                      value={localFilters.sdrId || "all"}
-                      onValueChange={(value) =>
-                        updateFilter(
-                          "sdrId",
-                          value === "all" ? undefined : value
-                        )
-                      }
-                    >
-                      <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                        <SelectValue
-                          placeholder={
-                            loadingSdr ? "Chargement..." : "Tous les SDR"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les SDR</SelectItem>
-                        {sdrList.map((sdr) => (
-                          <SelectItem key={sdr.id} value={sdr.id}>
-                            {getSdrDisplayName(sdr)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground/80">
-                      Type de prospect
-                    </label>
-                    <Select
-                      value={localFilters.prospectType || "all"}
-                      onValueChange={(value) =>
-                        updateFilter(
-                          "prospectType",
-                          value === "all" ? undefined : value
-                        )
-                      }
-                    >
-                      <SelectTrigger className="transition-all duration-200 hover:border-primary/50 focus:border-primary">
-                        <SelectValue placeholder="Tous les types" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les types</SelectItem>
-                        {PROSPECT_TYPE_OPTIONS.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type === "traites" ? "Traités" : "À rappeler"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground/80 flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      Numéro de téléphone disponible
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="phone-filter"
-                        checked={localFilters.hasPhoneNumber || false}
-                        onCheckedChange={(checked) =>
-                          updateFilter(
-                            "hasPhoneNumber",
-                            checked ? true : undefined
-                          )
-                        }
-                      />
-                      <label
-                        htmlFor="phone-filter"
-                        className="text-sm text-muted-foreground cursor-pointer"
-                      >
-                        {localFilters.hasPhoneNumber
-                          ? "Prospects avec téléphone uniquement"
-                          : "Tous les prospects"}
-                      </label>
-                    </div>
                   </div>
                 </div>
 
@@ -426,7 +249,7 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
                           {format(localFilters.dateRange.from, "dd/MM/yyyy", {
                             locale: fr,
                           })}
-                          {localFilters.dateRange.to &&
+                       {localFilters.dateRange.to &&
                             ` - ${format(
                               localFilters.dateRange.to,
                               "dd/MM/yyyy",
@@ -437,48 +260,6 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
                           <X
                             className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
                             onClick={() => removeFilter("dateRange")}
-                          />
-                        </Badge>
-                      )}
-                      {localFilters.statutProspect && (
-                        <Badge
-                          variant="secondary"
-                          className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in"
-                        >
-                          Statut: {localFilters.statutProspect}
-                          <X
-                            className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
-                            onClick={() => removeFilter("statutProspect")}
-                          />
-                        </Badge>
-                      )}
-                      {localFilters.sdrId && (
-                        <Badge
-                          variant="secondary"
-                          className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in"
-                        >
-                          SDR:{" "}
-                          {sdrList.find(
-                            (sdr) => sdr.id === localFilters.sdrId
-                          )?.email || localFilters.sdrId}
-                          <X
-                            className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
-                            onClick={() => removeFilter("sdrId")}
-                          />
-                        </Badge>
-                      )}
-                      {localFilters.prospectType && (
-                        <Badge
-                          variant="secondary"
-                          className="flex items-center gap-1 transition-all duration-200 hover:bg-primary/20 animate-scale-in"
-                        >
-                          Type:{" "}
-                          {localFilters.prospectType === "traites"
-                            ? "Traités"
-                            : "À rappeler"}
-                          <X
-                            className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
-                            onClick={() => removeFilter("prospectType")}
                           />
                         </Badge>
                       )}
