@@ -17,6 +17,7 @@ import {
   User,
   Users,
   CheckCircle,
+  Info,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,6 +29,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SDRAssignmentProps {
   data: {
@@ -59,6 +62,10 @@ export const SDRAssignment: React.FC<SDRAssignmentProps> = ({
   const [sdrList, setSdrList] = useState<SDR[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user, userRole } = useAuth();
+  
+  const isSDR = userRole === "sdr";
+  const canChangeSDR = !isSDR;
 
   const fetchSDRs = useCallback(async () => {
     try {
@@ -120,6 +127,13 @@ export const SDRAssignment: React.FC<SDRAssignmentProps> = ({
   useEffect(() => {
     fetchSDRs();
   }, [fetchSDRs]);
+
+  // Auto-sélectionner le SDR si l'utilisateur est un SDR
+  useEffect(() => {
+    if (isSDR && user && sdrList.length > 0 && !selectedSDR) {
+      setSelectedSDR(user.id);
+    }
+  }, [isSDR, user, sdrList, selectedSDR]);
 
   const getSDRName = (sdrId: string) => {
     const sdr = sdrList.find((s) => s.id === sdrId);
@@ -248,7 +262,7 @@ export const SDRAssignment: React.FC<SDRAssignmentProps> = ({
                 <User className="h-5 w-5" />
                 <h3 className="text-lg font-medium">Assignation SDR</h3>
               </div>
-              <div className="p-6 border rounded-lg bg-muted/30">
+            <div className="p-6 border rounded-lg bg-muted/30">
                 <div className="space-y-4">
                   <div>
                     <Label className="text-base font-medium">
@@ -259,7 +273,21 @@ export const SDRAssignment: React.FC<SDRAssignmentProps> = ({
                       SDR
                     </p>
                   </div>
-                  <Select value={selectedSDR} onValueChange={setSelectedSDR}>
+                  
+                  {isSDR && (
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertDescription>
+                        En tant que SDR, les prospects seront automatiquement assignés à vous-même.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <Select 
+                    value={selectedSDR} 
+                    onValueChange={setSelectedSDR}
+                    disabled={!canChangeSDR}
+                  >
                     <SelectTrigger className="h-12">
                       <SelectValue placeholder="Choisir un SDR..." />
                     </SelectTrigger>
