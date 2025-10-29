@@ -30,14 +30,14 @@ export interface SalesProspectsFilterValues {
   statutProspect?: string;
   sdrId?: string;
   prospectType?: string;
-  hasPhoneNumber?: boolean; // Nouveau filtre
+  hasPhoneNumber?: boolean;
 }
 
 interface SDR {
-  sdr_id: string;
-  sdr_email: string;
-  sdr_first_name: string | null;
-  sdr_last_name: string | null;
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 interface SalesProspectsFiltersProps {
@@ -49,6 +49,7 @@ interface SalesProspectsFiltersProps {
   showOnlyButton?: boolean;
   isFilterExpanded?: boolean;
   onFilterExpandedChange?: (expanded: boolean) => void;
+  filterMode?: 'assigned' | 'traites' | 'rappeler';
 }
 
 const STATUT_PROSPECT_OPTIONS = [
@@ -71,6 +72,7 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
   showOnlyButton = false,
   isFilterExpanded = false,
   onFilterExpandedChange,
+  filterMode = 'assigned',
 }) => {
   const [localFilters, setLocalFilters] =
     useState<SalesProspectsFilterValues>(filters);
@@ -82,28 +84,37 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
     setLocalFilters(filters);
   }, [filters]);
 
-  // Charger la liste des SDR
+  // Charger la liste des SDR depuis user_roles et profiles
   useEffect(() => {
     const fetchSdrList = async () => {
       setLoadingSdr(true);
       try {
         const { data, error } = await supabase
-          .from("sales_sdr_prospects_view")
-          .select("sdr_id, sdr_email, sdr_first_name, sdr_last_name")
-          .not("sdr_id", "is", null)
-          .order("sdr_email");
+          .from("user_roles")
+          .select("user_id, role, profiles(id, email, first_name, last_name)")
+          .in("role", ["sdr", "sales"])
+          .order("profiles(email)");
 
         if (error) throw error;
 
-        // Dédupliquer par sdr_id
-        const uniqueSdrs =
-          data?.reduce((acc: SDR[], current: SDR) => {
-            const existing = acc.find((sdr) => sdr.sdr_id === current.sdr_id);
-            if (!existing) {
-              acc.push(current);
-            }
-            return acc;
-          }, []) || [];
+        // Mapper vers le format SDR attendu
+        const sdrs: SDR[] = (data || [])
+          .filter((item: any) => item.profiles) // Filtrer ceux qui ont un profil
+          .map((item: any) => ({
+            id: item.profiles.id,
+            email: item.profiles.email,
+            first_name: item.profiles.first_name,
+            last_name: item.profiles.last_name,
+          }));
+
+        // Dédupliquer par id
+        const uniqueSdrs = sdrs.reduce((acc: SDR[], current: SDR) => {
+          const existing = acc.find((sdr) => sdr.id === current.id);
+          if (!existing) {
+            acc.push(current);
+          }
+          return acc;
+        }, []);
 
         setSdrList(uniqueSdrs);
       } catch (error) {
@@ -157,10 +168,48 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
   }
 
   const getSdrDisplayName = (sdr: SDR) => {
-    if (sdr.sdr_first_name && sdr.sdr_last_name) {
-      return `${sdr.sdr_first_name} ${sdr.sdr_last_name} (${sdr.sdr_email})`;
+    if (sdr.first_name && sdr.last_name) {
+      return `${sdr.first_name} ${sdr.last_name} (${sdr.email})`;
     }
-    return sdr.sdr_email;
+    return sdr.email;
+  };
+
+  const getDateRangeLabel = () => {
+    switch (filterMode) {
+      case 'assigned':
+        return 'Période d\'assignation';
+      case 'traites':
+        return 'Période de finalisation';
+      case 'rappeler':
+        return 'Période de rappel';
+      default:
+        return 'Période de traitement';
+    }
+  };
+
+  const getDateRangePlaceholder = () => {
+    switch (filterMode) {
+      case 'assigned':
+        return 'Sélectionner une période d\'assignation';
+      case 'traites':
+        return 'Sélectionner une période de finalisation';
+      case 'rappeler':
+        return 'Sélectionner une période de rappel';
+      default:
+        return 'Sélectionner une période';
+    }
+  };
+
+  const getSdrLabel = () => {
+    switch (filterMode) {
+      case 'assigned':
+        return 'SDR assigné';
+      case 'traites':
+      case 'rappeler':
+        return 'SDR qui a traité';
+      default:
+        return 'SDR';
+    }
   };
 
   return (
@@ -229,14 +278,14 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
                   style={{ animationDelay: "100ms" }}
                 >
                   <label className="text-sm font-medium text-foreground/80">
-                    Période de traitement
+                    {getDateRangeLabel()}
                   </label>
                   <DateRangePicker
                     dateRange={localFilters.dateRange}
                     onDateRangeChange={(range) =>
                       updateFilter("dateRange", range)
                     }
-                    placeholder="Sélectionner une période de traitement"
+                    placeholder={getDateRangePlaceholder()}
                   />
                 </div>
 
@@ -274,7 +323,7 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground/80">
-                      SDR qui a traité
+                      {getSdrLabel()}
                     </label>
                     <Select
                       value={localFilters.sdrId || "all"}
@@ -295,7 +344,7 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
                       <SelectContent>
                         <SelectItem value="all">Tous les SDR</SelectItem>
                         {sdrList.map((sdr) => (
-                          <SelectItem key={sdr.sdr_id} value={sdr.sdr_id}>
+                          <SelectItem key={sdr.id} value={sdr.id}>
                             {getSdrDisplayName(sdr)}
                           </SelectItem>
                         ))}
@@ -410,8 +459,8 @@ const SalesProspectsFilters: React.FC<SalesProspectsFiltersProps> = ({
                         >
                           SDR:{" "}
                           {sdrList.find(
-                            (sdr) => sdr.sdr_id === localFilters.sdrId
-                          )?.sdr_email || localFilters.sdrId}
+                            (sdr) => sdr.id === localFilters.sdrId
+                          )?.email || localFilters.sdrId}
                           <X
                             className="h-3 w-3 cursor-pointer hover:text-destructive transition-colors"
                             onClick={() => removeFilter("sdrId")}

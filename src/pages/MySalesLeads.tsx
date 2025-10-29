@@ -824,6 +824,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
         onReset={() => setSalesFilters({})}
         isFilterExpanded={isFilterExpanded}
         onFilterExpandedChange={setIsFilterExpanded}
+        filterMode={filterMode}
       />
 
       {/* Table */}

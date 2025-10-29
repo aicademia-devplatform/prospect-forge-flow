@@ -276,11 +276,18 @@ Deno.serve(async (req) => {
         )
       }
       
-      // SDR filter - need to get from assignment data
+      // SDR filter - adapt based on filterMode
       if (salesFilters.sdrId) {
-        filteredProspects = filteredProspects.filter(prospect => 
-          prospect._assignment_data?.sdr_id === salesFilters.sdrId
-        )
+        filteredProspects = filteredProspects.filter(prospect => {
+          if (filterMode === 'assigned') {
+            // Pour assigned, on filtre uniquement sur sales_user_id
+            return prospect._assignment_data?.sales_user_id === salesFilters.sdrId
+          } else {
+            // Pour traites et rappeler, on filtre sur sdr_id OU sales_user_id
+            return prospect._assignment_data?.sdr_id === salesFilters.sdrId || 
+                   prospect._assignment_data?.sales_user_id === salesFilters.sdrId
+          }
+        })
       }
       
       // Prospect type filter (traites/rappeler)
