@@ -16,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DataPagination from '@/components/DataPagination';
 import TableFilters, { FilterValues } from '@/components/TableFilters';
+import SalesProspectsFilters, { SalesProspectsFilterValues } from '@/components/SalesProspectsFilters';
 import TableColumnHeader from '@/components/TableColumnHeader';
 import { useAssignedProspectsData } from '@/hooks/useAssignedProspectsData';
 import { createProspectUrl } from '@/lib/emailCrypto';
@@ -104,7 +105,9 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
   );
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
+  const [salesFilters, setSalesFilters] = useState<SalesProspectsFilterValues>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // États pour le dialog de colonnes
@@ -273,6 +276,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
     sortOrder,
     visibleColumns: visibleColumnsArray,
     advancedFilters,
+    salesFilters,
     filterMode
   });
   const getAllColumns = (): ColumnInfo[] => {
@@ -812,6 +816,15 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
       <AnimatePresence>
         {filtersOpen && <TableFilters tableName="apollo_contacts" filters={advancedFilters} onFiltersChange={setAdvancedFilters} onReset={() => setAdvancedFilters({})} isOpen={filtersOpen} onToggle={() => setFiltersOpen(!filtersOpen)} />}
       </AnimatePresence>
+
+      {/* Sales Filters - similar to SalesProspects page */}
+      <SalesProspectsFilters
+        filters={salesFilters}
+        onFiltersChange={setSalesFilters}
+        onReset={() => setSalesFilters({})}
+        isFilterExpanded={isFilterExpanded}
+        onFilterExpandedChange={setIsFilterExpanded}
+      />
 
       {/* Table */}
       <Card>

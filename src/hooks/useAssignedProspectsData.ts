@@ -11,6 +11,7 @@ interface UseAssignedProspectsDataParams {
   sortOrder?: 'asc' | 'desc';
   visibleColumns?: string[];
   advancedFilters?: Record<string, any>;
+  salesFilters?: Record<string, any>;
   filterMode?: 'assigned' | 'traites' | 'rappeler';
 }
 
@@ -41,6 +42,7 @@ export const useAssignedProspectsData = (params: UseAssignedProspectsDataParams)
           sortOrder: params.sortOrder,
           visibleColumns: params.visibleColumns,
           advancedFilters: params.advancedFilters,
+          salesFilters: params.salesFilters,
           filterMode: params.filterMode
         }
       });
@@ -75,7 +77,8 @@ export const useAssignedProspectsData = (params: UseAssignedProspectsDataParams)
     params.filterMode,
     JSON.stringify(params.searchColumns),
     JSON.stringify(params.visibleColumns),
-    JSON.stringify(params.advancedFilters)
+    JSON.stringify(params.advancedFilters),
+    JSON.stringify(params.salesFilters)
   ]);
 
   const refetch = () => {

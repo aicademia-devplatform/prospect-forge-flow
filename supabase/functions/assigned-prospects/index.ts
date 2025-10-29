@@ -23,6 +23,16 @@ interface QueryParams {
     industrie?: string
     company?: string
   }
+  salesFilters?: {
+    dateRange?: {
+      from?: string
+      to?: string
+    }
+    statutProspect?: string
+    sdrId?: string
+    prospectType?: string
+    hasPhoneNumber?: boolean
+  }
 }
 
 Deno.serve(async (req) => {
@@ -60,7 +70,8 @@ Deno.serve(async (req) => {
       sortOrder = 'desc',
       visibleColumns = [],
       filterMode = 'assigned',
-      advancedFilters = {}
+      advancedFilters = {},
+      salesFilters = {}
     }: QueryParams = await req.json()
 
     console.log('Query params:', { page, pageSize, searchTerm, searchColumns, sortBy, sortOrder, visibleColumns, filterMode, advancedFilters })
@@ -236,6 +247,53 @@ Deno.serve(async (req) => {
       if (advancedFilters.company) {
         filteredProspects = filteredProspects.filter(prospect => 
           prospect.company?.toLowerCase().includes(advancedFilters.company!.toLowerCase())
+        )
+      }
+    }
+
+    // Apply sales filters
+    if (Object.keys(salesFilters).length > 0) {
+      // Date range filter for created_at (traites/rappeler date)
+      if (salesFilters.dateRange?.from) {
+        const dateField = filterMode === 'traites' ? 'completed_at' : filterMode === 'rappeler' ? 'callback_date' : 'assigned_at'
+        filteredProspects = filteredProspects.filter(prospect => 
+          prospect[dateField] && new Date(prospect[dateField]) >= new Date(salesFilters.dateRange!.from!)
+        )
+      }
+      if (salesFilters.dateRange?.to) {
+        const dateField = filterMode === 'traites' ? 'completed_at' : filterMode === 'rappeler' ? 'callback_date' : 'assigned_at'
+        const endDate = new Date(salesFilters.dateRange.to)
+        endDate.setDate(endDate.getDate() + 1)
+        filteredProspects = filteredProspects.filter(prospect => 
+          prospect[dateField] && new Date(prospect[dateField]) < endDate
+        )
+      }
+      
+      // Statut prospect filter
+      if (salesFilters.statutProspect) {
+        filteredProspects = filteredProspects.filter(prospect => 
+          prospect.statut_prospect === salesFilters.statutProspect
+        )
+      }
+      
+      // SDR filter - need to get from assignment data
+      if (salesFilters.sdrId) {
+        filteredProspects = filteredProspects.filter(prospect => 
+          prospect._assignment_data?.sdr_id === salesFilters.sdrId
+        )
+      }
+      
+      // Prospect type filter (traites/rappeler)
+      if (salesFilters.prospectType) {
+        filteredProspects = filteredProspects.filter(prospect => 
+          prospect._assignment_data?.prospect_type === salesFilters.prospectType
+        )
+      }
+      
+      // Phone number filter
+      if (salesFilters.hasPhoneNumber) {
+        filteredProspects = filteredProspects.filter(prospect => 
+          prospect.mobile_phone || prospect.work_direct_phone || prospect.home_phone
         )
       }
     }
