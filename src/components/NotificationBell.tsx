@@ -30,6 +30,12 @@ export const NotificationBell: React.FC = () => {
       setOpen(false);
       navigate(`/prospects/rappeler`);
     }
+    
+    // Si c'est une notification d'importation, naviguer vers l'historique d'importation
+    if ((notification.type === 'import_result' || notification.type === 'import_error') && notification.data?.import_id) {
+      setOpen(false);
+      navigate(`/import`);
+    }
   };
 
   const handleDelete = async (e: React.MouseEvent, notificationId: string) => {
@@ -41,6 +47,10 @@ export const NotificationBell: React.FC = () => {
     switch (type) {
       case 'callback_reminder':
         return '🔔';
+      case 'import_result':
+        return '📁';
+      case 'import_error':
+        return '⚠️';
       default:
         return '📬';
     }
