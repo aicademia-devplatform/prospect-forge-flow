@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Search, Download, Loader2, Eye, Trash2, X, ChevronDown, Columns, UserPlus, ExternalLink, GripVertical, ArrowRight, ArrowLeftRight } from 'lucide-react';
+import { ArrowLeft, Search, Download, Loader2, Eye, Trash2, X, ChevronDown, Columns, UserPlus, ExternalLink, GripVertical, ArrowRight, ArrowLeftRight, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -25,6 +25,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ExportDialog, { ExportOptions } from '@/components/ExportDialog';
+import { usePhoneNumbers } from '@/hooks/usePhoneNumbers';
 import * as XLSX from 'xlsx';
 interface ColumnInfo {
   name: string;
@@ -52,6 +53,7 @@ const translateColumnName = (columnName: string): string => {
     'zoho_status': 'Statut Zoho',
     'mobile_phone': 'Téléphone portable',
     'work_direct_phone': 'Téléphone professionnel',
+    'phone_number': 'Numéro de téléphone',
     'person_linkedin_url': 'LinkedIn',
     'website': 'Site web',
     'last_contacted': 'Dernier contact',
@@ -109,6 +111,7 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [showPhoneColumn, setShowPhoneColumn] = useState(false);
 
   // États pour le dialog de colonnes
   const [columnDialogOpen, setColumnDialogOpen] = useState(false);
@@ -279,6 +282,10 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
     salesFilters,
     filterMode
   });
+
+  // Récupérer les numéros de téléphone pour les prospects paginés quand le filtre est actif
+  const emailsToLoad = showPhoneColumn ? data.map((p) => p.email) : [];
+  const phoneNumbers = usePhoneNumbers(emailsToLoad);
   const getAllColumns = (): ColumnInfo[] => {
     const baseColumns = [{
       name: 'email',
@@ -309,6 +316,15 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
       type: 'string',
       nullable: false
     }];
+
+    // Ajouter la colonne phone_number si la fonctionnalité est activée
+    if (showPhoneColumn) {
+      baseColumns.splice(-2, 0, {
+        name: 'phone_number',
+        type: 'string',
+        nullable: true
+      });
+    }
 
     // Add callback columns for rappeler mode
     if (filterMode === 'rappeler') {
@@ -891,7 +907,29 @@ const MySalesLeads: React.FC<MySalesLeadsProps> = ({
                       {availableColumns.map(column => {
                 if (!visibleColumns.has(column.name) || column.name === 'email') return null;
                 return <TableCell key={column.name} className="px-4 py-3 min-w-[120px]">
-                            {column.name === 'apollo_status' || column.name === 'zoho_status' ? <Badge className={getStatusBadgeClass(prospect[column.name])}>
+                            {column.name === 'phone_number' ? (
+                              <div className="flex flex-col gap-1">
+                                {phoneNumbers[prospect.email]?.loading ? (
+                                  <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                    <span className="text-xs">Recherche...</span>
+                                  </div>
+                                ) : phoneNumbers[prospect.email]?.phones?.length > 0 ? (
+                                  phoneNumbers[prospect.email].phones.map((phone, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={`tel:${phone}`}
+                                      className="text-sm text-primary hover:underline flex items-center gap-1"
+                                    >
+                                      <Phone className="h-3 w-3" />
+                                      {phone}
+                                    </a>
+                                  ))
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">Aucun numéro</span>
+                                )}
+                              </div>
+                            ) : column.name === 'apollo_status' || column.name === 'zoho_status' ? <Badge className={getStatusBadgeClass(prospect[column.name])}>
                                 {prospect[column.name] || 'Non défini'}
                               </Badge> : column.name === 'source_table' || column.name === 'data_source' ? <Badge variant="outline">
                                  {prospect.source_table === 'apollo_contacts' ? 'Apollo' : 'CRM'}
